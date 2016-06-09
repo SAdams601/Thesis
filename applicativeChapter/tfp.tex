@@ -1,0 +1,342 @@
+\documentclass{kentHarvard}
+\usepackage{llncsdoc}
+\usepackage{url}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{relsize}
+\usepackage{listings}
+\newcommand{\comment}[1]{{\bf \tt  {#1}}}
+\newcommand{\todo}[1]{\textcolor{red}{\comment{\textbf{To Do: {#1}}}}}
+\lstset{
+  frame=none,
+  xleftmargin=2pt,
+  stepnumber=1,
+  numbers=left,
+  numbersep=5pt,
+  numberstyle=\ttfamily\tiny\color[gray]{0.3},
+  belowcaptionskip=\bigskipamount,
+  captionpos=b,
+  escapeinside={*'}{'*},
+  language=haskell,
+  tabsize=2,
+  emphstyle={\bf},
+  commentstyle=\it,
+  stringstyle=\mdseries\rmfamily,
+  showspaces=false,
+  keywordstyle=\bfseries\rmfamily,
+  columns=flexible,
+  basicstyle=\small\sffamily,
+  showstringspaces=false,
+  morecomment=[l]\%,
+}
+
+\urldef{\mail}\path|{sa597, S.J.Thompson}@kent.ac.uk|
+\begin{document}
+
+
+
+
+\title{Type Changing Refactorings for Haskell}
+\author{Stephen Adams \and Simon Thompson}
+\institute{School of Computing, University of Kent, UK\\
+\mail}
+
+\maketitle
+
+\begin{abstract}
+Should write this eventually.
+\end{abstract}
+
+\section{Introduction}
+
+\begin{itemize}
+	\item Refactoring and functional refactoring
+	\item Haskell?? (is this necessary for the TFP audience)
+
+\end{itemize}
+
+\section{HaRe: The \textit{Ha}skell \textit{Re}factorer}
+	\begin{itemize}
+		\item Origins
+		\item GHC API
+		\item GHC Exactprint
+	\end{itemize}
+	
+	
+\section{Notes on defining refactorings}
+	
+\subsection{Parts to a Fowler refactoring description}
+
+Each Fowler refactoring begins with either a UML diagram showing the class hierarchy before and after the refactoring or a snippet of example code before the refactoring and the equivalent code after the refactoring. There is also a brief description of what the refactoring does.
+
+After that there is a section on the motivation behind why you would use this particular refactoring. This summarises the situation where the refactoring should occur and when not to perform this particular refactoring.
+
+The mechanics section is a concise step-by-step description of how to carry out the refactoring. This description is at a fairly high level and generic presumably to allow for the refactorings to be language agnostic and because Fowler was writing assuming refactoring was done by hand.
+
+Finally some of the refactorings include one or more concrete examples of the refactoring working on ``actual" code.
+
+\subsection{Thoughts on documenting refactorings for GHC}
+
+Obviously there is no equivalent for UML in a functional language. Instead the introduction to a refactoring will consist of a brief code example show code pre and post refactoring in addition to the brief summary of what the refactoring does.
+
+The motivation section will be a bit tricky for me to really flesh out. For Fowler he had many years of experience to draw on which is where many of his ideas for refactorings came from. Unfortunately I don't have that level of Haskell experience at this point.
+
+\subsubsection{The mechanics section}
+
+I'm separating this into its own little section because mechanics is where most of the information I would like to capture should be kept. Since I can focus my refactorings on the GHC I would like the mechanics section to include much more specific descriptions of the AST transformations. 
+
+Often the way the refactoring is implemented involves checking for preconditions as well as performing transformations at the same time. This is more efficient and prevents code duplication of the same traversals. Should mechanics list the steps of the refactoring in the more natural pre-conditions first then transformation step, or try and highlight ways in which the condition checking can also be merged with certain transformation elements.
+
+I think it makes the most sense for the examples section to precede the mechanics section as opposed to Fowlers ordering. I want to switch this because of how these refactorings break apart into several distinct cases. The mechanics section will have to cover checking which case needs to actually be applied and it would make more sense for the reader if these cases were covered first with examples.
+
+I intend to write the mechanics section in a very rough pseudocode style to describe the rough program flow.
+\subsection{Other miscellaneous thoughts}
+
+At least for the maybe to monad plus refactoring depending on the format of the input code there are multiple different output possibilities (e.g. the case for Nothing to Nothing is significantly different than when a projection function needs to be added). It there a better way of showing this than through enumeration of all significant examples?  
+
+Up until now I had thought of maybe to monad plus as the refactoring that selects one input argument and generalises both that argument and the type of the output. Instead can this be a compound refactoring that does some additional collapsing after a ``generalise an argument" refactoring finishes (e.g. collapsing the $Nothing$ to $Nothing$ case into a bind statement). 
+
+\section{Design of Maybe to MonadPlus Refactoring}
+
+Maybe is a member of the MonadPlus type class. The refactoring takes a function with Maybe being the type of one of its arguments and generalises that argument to use MonadPlus.
+
+\paragraph{Arguments to the refactoring}
+\begin{itemize}
+	\item Position of the function
+	\item Name of the function
+	\item Integer signifying which argument is to be generalised
+\end{itemize}
+
+
+\subsection{Examples}
+This refactoring has several major cases. 
+
+When a function constructs a $Maybe$ from pure arguments the refactoring simply needs to replace all instances of $Nothing$ with $mzero$ and instances of $Just$ with $return$. 
+
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: String -> Maybe Int
+f "" = Nothing
+f s = Just (length s)
+\end{lstlisting}
+\larger[5]
+\[\Rightarrow\]
+\normalsize
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: (MonadPlus m) => String -> m Int
+f "" = mzero
+f s = return (length s)
+\end{lstlisting}
+\medskip
+
+When the function maps an input argument from $Nothing$ back to $Nothing$ that function can be generalised using the bind ($>>=$) operator. For example:\\
+
+
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: Maybe Int -> Maybe Int
+f Nothing = Nothing
+f (Just i) = Just (i+1)
+\end{lstlisting}
+\larger[5]
+\[\Rightarrow\]
+\normalsize
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: (MonadPlus m) => m Int -> m Int
+f mi = mi >>= (\i -> return (i+1))
+\end{lstlisting}
+\medskip
+If there is more than one case that matches the $Just$ constructor along with the Nothing-to-Nothing case the general function can still be rewritten using bind by wrapping the RHSs in a case statement.
+\\
+\begin{lstlisting}[frame=tlrb]{Name}
+inv :: Maybe Float -> Maybe Float
+inv Nothing = Nothing
+inv (Just 0) = Nothing
+inv (Just i) = Just (1/i)
+\end{lstlisting}
+\larger[5]
+\[\Rightarrow\]
+\normalsize
+\begin{lstlisting}[frame=tlrb]{Name}
+inv :: (MonadPlus m) => m Float -> m Float
+inv mi = mi >>= 
+	(\i -> case i of
+		        0 -> mzero
+		        i -> return (1/i)
+	)
+\end{lstlisting}
+\medskip
+A similar case to the two previous examples is when $Nothing$ is instead mapped to a $Just$ value. In this case the refactored function will need to keep a separate case to map $mzero$ to return the value that was previously wrapped in $Just$.\\
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: Maybe Int -> Maybe Int
+f Nothing = Just 0
+f (Just i) = Just (i)
+\end{lstlisting}
+\larger[5]
+\[\Rightarrow\]
+\normalsize
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: (MonadPlus m) => m Int -> m Int
+f mzero = return 0
+f mi = mi >>= (\i -> return i)
+\end{lstlisting}
+\medskip
+
+The final case this refactoring needs to take into account is when the targeted function does not treat Maybe monadically by extracting the values out of the monad. For example:\\
+
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: Maybe Int -> Int
+f Nothing = 0
+f (Just i) =  i
+\end{lstlisting}
+\larger[5]
+\[\Rightarrow\]
+\normalsize
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: (MonadPlus m) => (m Int -> Int) -> m Int -> Int
+f _ mzero = 0
+f proj mi = proj mi 
+\end{lstlisting}
+\medskip
+The refactoring introduces another argument to the function which is a function that ``projects" the monadic values into the output type. Another example of this:\\
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: Maybe a -> Either String a
+f Nothing  = Left "Computation has failed" 
+f (Just x) = Right x
+\end{lstlisting}
+\larger[5]
+\[\Rightarrow\]
+\normalsize
+\begin{lstlisting}[frame=tlrb]{Name}
+f :: (MonadPlus m) => (m a -> a) -> m a -> Either String a
+f _ mzero  = Left "Computation has failed" 
+f proj mx = Right (proj mx) 
+\end{lstlisting}
+\medskip
+The projection function's definition will be type dependent and, in some cases, not definable because a value cannot be extracted from any given monad. Automating this case provides little value since the creation of the projection function will be left up to the user.
+
+\subsection{Mechanics}
+
+Refactoring the function \textbf{f}:\\\\
+IF Maybe only occurs as the type of the output of \textbf{f}\\
+THEN DO 
+\begin{quote}
+	\begin{enumerate}
+		\item replace instances of $Nothing$ with $mzero$
+		\item replace instances of $Just$ with $return$
+		\item rewrite the type of \textbf{f}
+	\end{enumerate}
+\end{quote}
+ELSE IF \textbf{f} contains the Nothing-to-Nothing case\\
+THEN DO
+\begin{quote}
+	\begin{enumerate}
+		\item remove Nothing-to-Nothing case from \textbf{f}
+		\item IF \textbf{f} contains only a single $Just$ case\\THEN DO
+		\begin{enumerate}
+			\item The $Just$ case of the form: $f\: (Just\: var)\: =\: RHS$\\BECOMES
+			\item $f\: m\textunderscore var\: =\:m\textunderscore var >>= (\backslash var \rightarrow RHS)$
+			\item The variable name pattern matched inside of the $Just$ is prepended with ``m\textunderscore "
+		\end{enumerate}
+		ELSE there are multiple $Just$ cases\\THEN DO
+		\begin{enumerate}
+			\item The input function has the form of:\\
+			\begin{lstlisting}
+				f (Just var1) = RHS1
+				f (Just var2) = RHS2
+				.
+				.
+				f (Just varN) = RHSN
+			\end{lstlisting}
+			\item This function is now rewritten as:\\
+				\begin{lstlisting}
+				f uniq_var1 = uniq_var1 >>= (\uniq_var2 -> 
+					case uniq_var2 of
+						var1 -> RHS1
+						var2 -> RHS2
+						.
+						.
+						varN = RHSN)
+				\end{lstlisting}
+		\end{enumerate}
+	\end{enumerate}
+\end{quote}
+\section{Generalising Monads to Applicative}
+Since the release of GHC 7.10 Applicative became a superclass of Monad. This means that code that was originally written using monadic operations may also be re-written in an applicative style. In particular parsers written using the Parsec library benefit from more compact applicative definitions and judicious use of the applicative operators helps ``point" towards the values the parser is actually capturing.
+
+\paragraph{Arguments to the refactoring}
+\begin{itemize}
+	\item TODO
+\end{itemize}
+
+\subsection{Examples}
+
+Take for example the following parser that parses strings that begin and end with double quotes.
+
+\begin{lstlisting}[frame=tlrb]
+parseStr :: CharParser() String
+parseStr = do
+	char '"'
+	str <- many1 (noneOf "\"")
+	char '"'
+	return str
+\end{lstlisting}
+
+This parser first consumes a double quote ($char '"'$) then parses at least one other character other than double quotes and assigns those characters to the variable named $str$\footnote{This line is composed of two parser combinators, $many1$, and $noneOf$. $many1$ takes another parser as its argument and applies it one or more times returning a list of the results. $noneOf$ takes in a list of characters and succeeds if the current character is not in the provided list. Then the character is returned.}, finally the closing quote is consumed and $str$ is returned. This particular function can be rewritten in an applicative style like so:
+
+\begin{lstlisting}[frame=tlrb]
+parseStr :: CharParser() String
+parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
+\end{lstlisting}
+
+This function is a composition of three functions. The computations that produce a value that contributes to the final result of the function (in this case just the $many1$ parser) and computations that do not affect the final value but cause some other desirable effect to occur which in this case is matching and consuming input. 
+
+This refactoring works by going in order through the monadic version of the function and selectively composing computations with the applicative operators. In this case the first line of the $do$ block does not affect the final result so it is followed by the $*>$ which performs the action on the left hand side of the operator but discards that value. The next line's value is assigned to the variable str that is returned so this means that on both sides of this computation the operator that composes it with its neighbours will have to ``point" to it as well\footnote{This means $<*>$ could occur on both sides, $*>$ on the left, or $<*$ on the right of the computation}. To determine which operator needs to be used on the right of the call to $many1$ the refactoring needs to look at the next line and see if it also contributes a value to the final result. If it does then it and $many1$ 
+will be composed by the $<*>$ operator, but since it doesn't the operator between the call to $many1$ and the second call to $char$ becomes $<*$ which discards the value of the right hand side of the computation.
+
+This is a fairly simple function to convert to applicative style. Let's look at another example that adds in more complexity by having multiple computations that contribute to the final value of the function.
+
+\begin{lstlisting}[frame=tlrb]
+data Currency = Dollar
+              | Pound
+              | Euro
+                deriving (Show, Eq)
+                
+data Money = M Currency Integer Integer
+             deriving (Show, Eq)
+
+\end{lstlisting}
+
+Say we wanted to parse money amounts from text written in the style of currency symbol followed by whole amount ending with an optional decimal amount of money. The above data types will model dollars, pounds and euros.
+
+\newpage
+
+\begin{lstlisting}[frame=tlrb]
+parseCurrency :: CharParser () Currency
+parseCurrency = parsePound <|> parseDollar <|> parseEuro
+   where parsePound = Pound <$ char '£'
+         parseDollar = Dollar <$ char '$'
+         parseEuro = Euro <$ char '?'
+
+parseMoney :: CharParser () Money
+parseMoney = do
+   currency <- parseCurrency 
+   whole <- many1 digit
+   decimal <- (option "0" (do { 
+                           char '.';
+                           d <- many1 digit;
+                           return d}))
+   return $ M currency (read whole) (read decimal)
+\end{lstlisting}
+
+The $parseMoney$ function parses text into the $Money$ data type. It works by first consuming the currency symbol and getting the appropriate $Currency$ type from that. Then a whole money amount is read from one or more digits. Finally an "option" parser will attempt to match a decimal point followed by one or more digits. If that fails then the decimal amount is zero. These three values are then combined into type $Money$ which is returned. $parseMoney$ can be rewritten in an applicative style like so\footnote{The where clause in this example has been included for formatting and readability and would not be generated automatically.}:
+
+\begin{lstlisting}[frame=tlrb]
+parseMoney :: CharParser () Money
+parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
+          where readWhole = read <$> many1 digit
+                 readDecimal = read <$> option "0" (char '.' *> many1 digit)
+\end{lstlisting}
+
+On the left hand side of the chain of applicative actions there is a call to a pure operation, in this case the constructor $M$. Any pure computations that ``collect" the values returned from applicative computations will appear on the left of the chain of operations. The pure computations are composed with applicative computations with the $<\$>$ operator which lifts the computation into the applicative context. The three applicative operations are composed together with the $<*>$ operator because they all contribute to the final result of $parseMoney$. Below as another more complicated example that fully illustrates 
+
+
+\end{document}

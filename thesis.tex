@@ -1,0 +1,210 @@
+% Documentation:
+%
+% The UoK class file extends the standard report style to follow the Registry
+% guidelines for laying out a thesis. It sets the margins, interline spacing,
+% the page, figure and table numbering style, and disallows page breaks at
+% hyphens. The class file consists of setting one and an half line spacing text
+% with a 4cm left margin, at least a 2.5cm right margin, approximately 2cm top
+% and bottom margin, on A4 paper.
+% 
+% The class the following options, in addition to those of the standard report
+% class.
+%     mini - Toggles the thesis in to mini-thesis mode. This adds "mini" to the
+%            title and appends a nocite(*) at the end for an automatic output of
+%            your complete bibliography.
+%     draftmark - Puts a DRAFT' watermark on every page of the document along
+%                 with the draft statement on the title page. Additionaly, it
+%                 is used as a switch for the UoKExtentions package.
+%     draft - Puts the entire document into draft mode. Applies all the effect
+%             of draftmark above, but also propergates to other packages used.
+%     copyright - Adds a copyright page between the title page and the preface.
+%     nofig - Disables output of the list of figures in the preface.
+%     notab - Disables output of the list of tables in the preface.
+% All options passed to UoKthesis will be passed along to included packages:
+%    natbib, draftwatermark, setspace, hyperref, lmodern
+%
+% The cover page and optional copyright page are implicitly added before the
+% start of the preface section. Use the following commands to populate the 
+% cover page/copyright page information:
+%     \title{thesis title}
+%     \author{author's name} 
+%     \degree{Master of Science, Doctor of Philosophy, etc.} 
+%     \subject{author's department}
+%          - Computer Science if omitted 
+%     \submitdate{month year in which submitted}
+%          - dated by LaTeX if omitted 
+%     \copyrightyear{year degree conferred (next year if submitted in Dec.)}
+%          - assumes current year (or next year, in December) if omitted 
+% 
+% The preface environment allows for the use of sections that precede the main
+% document; such as Abstract and  Acknowlegements. These sections should be
+% defined using \section{Preface Section Title}. The contents page (and list of
+% figures and tables if in use) will be automatically inserted at the end of the
+% preface environment.
+%
+% The thesis style invokes the setspace package to set the commands:
+%     \doublespace
+%     \onehalfspace
+%     \singlespace
+% for spacing. By default one and an half spacing is used which resembles the
+% UKC Typewriter requirement. Singlespace can be used for letterpress
+% appearance. If you want to use true double space, for some reason, place the
+% \doublespace command where you want to start using double spacing. Just call
+% the appropriate spacing command at where you want to use them.
+% 
+% In the figure and table environments, single spacing is used. If you want to
+% use any other size rather than one and an half spacing, then do:
+% 	\renewcommand{\baselinestretch}{1.6} (or whatever you want instead of 1.6)
+% This command won't take effect unless it comes before the \begin{document} or
+% is triggered by a font change (after something like \small \normalsize).
+%
+% The example below shows the 12pt thesis style being used. This seems to give
+% acceptable looking results, but it may be omitted to get 10pt. Alternatively,
+% the 11pt option can be used.
+%
+% This version differs from old_ukcthesis.sty in the following ways:
+% 1. Removed the doublespace package (now uses setspace).
+% 2. Merged the phantom section for correct PDF links into the bibliography
+%    generating function. 
+% 3. Added thesis type options (mini, draft).
+% 4. Kent Harvard is used for referencing and citation, this is supported by the
+%    natbib package.
+% 5. PsFig macro removed.
+% 6. Now comes as two files, UoKthesis.cls, which defines purely stylistic layout,
+%    and UoKextentions.sty, that provideds some additional functionality.
+
+\documentclass[12pt,draft]{UoKthesis}
+
+% Note: The UoKextentions package includes the xcolor package with the [usenames]
+% options. If you need to add further options, these can be given to UoKextentions
+% to be propogated through.
+\usepackage{UoKextentions}
+
+%\usepackage{llncsdoc}
+\usepackage{url}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{relsize}
+\usepackage{listings}
+\newcommand{\comment}[1]{{\bf \tt  {#1}}}
+\lstset{
+  frame=none,
+  xleftmargin=2pt,
+  stepnumber=1,
+  numbers=left,
+  numbersep=5pt,
+  numberstyle=\ttfamily\tiny\color[gray]{0.3},
+  belowcaptionskip=\bigskipamount,
+  captionpos=b,
+  escapeinside={*'}{'*},
+  language=haskell,
+  tabsize=2,
+  emphstyle={\bf},
+  commentstyle=\it,
+  stringstyle=\mdseries\rmfamily,
+  showspaces=false,
+  keywordstyle=\bfseries\rmfamily,
+  columns=flexible,
+  basicstyle=\small\sffamily,
+  showstringspaces=false,
+  morecomment=[l]\%,
+}
+
+% Kent Harvard Bibliography Style. WIP
+\bibliographystyle{kentHarvard}
+
+% Provides nice linking in PDFs
+\usepackage{hyperref}
+
+% Only needed if you want to produce an index. Example is shown at the bottom of this document.
+\usepackage{makeidx}
+
+% Useful packages
+% \usepackage{epstopdf} % Converts EPS files to PDF using ghostscript
+% \usepackage{fnbreak}  % Warns you if you have split footnotes
+% \usepackage{mathpazo} % Type­set­ math­e­mat­ics in the Palatino fam­ily of text fonts
+% \usepackage{paralist} % Enumerate and itemize within paragraphs
+% \usepackage{amsmath}  % AMS mathematical facilities
+% \usepackage{rotating} % Rotating facilities for floats
+
+
+\setcounter{secnumdepth}{3} % add more section types
+
+%%%%% macros
+\def\fixme#1{\fbox{\textbf{\textsc{Fixme}}\quad#1}}
+\def\fixpic#1{\fbox{\textbf{\textsc{Picture}}\quad#1}}
+\def\defnx#1#2{\emph{#1}\index{#2}}
+\def\defn#1{\defnx{#1}{#1}}
+\def\floatpic#1#2{%
+\begin{wrapfigure}{r}{\dimexpr #1 / 2 \relax}
+\includegraphics[width=\dimexpr #1 / 2 \relax]{#2}
+\end{wrapfigure}}
+\def\inlinepic#1#2{%
+\begin{center}
+\includegraphics[width=\dimexpr #1 / 2 \relax]{#2}
+\end{center}}
+
+%%%%% augment hyphenation
+\hyphenation{wide-spread}
+
+%%%%% document start
+\begin{document}
+
+\title{Type-Changing Refactorings in Haskell}
+\author{Stephen Adams}
+\subject{Computer Science}
+\degree{PhD}
+
+\begin{preface}
+\section{Abstract}
+This mini-thesis tells you all you need to know about...
+\section{Acknowledgements}
+I would like to thank...
+\end{preface}
+
+\chapter{Introduction}
+This is probably going to be written last.
+
+\chapter{Refactoring Haskell in HaRe}
+History of HaRe and the update to the GHC. Maybe some architectural details.
+
+\chapter{Data refactoring in a functional context}
+Introduce some of the ideas of functional data refactorings. Talk about simple refactoring examples like Hughes lists and Maybe generalising to MonadPlus.
+
+\chapter{Generalising Monads to Applicative} 
+In their 2008 functional pearl ``Applicative programming with effects" Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are also known as Applicative Functors~\citep{mcbrideIdioms}. Idioms provide a way to run effectful computations and collect them in some way. They are more expressive than functors but more general than Monads, further work was done in~\citep{arrowsAndIdioms} to prove that Idioms are also less powerful than Arrows.
+
+Applicative functors were implemented in the GHC as the typeclass $Applicative$. An interesting part of the history of the GHC is that despite McBride and Paterson proving in their original functional pearl that all monads are also applicative functors, however, the GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
+
+This chapter will discuss the design and implementation of a refactoring which will automatically refactor code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the $Applicative$ typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators, next, section~\ref{sec:appApps} will cover some common applications of this refactoring, section~\ref{sec:appRefact} will specify the refactoring itself, section~\ref{sec:appPrecons} covers the preconditions of the refactoring, finally section~\ref{sec:appVariations} outlines other refactorings that may be used in conjunction with the generalising monads to applicative refactoring and some possible variations of this refactoring. 
+\section{The Applicative Typeclass}
+\label{sec:appOverview}
+\section{The Applicative Programming Style}
+\label{sec:appProgStyle}
+\section{Applications of the Refactoring}
+\label{sec:appApps}
+\section{Refactoring Monadic Programs to Applicative}
+\label{sec:appRefact}
+\section{Preconditions of the Refactoring (When is a Monad actually a Monad?)}
+\label{sec:appPrecons}
+\section{Variations and Related Refactorings}
+\label{sec:appVariations}
+
+\chapter{Mysterious third chapter of contribution}
+More research goes here.
+
+\chapter{Related work}
+Mention type and transform, Meng Wang's paper...
+
+\chapter{Conclusion}
+Well its done..
+
+\bibliography{main}
+
+% This index section is optional, use cleardoublepage and phantomsection to make the links work in your contents page. Uses makeidx package.
+\cleardoublepage
+\phantomsection
+\label{index}
+\printindex
+
+\end{document}
