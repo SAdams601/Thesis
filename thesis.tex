@@ -81,11 +81,12 @@
 \usepackage{UoKextentions}
 
 %\usepackage{llncsdoc}
+%\usepackage{verbatim}
 \usepackage{url}
 \usepackage{color}
 \usepackage{amsmath}
 \usepackage{relsize}
-\usepackage{listings}
+\usepackage[final]{listings}
 \newcommand{\comment}[1]{{\bf \tt  {#1}}}
 \lstset{
   frame=none,
@@ -174,13 +175,92 @@ Introduce some of the ideas of functional data refactorings. Talk about simple r
 \chapter{Generalising Monads to Applicative} 
 In their 2008 functional pearl ``Applicative programming with effects" Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are also known as Applicative Functors~\citep{mcbrideIdioms}. Idioms provide a way to run effectful computations and collect them in some way. They are more expressive than functors but more general than Monads, further work was done in~\citep{arrowsAndIdioms} to prove that Idioms are also less powerful than Arrows.
 
-Applicative functors were implemented in the GHC as the typeclass $Applicative$. An interesting part of the history of the GHC is that despite McBride and Paterson proving in their original functional pearl that all monads are also applicative functors, however, the GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
+Applicative functors were implemented in the GHC as the typeclass \texttt{Applicative}. An interesting part of the history of the GHC is that despite McBride and Paterson proving in their original functional pearl that all monads are also applicative functors, however, the GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
 
-This chapter will discuss the design and implementation of a refactoring which will automatically refactor code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the $Applicative$ typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators, next, section~\ref{sec:appApps} will cover some common applications of this refactoring, section~\ref{sec:appRefact} will specify the refactoring itself, section~\ref{sec:appPrecons} covers the preconditions of the refactoring, finally section~\ref{sec:appVariations} outlines other refactorings that may be used in conjunction with the generalising monads to applicative refactoring and some possible variations of this refactoring. 
+This chapter will discuss the design and implementation of a refactoring which will automatically refactor code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the \texttt{Applicative} typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators, next, section~\ref{sec:appApps} will cover some common applications of this refactoring, section~\ref{sec:appRefact} will specify the refactoring itself, section~\ref{sec:appPrecons} covers the preconditions of the refactoring, finally section~\ref{sec:appVariations} outlines other refactorings that may be used in conjunction with the generalising monads to applicative refactoring and some possible variations of this refactoring. 
 \section{The Applicative Typeclass}
 \label{sec:appOverview}
+
+\todo{Write more of an introduction here about what exactly the applicative context is before going into the applicative operators.}
+
+To implement the applicative typeclass two functions must be defined, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in listing~\ref{appTypes} where \texttt{f} is the applicative functor. 
+
+\begin{lstlisting}[frame=tblr,label=appTypes,caption={Types of Applicative's minimal complete definition}]
+pure :: a -> f a
+(<*>) :: f (a -> b) -> f a -> f b
+\end{lstlisting}
+
+The \texttt{pure} function is the equivalent of monad's \texttt{return}, it simply lifts a value into the applicative context. The other function \texttt{(<*>)} (which is typically pronounced ``applied over" or just ``apply"). Apply take in two arguments, both of which are applicative values. The first argument is function within an applicative context from types a to b, and the second argument is of type a. Apply returns a value of type b inside of the same functional context. Apply ``extracts" the function from the first argument and the value from the second argument and applies it to the function all within whatever the applicative context is.
+
+\subsection{Other useful functions}
+
+Though \texttt{pure} and apply are the only two functions that are required to be defined to declare an instance of applicative there are several other useful functions that can either be derived from these two functions or come from other typeclasses which will be briefly covered here. First there are two variations on apply.
+
+\begin{lstlisting}[frame=tblr]
+(*>) :: f a -> f b -> f b
+(<*) :: f a -> f b -> f a
+\end{lstlisting}
+
+These functions sequence actions and still perform the contextual effects of both of their arguments but discard the value of the first and second argument respectively. These functions are used when some operation affects the applicative context but their returned value will not affect the final result of the applicative expression. For example when writing parsers it is common to have to consume some characters from the input without those characters affecting the final result of the parser.
+
+Another operator that is very useful for programming in the applicative style (discussed further in section~\ref{sec:appProgStyle}) is the infix synonym of \texttt{fmap}.
+
+\begin{lstlisting}[frame=tblr]
+(<$>) :: Functor f => (a -> b) -> f a -> f b
+\end{lstlisting}
+
+A consequence of the applicative laws is that every applicative's functor instance will satisfy the following~\citep{control.applicative}: 
+
+\begin{lstlisting}[frame=tblr]
+f <$> x = pure f <*> x
+\end{lstlisting}
+
+The next section will cover how these functions can be used in an applicative style of programming. 
+
 \section{The Applicative Programming Style}
 \label{sec:appProgStyle}
+
+In~\cite{mcbrideIdioms} McBride and Paterson prove that any expression built from the applicative combinators can take the following canonical form:
+
+\begin{lstlisting}[frame=tblr]
+pure f <*> is_1 <*> ... <*> is_n
+\end{lstlisting}
+
+\todo{Include my variation on the canonical form which composes f with the infix fmap operator instead?}
+
+Where some of the \texttt{is}'s have the form \texttt{pure s} for a pure function \texttt{s}. This is the form that most programs will take when they are refactored from a monadic style.
+
+ Context-free parsing is a good use case of the applicative type and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function that parses money amounts of the form ``\$4.50" into the following data type.
+ 
+ \begin{lstlisting}[frame=tblr]
+ data Currency = Dollar
+                          | Pound
+                          | Euro
+              
+data Money = M Currency Integer Integer
+ \end{lstlisting}
+ 
+ 
+ 
+ \iffalse
+ The first example of the applicative programming style is a simple function that parses strings surrounded by double quotes.
+ 
+\begin{lstlisting}[frame=tblr]
+parseStr :: CharParser () String 
+parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
+\end{lstlisting}
+
+The calls to the \texttt{char} combinator consumes a single character of input succeeds if that character matches the parsers only argument, and then returns the matched character. In this case we don't care about the double quotes just the characters between them so the result of the parser is ignored (hence the use of the $*>$ and $<*$ operators). The parser who's result actually affects the final value of this function is the \texttt{many1 (noneOf "\textbackslash"")} combinator. This parses one or more characters excluding a double quote.
+
+You may have noticed that this function is not in the canonical form but can be transformed to the canonical form by prepending the identity function like so:
+
+\begin{lstlisting}[frame=tblr]
+parseStr :: CharParser () String 
+parseStr = pure id <*> char '"' *> (many1 (noneOf "\"")) <* char '"'
+\end{lstlisting}
+
+\fi
+
 \section{Applications of the Refactoring}
 \label{sec:appApps}
 \section{Refactoring Monadic Programs to Applicative}
