@@ -87,6 +87,8 @@
 \usepackage{amsmath}
 \usepackage{relsize}
 \usepackage[final]{listings}
+\usepackage[T1]{fontenc}
+\usepackage[math]{iwona}
 \newcommand{\comment}[1]{{\bf \tt  {#1}}}
 \lstset{
   frame=none,
@@ -230,7 +232,7 @@ pure f <*> is_1 <*> ... <*> is_n
 
 Where some of the \texttt{is}'s have the form \texttt{pure s} for a pure function \texttt{s}. This is the form that most programs will take when they are refactored from a monadic style.
 
- Context-free parsing is a good use case of the applicative type and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function that parses money amounts of the form ``\$4.50" into the following data type.
+ Context-free parsing is a good use case of the applicative type and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>} e.g. ``\$4.59" or ``\textsterling64.56".
  
  \begin{lstlisting}[frame=tblr]
  data Currency = Dollar
@@ -238,10 +240,32 @@ Where some of the \texttt{is}'s have the form \texttt{pure s} for a pure functio
                           | Euro
               
 data Money = M Currency Integer Integer
+
+parseMoney :: CharParser () Money
+parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
  \end{lstlisting}
  
+The \texttt{parseMoney} function is in the canonical form as defined by~\cite{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount separately. 
+
+The only difference between \texttt{readWhole} and \texttt{readDecimal} is that \texttt{readDecimal} has to consume the decimal point before reading the number. Instead of duplicating that number code let's perform a small refactoring to lift the parsing of the decimal into the \texttt{parseMoney} function which will allow us to reuse the \texttt{readWhole} function.
+
+ \begin{lstlisting}[frame=tblr]
+parseMoney :: CharParser () Money
+parseMoney = M <$> parseCurrency <*> readWhole <* char '.' <*> readWhole
+ \end{lstlisting}
+ 
+ Here we can see that the result of parsing the decimal point is discarded because of the use of \texttt{<*} rather than the full apply. All of the variations of apply are left associative so the following definition of \texttt{parseMoney} causes a type error.
+ 
+  \begin{lstlisting}[frame=tblr]
+parseMoney :: CharParser () Money
+parseMoney = M <$> parseCurrency <*> readWhole <*> char '.' *> readWhole
+ \end{lstlisting}
+ 
+This error can be corrected by wrapping \texttt{char '.' *> readWhole} in parenthesis.  
  
  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  \iffalse
  The first example of the applicative programming style is a simple function that parses strings surrounded by double quotes.
  
@@ -263,12 +287,44 @@ parseStr = pure id <*> char '"' *> (many1 (noneOf "\"")) <* char '"'
 
 \section{Applications of the Refactoring}
 \label{sec:appApps}
+\todo{Maybe move this to earlier in the chapter? Since the previous section uses parsers as examples which is a major use case this section may end up being fairly redundant. Perhaps this should just be a subsection before section~\ref{sec:appOverview}}
+
 \section{Refactoring Monadic Programs to Applicative}
 \label{sec:appRefact}
 \section{Preconditions of the Refactoring (When is a Monad actually a Monad?)}
 \label{sec:appPrecons}
 \section{Variations and Related Refactorings}
 \label{sec:appVariations}
+
+\subsection{Inline do blocks}
+\todo{Some examples of monadic code are only monadic in small chunks so the whole function may be able to take on more of an applicative structure but with a small do block embedded in it. See example below}
+
+\begin{lstlisting}[frame=tblr]
+f = do
+	x <- result1
+	y <- result2
+	z <- result3
+	log z
+	return (x,y)
+\end{lstlisting}
+\larger[5]
+\[\Rightarrow\]
+\normalsize
+\begin{lstlisting}[frame=tblr]
+f = (,) <*> result1 <*> result2 <* do{z <- result3; log z}
+\end{lstlisting}
+
+\subsection{Reordering of monadic statements}
+\todo{The statements in an applicative chain need to be ordered in the way the pure constructor takes the arguments. For example if the function \texttt{f :: Int -> Char -> String} was the pure constructor in the following monadic statement:}
+
+\begin{lstlisting}[frame=tblr]
+g = do
+	x <- getChar
+	y <- getInt
+	return $ f y x
+\end{lstlisting}
+
+\todo{The generalisation refactoring would produce \texttt{g = f <*> getChar <*> getInt} which throws a type error. Swapping lines two and three before attempting the generalisation would fix this.}
 
 \chapter{Mysterious third chapter of contribution}
 More research goes here.
