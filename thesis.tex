@@ -292,6 +292,7 @@ parseStr = pure id <*> char '"' *> (many1 (noneOf "\"")) <* char '"'
 \section{Refactoring Monadic Programs to Applicative}
 \label{sec:appRefact}
 \section{Preconditions of the Refactoring (When is a Monad actually a Monad?)}
+\todo{Main precondition is that no variable assigned in the do block can be used on the RHS before the return statement. There can also only be a single return statement, e.g. no branches in computation.}
 \label{sec:appPrecons}
 \section{Variations and Related Refactorings}
 \label{sec:appVariations}
