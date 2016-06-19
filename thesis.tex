@@ -73,13 +73,15 @@
 % 6. Now comes as two files, UoKthesis.cls, which defines purely stylistic layout,
 %    and UoKextentions.sty, that provideds some additional functionality.
 
-\documentclass[12pt,draft]{UoKthesis}
+\documentclass[12pt]{UoKthesis}
 
+%\renewcommand*\rmdefault{ptm}
+%\renewcommand{\familydefault}{\rmdefault}
 % Note: The UoKextentions package includes the xcolor package with the [usenames]
 % options. If you need to add further options, these can be given to UoKextentions
 % to be propogated through.
 \usepackage{UoKextentions}
-
+\usepackage{times}
 %\usepackage{llncsdoc}
 %\usepackage{verbatim}
 \usepackage{url}
@@ -88,8 +90,12 @@
 \usepackage{relsize}
 \usepackage[final]{listings}
 \usepackage[T1]{fontenc}
-\usepackage[math]{iwona}
+%\usepackage[math]{times}
+\usepackage{mathptmx}
+\usepackage[scaled=.90]{helvet}
+\usepackage{courier}
 \newcommand{\comment}[1]{{\bf \tt  {#1}}}
+\usepackage{textcomp}
 \lstset{
   frame=none,
   xleftmargin=2pt,
@@ -104,12 +110,14 @@
   tabsize=2,
   emphstyle={\bf},
   commentstyle=\it,
-  stringstyle=\mdseries\rmfamily,
+  stringstyle=\mdseries\ttfamily,
   showspaces=false,
-  keywordstyle=\bfseries\rmfamily,
+  keywordstyle=\bfseries\ttfamily,
   columns=flexible,
-  basicstyle=\small\sffamily,
+  upquote=true,
   showstringspaces=false,
+  basicstyle=\small\ttfamily,
+  breaklines=true,
   morecomment=[l]\%,
 }
 
@@ -183,7 +191,14 @@ This chapter will discuss the design and implementation of a refactoring which w
 \section{The Applicative Typeclass}
 \label{sec:appOverview}
 
-\todo{Write more of an introduction here about what exactly the applicative context is before going into the applicative operators.}
+The \texttt{Functor} typeclass defines a single function that must be implemented, \texttt{fmap}.
+
+\begin{lstlisting}[frame=tblr]
+class Functor f where
+	fmap :: (a -> b) -> f a -> f b
+\end{lstlisting}
+
+The \texttt{fmap} function allows for a function to be applied to the contents of the functor f.  
 
 To implement the applicative typeclass two functions must be defined, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in listing~\ref{appTypes} where \texttt{f} is the applicative functor. 
 
@@ -192,7 +207,7 @@ pure :: a -> f a
 (<*>) :: f (a -> b) -> f a -> f b
 \end{lstlisting}
 
-The \texttt{pure} function is the equivalent of monad's \texttt{return}, it simply lifts a value into the applicative context. The other function \texttt{(<*>)} (which is typically pronounced ``applied over" or just ``apply"). Apply take in two arguments, both of which are applicative values. The first argument is function within an applicative context from types a to b, and the second argument is of type a. Apply returns a value of type b inside of the same functional context. Apply ``extracts" the function from the first argument and the value from the second argument and applies it to the function all within whatever the applicative context is.
+The \texttt{pure} function is the equivalent of monad's \texttt{return}, it simply lifts a value into the applicative context. The other function \texttt{(<*>)} (which is typically pronounced ``applied over" or just ``apply"). Apply take in two arguments, both of which are applicative values. The first argument is function within an applicative context from types a to b, and the second argument is of type a. Apply returns a value of type b inside of the same functional context. Apply ``extracts" the function from the first argument and the value from the second argument and applies it to the function, all within whatever the applicative context is.
 
 \subsection{Other useful functions}
 
@@ -228,9 +243,15 @@ In~\cite{mcbrideIdioms} McBride and Paterson prove that any expression built fro
 pure f <*> is_1 <*> ... <*> is_n
 \end{lstlisting}
 
-\todo{Include my variation on the canonical form which composes f with the infix fmap operator instead?}
 
-Where some of the \texttt{is}'s have the form \texttt{pure s} for a pure function \texttt{s}. This is the form that most programs will take when they are refactored from a monadic style.
+Where some of the \texttt{is}'s have the form \texttt{pure s} for a pure function \texttt{s}. As mentioned at the end of the previous section this canonical form can also be expressed using the infix fmap operator. 
+
+\begin{lstlisting}[frame=tblr]
+f <$> is_1 <*> ... <*> is_n
+\end{lstlisting}
+
+This is the form that most programs will take when they are refactored from a monadic style. 
+
 
  Context-free parsing is a good use case of the applicative type and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>} e.g. ``\$4.59" or ``\textsterling64.56".
  
@@ -261,10 +282,18 @@ parseMoney :: CharParser () Money
 parseMoney = M <$> parseCurrency <*> readWhole <*> char '.' *> readWhole
  \end{lstlisting}
  
-This error can be corrected by wrapping \texttt{char '.' *> readWhole} in parenthesis.  
+This error can be corrected by wrapping "\texttt{char \textquotesingle.\textquotesingle~*> readWhole}" in parenthesis. 
  
- 
+The canonical style of applicative functions is not always the most idiomatic way to define things. The following function parses strings surrounded by double quotes.
 
+\begin{lstlisting}[frame=tblr]
+parseStr :: CharParser () String 
+parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
+\end{lstlisting}
+
+\texttt{parseStr} does not match the canonical form because no lifted pure function is applied to the rest of the applicative chain. This function could be transformed to canonical form by pre-pending "\texttt{id <\$>}."
+
+The examples covered in this section give a basic introduction to programming in an applicative style.  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  \iffalse
  The first example of the applicative programming style is a simple function that parses strings surrounded by double quotes.
@@ -291,6 +320,9 @@ parseStr = pure id <*> char '"' *> (many1 (noneOf "\"")) <* char '"'
 
 \section{Refactoring Monadic Programs to Applicative}
 \label{sec:appRefact}
+
+
+
 \section{Preconditions of the Refactoring (When is a Monad actually a Monad?)}
 \todo{Main precondition is that no variable assigned in the do block can be used on the RHS before the return statement. There can also only be a single return statement, e.g. no branches in computation.}
 \label{sec:appPrecons}
