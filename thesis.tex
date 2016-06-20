@@ -174,20 +174,25 @@ I would like to thank...
 \end{preface}
 
 \chapter{Introduction}
-This is probably going to be written last.
+This chapter will introduce the most basic concepts of this thesis. In particular it will discuss, refactoring in general, functional refactoring, and the Haskell programming language. It will also state the contributions of this research and outline the rest of the thesis.
 
 \chapter{Refactoring Haskell in HaRe}
-History of HaRe and the update to the GHC. Maybe some architectural details.
+\label{hare}
+Chapter~\ref{hare} is where the development and implementation of HaRe will be discussed. The chapter with cover some of the history or HaRe and the briefly the technology that it was originally developed with. Next it will cover the design and implementation of HaRe currently and it's dependencies (in particular ghc-exactprint).
 
 \chapter{Data refactoring in a functional context}
-Introduce some of the ideas of functional data refactorings. Talk about simple refactoring examples like Hughes lists and Maybe generalising to MonadPlus.
+This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler} however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
 
-\chapter{Generalising Monads to Applicative} 
+This chapter will provide several examples of simple data refactorings for the functional language Haskell. These refactorings include transforming standard lists into Hughes lists~\citep{hughesList}, introducing a new type synonym, and generalising the Maybe type to the typeclass MonadPlus.  
+
+\chapter{Generalising Monads to Applicative}
+\label{applicative}
 In their 2008 functional pearl ``Applicative programming with effects" Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are also known as Applicative Functors~\citep{mcbrideIdioms}. Idioms provide a way to run effectful computations and collect them in some way. They are more expressive than functors but more general than Monads, further work was done in~\citep{arrowsAndIdioms} to prove that Idioms are also less powerful than Arrows.
 
 Applicative functors were implemented in the GHC as the typeclass \texttt{Applicative}. An interesting part of the history of the GHC is that despite McBride and Paterson proving in their original functional pearl that all monads are also applicative functors, however, the GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
 
 This chapter will discuss the design and implementation of a refactoring which will automatically refactor code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the \texttt{Applicative} typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators, next, section~\ref{sec:appApps} will cover some common applications of this refactoring, section~\ref{sec:appRefact} will specify the refactoring itself, section~\ref{sec:appPrecons} covers the preconditions of the refactoring, finally section~\ref{sec:appVariations} outlines other refactorings that may be used in conjunction with the generalising monads to applicative refactoring and some possible variations of this refactoring. 
+
 \section{The Applicative Typeclass}
 \label{sec:appOverview}
 
@@ -198,9 +203,9 @@ class Functor f where
 	fmap :: (a -> b) -> f a -> f b
 \end{lstlisting}
 
-The \texttt{fmap} function allows for a function to be applied to the contents of the functor f.  
+The \texttt{fmap} function allows for a function to be applied to the contents of the Functor f. One could think of the functor as a context and \texttt{fmap} as a function that allows other functions to run within that context. However, what if you wanted to chain together sequences of commands within that context? This is not possible with just functors since \texttt{fmap} does not have the function inside of the functor's context. Sequencing commands will require a more powerful abstraction, applicative functors. 
 
-To implement the applicative typeclass two functions must be defined, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in listing~\ref{appTypes} where \texttt{f} is the applicative functor. 
+In Haskell applicative functors are implemented in the \texttt{Applicative} typeclass. \texttt{Applicative} typeclass declares two functions, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in listing~\ref{appTypes} where \texttt{f} is the applicative functor. 
 
 \begin{lstlisting}[frame=tblr,label=appTypes,caption={Types of Applicative's minimal complete definition}]
 pure :: a -> f a
@@ -220,12 +225,6 @@ Though \texttt{pure} and apply are the only two functions that are required to b
 
 These functions sequence actions and still perform the contextual effects of both of their arguments but discard the value of the first and second argument respectively. These functions are used when some operation affects the applicative context but their returned value will not affect the final result of the applicative expression. For example when writing parsers it is common to have to consume some characters from the input without those characters affecting the final result of the parser.
 
-Another operator that is very useful for programming in the applicative style (discussed further in section~\ref{sec:appProgStyle}) is the infix synonym of \texttt{fmap}.
-
-\begin{lstlisting}[frame=tblr]
-(<$>) :: Functor f => (a -> b) -> f a -> f b
-\end{lstlisting}
-
 A consequence of the applicative laws is that every applicative's functor instance will satisfy the following~\citep{control.applicative}: 
 
 \begin{lstlisting}[frame=tblr]
@@ -237,14 +236,14 @@ The next section will cover how these functions can be used in an applicative st
 \section{The Applicative Programming Style}
 \label{sec:appProgStyle}
 
-In~\cite{mcbrideIdioms} McBride and Paterson prove that any expression built from the applicative combinators can take the following canonical form:
+In~\cite{mcbrideIdioms} the authors prove that any expression built from the applicative combinators can take the following canonical form:
 
 \begin{lstlisting}[frame=tblr]
 pure f <*> is_1 <*> ... <*> is_n
 \end{lstlisting}
 
 
-Where some of the \texttt{is}'s have the form \texttt{pure s} for a pure function \texttt{s}. As mentioned at the end of the previous section this canonical form can also be expressed using the infix fmap operator. 
+Where some of the \texttt{is}'s have the form \texttt{pure s} for a pure function \texttt{s}. Due to the rule mentioned at the end of the previous section this canonical form can also be expressed using the infix version of fmap \texttt{(<\$>)}. 
 
 \begin{lstlisting}[frame=tblr]
 f <$> is_1 <*> ... <*> is_n
@@ -293,31 +292,13 @@ parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
 
 \texttt{parseStr} does not match the canonical form because no lifted pure function is applied to the rest of the applicative chain. This function could be transformed to canonical form by pre-pending "\texttt{id <\$>}."
 
-The examples covered in this section give a basic introduction to programming in an applicative style.  
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- \iffalse
- The first example of the applicative programming style is a simple function that parses strings surrounded by double quotes.
- 
-\begin{lstlisting}[frame=tblr]
-parseStr :: CharParser () String 
-parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
-\end{lstlisting}
-
-The calls to the \texttt{char} combinator consumes a single character of input succeeds if that character matches the parsers only argument, and then returns the matched character. In this case we don't care about the double quotes just the characters between them so the result of the parser is ignored (hence the use of the $*>$ and $<*$ operators). The parser who's result actually affects the final value of this function is the \texttt{many1 (noneOf "\textbackslash"")} combinator. This parses one or more characters excluding a double quote.
-
-You may have noticed that this function is not in the canonical form but can be transformed to the canonical form by prepending the identity function like so:
-
-\begin{lstlisting}[frame=tblr]
-parseStr :: CharParser () String 
-parseStr = pure id <*> char '"' *> (many1 (noneOf "\"")) <* char '"'
-\end{lstlisting}
-
-\fi
+The examples covered in this section give a basic introduction to programming in an applicative style. The next section will discuss common applications that are particularly well suited to definition in the applicative style and can be transformed from the monadic style. 
 
 \section{Applications of the Refactoring}
 \label{sec:appApps}
-\todo{Maybe move this to earlier in the chapter? Since the previous section uses parsers as examples which is a major use case this section may end up being fairly redundant. Perhaps this should just be a subsection before section~\ref{sec:appOverview}}
 
+There are two things that make a particular application a good candidate for this refactoring. First, and most obviously, the application must be able to be defined using the applicative interface. Finally the  
+ 
 \section{Refactoring Monadic Programs to Applicative}
 \label{sec:appRefact}
 
@@ -359,14 +340,108 @@ g = do
 
 \todo{The generalisation refactoring would produce \texttt{g = f <*> getChar <*> getInt} which throws a type error. Swapping lines two and three before attempting the generalisation would fix this.}
 
-\chapter{Mysterious third chapter of contribution}
-More research goes here.
+\chapter{Introducing Monads}
+This chapter will cover the refactoring of pure code to become monadic. This chapter will be structured much like chapter~\ref{applicative} with sections covering the motivation behind the refactoring, examples of the refactoring, the preconditions that must hold before applying the refactoring, and variations and related refactorings. 
 
+The \texttt{Identity} monad is the monad the does not embody any computation strategy~\citep{identityMonad}. This means that any pure Haskell function could be refactored to be within the Identity monad. This refactoring can take in a set of functions and produce a corresponding set of functions with a monadic type. Take for example this definition of the Fibonacci numbers.
+
+\begin{lstlisting}[frame=tblr]
+fib :: Int -> [Int]
+fib 0 = 0
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)
+\end{lstlisting} 
+
+This can be refactored to the Identity monad like so:
+
+\begin{lstlisting}[frame=tblr]
+fib :: Int -> Identity [Int]
+fib 0 = return 0
+fib 1 = return 1
+fib n = do
+	x <- fib (n-1)
+	y <- fib (n-2)
+	return (x + y)
+\end{lstlisting}
+
+The new code could then be rewritten very easily (just by changing the type signature) to be within another monad. This allows for a developer to quickly create programs that can take advantage of monadic features such as IO or state.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\if(FALSE)
+This chapter will cover the refactoring pure code to be monadic instead. Take for example the following standard definition of mergesort.
+
+\begin{lstlisting}[frame=tblr]
+mergesort :: (Ord a) => [a] -> [a]
+mergesort [] = []
+mergesort [x] = [x]
+mergesort xs = merge (mergesort fst) (mergesort snd)
+  where fst = take (length xs `div` 2) xs
+        snd = drop (length xs `div` 2) xs
+
+merge :: (Ord a) => [a] -> [a] -> [a]
+merge xs [] = xs
+merge [] ys = ys
+merge (x:xs) (y:ys)
+   | (x <= y) = x:(merge xs (y:ys))
+   | otherwise = y:(merge (x:xs) ys)
+\end{lstlisting}
+
+Say that one wanted to refactor this code to become monadic. There are two different ways this could be interpreted, either both \texttt{mergesort} and \texttt{merge} are rewritten to be monadic, or just \texttt{mergesort} could be refactored. \texttt{Merge} cannot be refactored to be monadic without also changing \texttt{mergesort} because \texttt{mergesort} is dependent on the result of calls to \texttt{merge}. If \texttt{merge}'s result is monadic any client functions will also have to be monadic because there is no way to remove the value from a monad. 
+
+Refactoring \texttt{mergesort} to be monadic without refactoring \texttt{merge} produces the following code.
+
+\begin{lstlisting}[frame=tblr]
+mergesort :: (Ord a) => [a] -> Identity [a]
+mergesort [] = return []
+mergesort [x] = return [x]
+mergesort xs = do
+  x <- mergesort fst
+  y <- mergesort snd
+  return $ merge x y
+    where fst = take (length xs `div` 2) xs
+             snd = drop (length xs `div` 2) xs
+\end{lstlisting}  
+
+Any program can be refactored into the \texttt{Identity} monad as this monad does not express any computational strategy~\citep{identityMonad}. Here we can see that in cases where pure values would have been returned from \texttt{mergesort} pre-refactoring have now been prepended with \texttt{return}, this lifts these values into the \texttt{Identity} monad. The recursive calls to \texttt{mergesort} now need to be bound to variables in the do block which allow the pure results to be passed to calls to the still pure \texttt{merge}.
+
+Instead of refactoring just \texttt{mergesort} refactoring \texttt{merge} as well would produce slightly different code.
+
+\begin{lstlisting}[frame = tblr]
+merge :: (Ord a) => [a] -> [a] -> Identity [a]
+merge xs [] = return xs
+merge [] ys = return ys
+merge (x:xs) (y:ys)
+   | (x <= y) = do
+       ls <- merge xs (y:ys)
+       return (x:ls)
+   | otherwise = do
+       ls <- merge (x:xs) ys
+       return (y:ls)
+
+mergesort :: (Ord a) => [a] -> Identity [a]
+mergesort [] = return []
+mergesort [x] = return [x]
+mergesort xs = do
+  x <- mergesort fst
+  y <- mergesort snd
+  merge x y
+    where fst = take (length xs `div` 2) xs
+            snd = drop (length xs `div` 2) xs
+\end{lstlisting}
+
+The above example's definition of \texttt{mergesort} is very similar to the previous definition. The only difference is that previously the call to \texttt{merge} was a pure value so it needed to be lifted into the monad by \texttt{return}, in this version since merge was also refactored into the monad it can just sit at the end of mergesort.
+
+\fi 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
-Mention type and transform, Meng Wang's paper...
+
+There are several bodies of literature that are related too my thesis work. Other functional refactoring tools such as Wrangler~\citep{wrangler} are of obvious interest. There is also the code smell tool for Haskell HLint~\citep{hlint}.
+
+Another interesting project is the Type-and-Transform system developed at the University of Utrecht~\citep{typeAndTransform}. Which is a system for performing semantics preserving type changing transformations for the simply typed lambda calculus, and the polymorphic lambda calculus.
 
 \chapter{Conclusion}
-Well its done..
+Summarise my contribution here. The main contributions of my thesis are the development of type changing refactorings for the GHC. With a particular emphasis on changing the abstractions that programs use.
 
 \bibliography{main}
 
