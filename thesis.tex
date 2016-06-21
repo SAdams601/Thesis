@@ -340,7 +340,43 @@ g = do
 
 \todo{The generalisation refactoring would produce \texttt{g = f <*> getChar <*> getInt} which throws a type error. Swapping lines two and three before attempting the generalisation would fix this.}
 
-\chapter{Introducing Monads}
+\chapter{Introducing Effectful Abstractions}
+Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus on introducing monads and applicatives into pure code.
+
+The \texttt{Identity} monad is the monad the does not embody any computation strategy~\citep{identityMonad}. This means that any pure Haskell function could be refactored to be within the Identity monad. This refactoring can take in a set of functions and produce a corresponding set of functions with a monadic type. Take for example this definition of the Fibonacci numbers.
+
+\begin{lstlisting}[frame=tblr]
+fib :: Int -> [Int]
+fib 0 = 0
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)
+\end{lstlisting} 
+
+This can be refactored to the Identity monad like so:\pagebreak
+
+\begin{lstlisting}[frame=tblr]
+fib :: Int -> Identity [Int]
+fib 0 = return 0
+fib 1 = return 1
+fib n = do
+	x <- fib (n-1)
+	y <- fib (n-2)
+	return (x + y)
+\end{lstlisting}
+
+The new code could then be rewritten very easily (just by changing the type signature) to be within another monad. This allows for a developer to quickly create programs that can take advantage of monadic features such as IO or state. The monadic code could also be generalised to use applicatives with the refactoring detailed in chapter~\ref{applicative} but I also hope to develop a more straightforward way to introduce applicatives for this chapter.
+
+Finally another abstraction that would seem to have quite a bit of potential for automatic introduction is the \texttt{Arrow} typeclass. Arrows were originally introduced as a more general abstraction to monads in~\cite{genMonadsArrows}. The full relationship between arrows, monads, and applicative functors was more fully described in~\cite{arrowsAndIdioms}. Given the relationship between these three typeclasses I believe it will be worth exploring introducing arrows as well. A possible outline of this chapter would be:
+
+\begin{enumerate}
+\item Introducing the Applicative style
+\item Automated Monadification
+\item Introduction to Arrows
+\item Discussion of Arrows, Applicative, and Monads
+\item Refactoring to Arrows
+\end{enumerate} 
+
+\if(FALSE)
 This chapter will cover the refactoring of pure code to become monadic. This chapter will be structured much like chapter~\ref{applicative} with sections covering the motivation behind the refactoring, examples of the refactoring, the preconditions that must hold before applying the refactoring, and variations and related refactorings. 
 
 The \texttt{Identity} monad is the monad the does not embody any computation strategy~\citep{identityMonad}. This means that any pure Haskell function could be refactored to be within the Identity monad. This refactoring can take in a set of functions and produce a corresponding set of functions with a monadic type. Take for example this definition of the Fibonacci numbers.
@@ -368,7 +404,7 @@ The new code could then be rewritten very easily (just by changing the type sign
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\if(FALSE)
+
 This chapter will cover the refactoring pure code to be monadic instead. Take for example the following standard definition of mergesort.
 
 \begin{lstlisting}[frame=tblr]
