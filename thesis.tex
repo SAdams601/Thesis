@@ -73,7 +73,7 @@
 % 6. Now comes as two files, UoKthesis.cls, which defines purely stylistic layout,
 %    and UoKextentions.sty, that provideds some additional functionality.
 
-\documentclass[12pt]{UoKthesis}
+\documentclass[draft,12pt]{UoKthesis}
 
 %\renewcommand*\rmdefault{ptm}
 %\renewcommand{\familydefault}{\rmdefault}
@@ -299,16 +299,141 @@ The examples covered in this section give a basic introduction to programming in
 
 There are two things that make a particular application a good candidate for this refactoring. First, and most obviously, the application must be able to be defined using the applicative interface. Finally a good candidate will already have a large corpus of code that is already written in the monadic style. If a particular library already encourages its users to use it using applicative functors rather than monads then there is little work for the refactoring to do.
 
+\subsection{Parsec}
+Parser combinator libraries such as parsec~\citep{parsec} provide a simple way of building parsers from predefined smaller parsers (a.k.a. the combinators). The applicative interface is sufficient for defining parsers of context-free languages\footnote{This is mostly true. The applicative interface can parse context-sensitive languages if your grammar is an infinite size~\citep{appContextSens}.}. Despite this much of the code written using Parsec is monadic. A good example of this comes from Real World Haskell~\citep{realWorldHaskell}.
 
+\begin{lstlisting}[frame=tblr]
+csvFile :: GenParser Char st [[String]]
+csvFile = 
+    do result <- many line
+       eof
+       return result
+\end{lstlisting}
+
+This can be very simply rewritten using the applicative like so:
+
+\begin{lstlisting}[frame=tblr]
+csvFile :: GenParser Char st [[String]]
+csvFile = many line <* eof 
+\end{lstlisting}      
  
+ Shorter code is not always better however, in this case,  I would argue that the applicative style is easy to clearer. The parser can be read left to right many lines are followed by the end of file.
+ 
+\subsection{Yesod}
+Another possible application of this refactoring applies to parts of code used to define Yesod webservers~\citep{yesod}. The preferred way to handle the creation and processing of web forms is using the applicative interface~\citep{yesodBook}. Yesod doesn't force forms to be handled applicatively because a monad instance is provided as well but it is the \textit{idiomatic} way to handle web forms. This refactoring would allow people to write in a monadic style and then refactor their code to fit the standard.
+
+\subsection{Other applications}
+\todo{Complete section conclusion here}
+  
+
 \section{Refactoring Monadic Programs to Applicative}
 \label{sec:appRefact}
+This section will cover the mechanics of refactoring monadic code to the applicative style. Many of these examples are taken from the parser for money amounts and a JSON parser. The full source of these parse can be found in~\cite{moneyParse} and~\cite{jsonParser}.
 
+Take for example the following parser that parses strings that begin and end with double quotes.
 
+\begin{lstlisting}[frame=tlrb]
+parseStr :: CharParser() String
+parseStr = do
+	char '"'
+	str <- many1 (noneOf "\"")
+	char '"'
+	return str
+\end{lstlisting}
+
+This parser first consumes a double quote (\texttt{char \textquotesingle"\textquotesingle}) then parses at least one other character other than double quotes and assigns those characters to the variable named \texttt{str}\footnote{This line is composed of two parser combinators, \texttt{many1}, and \texttt{noneOf}. \texttt{many1} takes another parser as its argument and applies it one or more times returning a list of the results. \texttt{noneOf} takes in a list of characters and succeeds if the current character is not in the provided list. Then the character is returned.}, finally the closing quote is consumed and \texttt{str} is returned. This particular function can be rewritten in an applicative style like so:
+
+\begin{lstlisting}[frame=tlrb]
+parseStr :: CharParser() String
+parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
+\end{lstlisting}
+
+The refactoring goes through the monadic version of the function line by line and composes computations with the applicative operators. In this case the first line of the \texttt{do} block does not affect the final result so it is followed by the \texttt{*>} which performs the action on the left hand side of the operator but discards that value. The next line's value is assigned to the variable str which is returned by the function so this means that on both sides of this computation the operator that composes it with its neighbours will have to ``point" to it as well\footnote{This means \texttt{<*>} could occur on both sides, \texttt{*>} on the left, or \texttt{<*} on the right of the computation}. To determine which operator needs to be used on the right of the call to \texttt{many1} the refactoring needs to look at the next line and see if it also contributes a value to the final result. If it does then it and \texttt{many1} will be composed by the \texttt{<*>} operator, but since \texttt{char} doesn't, the operator between the call to \texttt{many1} and the second call to \texttt{char} becomes \texttt{<*} which discards the value \texttt{char} returns.
+
+This is a fairly simple function to convert to applicative style. Let's look at another example that adds in more complexity by having multiple computations that contribute to the final value of the function. This function comes from the money parser that was used in~\ref{sec:appProgStyle} as well. 
+\pagebreak
+\begin{lstlisting}[frame=tlrb]
+parseMoney :: CharParser () Money
+parseMoney = do
+   currency <- parseCurrency 
+   whole <- many1 digit
+   decimal <- (option "0" (do { 
+                           char '.';
+                           d <- many1 digit;
+                           return d}))
+   return $ M currency (read whole) (read decimal)
+\end{lstlisting}
+
+The \texttt{parseMoney} function parses text into the \texttt{Money} data type. It works by first consuming the currency symbol and getting the appropriate \texttt{Currency} type from that. Then the whole money amount is read from one or more digits. Finally an "option" parser attempts to match a decimal point followed by one or more digits. If that fails then the decimal amount is zero. These three values are then combined into type \texttt{Money} which is returned. \texttt{parseMoney} can be rewritten in an applicative style like so\footnote{The where clause in this example has been included for formatting and readability and would not be generated automatically.}:
+
+\begin{lstlisting}[frame=tlrb]
+parseMoney :: CharParser () Money
+parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
+          where readWhole = read <$> many1 digit
+                  readDecimal = read <$> option "0" (do { 
+                           char '.';
+                           d <- many1 digit;
+                           return d}))
+\end{lstlisting}
+
+On the left hand side of the chain of applicative actions there is a call to a pure operation, in this case the constructor \texttt{M}. Any pure computations that ``collect" the values returned from applicative computations will appear on the left of the chain of operations. The pure computations are composed with applicative computations with the \texttt{<\$>} operator which lifts the computation into the applicative context. The three computations are composed together with the \texttt{<*>} operator because they all contribute to the final result of \texttt{parseMoney}.
+
+The chains of applicative computations can get more complicated. The following snippet of code parses a single in a JSON object which consists of a string key and a value which can be any valid JSON value, separated by a colon, and stores the key and value in a tuple. 
+
+\begin{lstlisting}[frame=tblr]
+objEntry = (,) <$> (spaces *> parseStr <* spaces <* char ':' <* spaces) <*> (parseJVal <* spaces)
+\end{lstlisting}
+
+When there are a large amount of computations that do not affect the final value of the function as a whole there can be multiple valid ways the chain can be structured. The \texttt{objEntry} function can be defined in several different ways as shown below.
+
+\begin{lstlisting}[frame=tblr]
+objEntry = (,) <$> (spaces *> parseStr <* spaces <* char ':') <*> (spaces *> parseJVal <* spaces)
+
+objEntry = (,) <$> (spaces *> parseStr) <*> (spaces *> char ':' *> spaces *> parseJVal <* spaces)
+\end{lstlisting}
+
+Both of the above versions of \texttt{objEntry} are equivalent to the first version. The automated refactoring will produce the first version of \texttt{objEntry}. The refactoring in general will produce applicative chains according to the following rules. Both sides of the apply operator will be parenthesised statements. After the first value producing operation every side effect causing operation will be composed with \texttt{(<*)}. In general the produced applicative chain will take the following form.
+
+\begin{lstlisting}[frame=tblr]
+f = pf <$> (is_1 *> ... is_n *> vs_1 <* js_1 ... <* js_n) <*> (vs_2 <* ks_1 ... <* ks_n) ... <*> (vs_n ...)
+\end{lstlisting}
+
+The \texttt{vs} are functions that return values to be passed to the pure function \texttt{pf} all other functions just run within the applicative context without affecting the returned value of \texttt{f}.
 
 \section{Preconditions of the Refactoring (When is a Monad actually a Monad?)}
-\todo{Main precondition is that no variable assigned in the do block can be used on the RHS before the return statement. There can also only be a single return statement, e.g. no branches in computation.}
 \label{sec:appPrecons}
+
+Many functional refactorings have non-trivial preconditions that must hold before the refactoring can be applied~\citep{refacTools}. Fortunately this refactoring only has a single fairly simple precondition, the function to be refactored must be definable with the applicative interface not just the monadic interface. What does this mean exactly? Where is the line between applicative and monadic? Let's start by looking at the type signatures of the bind and apply functions.
+
+\begin{lstlisting}[frame=tblr]
+(<*>) :: Applicative f => f (a -> b) -> f a -> f b
+
+(>>=) :: Monad m => m a -> (a -> m b) -> m b
+\end{lstlisting}  
+
+One thing to keep in mind is that these two functions' arguments are in opposite order. The key difference becomes clearer when examining the type of apply when its arguments are flipped.
+
+\begin{lstlisting}[frame=tblr]
+flip (<*>) :: Applicative f => f a -> f (a -> b) -> f b
+\end{lstlisting}
+
+The only difference between this version of apply and bind is in the second argument. Bind takes in a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value contained in the monad while all of the arguments to apply are contained within the applicative functor.
+
+What does this mean in practice? Take for example the following functions taken from this StackOverflow answer from Conor McBride~\citep{soApp}.
+
+\begin{lstlisting}[frame=tblr]
+iffy :: Applicative a => a Bool -> a x -> a x -> a x
+iffy ab at af = pure cond <*> ab <*> at <*> af where
+  cond b t f = if b then t else f
+
+miffy :: Monad m => m Bool -> m x -> m x -> m x
+miffy mb mt mf = do
+  b <- mb
+  if b then mt else mf
+\end{lstlisting} 
+
+Both of these functions attempt to implement an if statement, \texttt{iffy} does it with \texttt{pure} and \texttt{(<*>)} whereas \texttt{miffy} uses the monadic functions. 
+
 \section{Variations and Related Refactorings}
 \label{sec:appVariations}
 
@@ -341,6 +466,8 @@ g = do
 \end{lstlisting}
 
 \todo{The generalisation refactoring would produce \texttt{g = f <*> getChar <*> getInt} which throws a type error. Swapping lines two and three before attempting the generalisation would fix this.}
+
+\subsection{Refactor Inner \texttt{do} blocks}
 
 \chapter{Introducing Effectful Abstractions}
 Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus on introducing monads and applicatives into pure code.
