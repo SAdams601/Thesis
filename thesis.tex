@@ -419,7 +419,7 @@ flip (<*>) :: Applicative f => f a -> f (a -> b) -> f b
 
 The only difference between this version of apply and bind is in the second argument. Bind takes in a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value contained in the monad while all of the arguments to apply are contained within the applicative functor.
 
-What does this mean in practice? Take for example the following functions taken from this StackOverflow answer from Conor McBride~\citep{soApp}.
+What does this mean in practice? For example, the following functions are taken from a StackOverflow answer by Conor McBride~\citep{soApp}.
 
 \begin{lstlisting}[frame=tblr]
 iffy :: Applicative a => a Bool -> a x -> a x -> a x
@@ -432,13 +432,43 @@ miffy mb mt mf = do
   if b then mt else mf
 \end{lstlisting} 
 
-Both of these functions attempt to implement an if statement, \texttt{iffy} does it with \texttt{pure} and \texttt{(<*>)} whereas \texttt{miffy} uses the monadic functions. 
+Both of these functions attempt to implement an if statement, \texttt{iffy} does it with \texttt{pure} and \texttt{(<*>)} whereas \texttt{miffy} uses the monadic functions. Both functions' first argument contains a boolean within its computational context. Depending on the value of this boolean the second or third argument is then returned. Though both of these functions will return the same value when given the same arguments, the effects within the context will be very different. When \texttt{iffy} is run all of the contextual effects will be run regardless of which value is returned.
+
+If a value retrieved from the monadic context is used in a right hand side expression before the return statement then that function cannot be refactored to use the applicative interface without changing the contextual effects of the function. 
 
 \section{Variations and Related Refactorings}
 \label{sec:appVariations}
 
+This section will discuss related refactorings and variations on the generalise monad to applicative refactoring that may be useful. Related refactorings help transform code so that it can pass the preconditions. In this case it may be possible to extract monadic code into another function making the top level function definable with the applicative interface. Variations on refactorings slightly change the behavior of the refactoring. This section will present two variations, one which will inline small do blocks of monadic code automatically, another will
+recursively refactor do blocks that may occur inside of higher level statements.
+
+\subsection{Extract monadic code}
+\label{subSec:extract}
+Say someone wanted to refactor the following code to use the applicative interface rather than the monadic one it currently uses.
+
+\begin{lstlisting}[frame=tblr]
+f = do
+	x <- getX
+	b <- getB
+	y <- if b then getY1 else getY2
+	log y
+	return (x,y)	
+\end{lstlisting}
+
+This code will not pass the precondition because both \texttt{b} and \texttt{y} are used on the right as well as the left hand side of the equation. However, lines three through five don't really affect the rest of the function so they could be refactored into their own function then f could be rewritten applicatively.
+
+\begin{lstlisting}[frame=tblr]
+f = (,) <$> getX <*> g
+
+g = do
+	b <- getB
+	y <- if b then getY1 else getY2
+	log y
+	return y
+\end{lstlisting}
+
 \subsection{Inline do blocks}
-\todo{Some examples of monadic code are only monadic in small chunks so the whole function may be able to take on more of an applicative structure but with a small do block embedded in it. See example below}
+Instead of extracting an entire function as in subsection~\ref{subSec:extract} a developer may prefer to just inline a do block. This is useful if the monadic section is fairly small.
 
 \begin{lstlisting}[frame=tblr]
 f = do
@@ -452,20 +482,16 @@ f = do
 \[\Rightarrow\]
 \normalsize
 \begin{lstlisting}[frame=tblr]
-f = (,) <*> result1 <*> result2 <* do{z <- result3; log z}
+f = (,) <*> result1 <*> (result2 <* do{z <- result3; log z})
 \end{lstlisting}
 
-\subsection{Reordering of monadic statements}
-\todo{The statements in an applicative chain need to be ordered in the way the pure constructor takes the arguments. For example if the function \texttt{f :: Int -> Char -> String} was the pure constructor in the following monadic statement:}
+Normally the variable \texttt{z} would prevent the function from being refactored. Introducing the small do block allows for a simple readable applicative function to be produced. 
+
+It is worth noting that if the variable \texttt{z} was also included in the output of the function the do block inlining would still work with a slight modification.
 
 \begin{lstlisting}[frame=tblr]
-g = do
-	x <- getChar
-	y <- getInt
-	return $ f y x
+f = (,) <*> result1 <*> result2 <*> do{z <- result3; log z; return z}
 \end{lstlisting}
-
-\todo{The generalisation refactoring would produce \texttt{g = f <*> getChar <*> getInt} which throws a type error. Swapping lines two and three before attempting the generalisation would fix this.}
 
 \subsection{Refactor Inner \texttt{do} blocks}
 
