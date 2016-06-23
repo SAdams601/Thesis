@@ -73,7 +73,7 @@
 % 6. Now comes as two files, UoKthesis.cls, which defines purely stylistic layout,
 %    and UoKextentions.sty, that provideds some additional functionality.
 
-\documentclass[draft,12pt]{UoKthesis}
+\documentclass[12pt]{UoKthesis}
 
 %\renewcommand*\rmdefault{ptm}
 %\renewcommand{\familydefault}{\rmdefault}
@@ -176,20 +176,43 @@ I would like to thank...
 \chapter{Introduction}
 This chapter will introduce the most basic concepts of this thesis. In particular it will discuss, refactoring in general, functional refactoring, and the Haskell programming language. It will also state the contributions of this research and outline the rest of the thesis.
 
-\chapter{Refactoring Haskell in HaRe}
+\chapter{Background: Refactoring Haskell in HaRe}
 \label{hare}
-Chapter~\ref{hare} is where the development and implementation of HaRe will be discussed. The chapter with cover some of the history or HaRe and the briefly the technology that it was originally developed with. Next it will cover the design and implementation of HaRe currently and it's dependencies (in particular ghc-exactprint).
+Chapter~\ref{hare} is where the development and implementation of HaRe will be discussed. The chapter with cover some of the history or HaRe and the briefly the technology that it was originally developed with. Next it will cover the design and implementation of HaRe currently and its dependencies (in particular ghc-exactprint). 
+
+A brief outline of this chapter:
+
+\begin{enumerate}
+\item The original implementation of HaRe
+\item The GHC API
+\item Generic Programming (Scrap Your Boilerplate and Strafunski-StrategyLib)
+\item GHC-ExactPrint
+\item The Current version of HaRe
+\end{enumerate}
+
 
 \chapter{Data refactoring in a functional context}
-This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler} however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
+This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
 
-This chapter will provide several examples of simple data refactorings for the functional language Haskell. These refactorings include transforming standard lists into Hughes lists~\citep{hughesList}, introducing a new type synonym, and generalising the Maybe type to the typeclass MonadPlus.  
+This chapter will provide several examples of simple data refactorings for the functional language Haskell. These refactorings include transforming standard lists into Hughes lists~\citep{hughesList}, introducing a new type synonym, and generalising the Maybe type to the typeclass MonadPlus. 
+
+A brief outline of this chapter:
+
+\begin{enumerate}
+\item Data refactorings in an Object Oriented Context
+\item Functional Data refactorings
+\item Experience report on developing refactorings with GHC-Exactprint and the GHC API
+\item Introducing a Type Synonym
+\item Generalising Maybe to MonadPlus
+\end{enumerate}
 
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
+The previous chapter introduced the concept of a functional data refactoring and gave two examples, introducing a type synonym and generalising Maybe to MonadPlus. This chapter will cover another generalising refactoring in more depth, rewriting monadic functions to use applicative functors. 
+
 In their 2008 functional pearl ``Applicative programming with effects" Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are also known as Applicative Functors~\citep{mcbrideIdioms}. Idioms provide a way to run effectful computations and collect them in some way. They are more expressive than functors but more general than Monads, further work was done in~\citep{arrowsAndIdioms} to prove that Idioms are also less powerful than Arrows.
 
-Applicative functors were implemented in the GHC as the typeclass \texttt{Applicative}. An interesting part of the history of the GHC is that despite McBride and Paterson proving in their original functional pearl that all monads are also applicative functors, however, the GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
+Applicative functors were implemented in GHC as the typeclass \texttt{Applicative}. An interesting part of the history of GHC is that despite McBride and Paterson proving in their original functional pearl that all monads are also applicative functors, however,  GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
 
 This chapter will discuss the design and implementation of a refactoring which will automatically refactor code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the \texttt{Applicative} typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators, next, section~\ref{sec:appApps} will cover some common applications of this refactoring, section~\ref{sec:appRefact} will specify the refactoring itself, section~\ref{sec:appPrecons} covers the preconditions of the refactoring, finally section~\ref{sec:appVariations} outlines other refactorings that may be used in conjunction with the generalising monads to applicative refactoring and some possible variations of this refactoring. 
 
@@ -203,7 +226,7 @@ class Functor f where
 	fmap :: (a -> b) -> f a -> f b
 \end{lstlisting}
 
-The \texttt{fmap} function allows for a function to be applied to the contents of the Functor f. One could think of the functor as a context and \texttt{fmap} as a function that allows other functions to run within that context. However, what if you wanted to chain together sequences of commands within that context? This is not possible with just functors since \texttt{fmap} does not have the function inside of the functor's context. Sequencing commands will require a more powerful abstraction, applicative functors. 
+The \texttt{fmap} function allows for a function to be applied to the contents of the Functor f. One could think of the functor as a context and \texttt{fmap} as a function that allows other functions to run within that context. However, what if you wanted to chain together sequences of commands within that context? This is not possible with just functors since \texttt{fmap} does not have the function inside of the functor's context. Sequencing commands will require a more powerful abstraction, applicative functors~\citep{realWorldHaskell}. 
 
 In Haskell applicative functors are implemented in the \texttt{Applicative} typeclass. \texttt{Applicative} typeclass declares two functions, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in listing~\ref{appTypes} where \texttt{f} is the applicative functor. 
 
@@ -494,6 +517,38 @@ f = (,) <*> result1 <*> result2 <*> do{z <- result3; log z; return z}
 \end{lstlisting}
 
 \subsection{Refactor Inner \texttt{do} blocks}
+If we take another look at the \texttt{parseMoney} function and it's applicative counterpart the default behaviour of the refactoring preserves the inner do block passed to the \texttt{option} parser.
+
+\begin{lstlisting}[frame=tlrb]
+parseMoney :: CharParser () Money
+parseMoney = do
+   currency <- parseCurrency 
+   whole <- many1 digit
+   decimal <- (option "0" (do { 
+                           char '.';
+                           d <- many1 digit;
+                           return d}))
+   return $ M currency (read whole) (read decimal)
+   
+parseMoney :: CharParser () Money
+parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
+          where readWhole = read <$> many1 digit
+                  readDecimal = read <$> option "0" (do { 
+                           						char '.';
+                          						d <- many1 digit;
+                           						return d}))
+\end{lstlisting}
+
+It is perfectly possible to refactor this inner do block to the applicative style as well.
+
+\begin{lstlisting}[frame=tblr]
+
+parseMoney :: CharParser () Money
+parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
+          where readWhole = read <$> many1 digit
+                  readDecimal = read <$> option "0" (char '.' *> many1 digit)
+\end{lstlisting}
+
 
 \chapter{Introducing Effectful Abstractions}
 Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus on introducing monads and applicatives into pure code.
@@ -627,12 +682,19 @@ The above example's definition of \texttt{mergesort} is very similar to the prev
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
 
-There are several bodies of literature that are related too my thesis work. Other functional refactoring tools such as Wrangler~\citep{wrangler} are of obvious interest. There is also the code smell tool for Haskell HLint~\citep{hlint}.
+There are several bodies of literature that are related to my thesis work. Other functional refactoring tools such as Wrangler~\citep{wrangler} are of obvious interest. There is also the code smell tool for Haskell HLint~\citep{hlint}.
 
 Another interesting project is the Type-and-Transform system developed at the University of Utrecht~\citep{typeAndTransform}. Which is a system for performing semantics preserving type changing transformations for the simply typed lambda calculus, and the polymorphic lambda calculus.
 
+In general this chapter will briefly discuss the research done in two primary areas:
+
+\begin{enumerate}
+\item Refactoring and code smell tools for functional programming languages
+\item Type changing program transformations 
+\end{enumerate}
+
 \chapter{Conclusion}
-Summarise my contribution here. The main contributions of my thesis are the development of type changing refactorings for the GHC. With a particular emphasis on changing the abstractions that programs use.
+Summarise my contribution here. The main contributions of my thesis are the development of type changing refactorings for GHC. With a particular emphasis on changing the abstractions that programs use.
 
 \bibliography{main}
 
