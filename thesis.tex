@@ -96,7 +96,8 @@
 \usepackage{wrapfig}
 \usepackage[scaled=.90]{helvet}
 \usepackage{courier}
-\newcommand{\comment}[1]{\textcolor{red}{{\bf \tt  {#1}}}}
+\newcommand{\td}[1]{{\bf {\tt{#1}}}}
+\newcommand{\comment}[1]{\textcolor{red}{\td{{#1}}}}
 \usepackage{textcomp}
 \lstset{
   frame=none,
@@ -177,8 +178,6 @@ I would like to thank...
 
 \chapter{Introduction}\label{chp:intro}
 
-\comment{This chapter will introduce the most basic concepts of this thesis. In particular it will discuss, refactoring in general, functional refactoring, and the Haskell programming language. It will also state the contributions of this research and outline the rest of the thesis.}
-
 
 \section{Functional Programming}
 Functional programming is a programming paradigm that focuses on data values as described by expressions which are built from function applications and definitions~\citep{elementsOfFunc}.  Functions in this case are closely related to the idea of mathematical functions. Another key concept of a functional programming language is that functions are \textit{first class citizens}. This means that functions can be used like any other type of data, e.g. as arguments to other functions. 
@@ -211,17 +210,20 @@ It is also not unusual for functional refactorings to be substantially different
 
 \section{Contributions of this Research}
 
-\comment{\textbf{TODO}}
+\comment{TODO}
 
 \section{Thesis Outline}
 
-\comment{\textbf{TODO}}
+\comment{TODO}
 
 
 \chapter{Background: Refactoring Haskell in HaRe}
 \label{hare}
-Chapter~\ref{hare} is where the development and implementation of HaRe will be discussed. The chapter with cover some of the history or HaRe and the briefly the technology that it was originally developed with. Next it will cover the design and implementation of HaRe currently and its dependencies (in particular ghc-exactprint). 
 
+\comment{
+Chapter~\ref{hare} is where the development and implementation of HaRe will be discussed. The chapter with cover some of the history or HaRe and the briefly the technology that it was originally developed with. Next it will cover the design and implementation of HaRe currently and its dependencies (in particular ghc-exactprint). }
+
+\td{
 A brief outline of this chapter:
 
 \begin{enumerate}
@@ -231,33 +233,17 @@ A brief outline of this chapter:
 \item GHC-ExactPrint
 \item The Current version of HaRe
 \end{enumerate}
+}
 
-\todo{Copy and paste relevant material from mini-thesis}
-
-
-Implementing an automated refactoring system requires two primary dependencies, a frontend for the language that your refactorer targets, and a generic programming library. A language frontend is required for your refactorer to analyse and modify source code. A generic programming library is required to traverse the complex abstract syntax tree of a real world programming language. This chapter will cover how HaRe was originally implemented and how it has changed into it's current form. Additionally this chapter will outline the technologies that HaRe depends on, including the GHC API, ghc-exactprint, and Scrap Your Boilerplate (SYB). 
-
-\todo{Do we want data refactoring to be in this chapter or in the intro?}  
+Work on creating the refactoring tool HaRe started in early 2003 at the University of Kent and was originally worked on by Huiqing Li, Claus Reinke, and Simon Thompson~\citep{refacWebsite}. This chapter will start with a brief discussion of this original implementation. The Haskell ecosystem that the original HaRe supported is very different from the Haskell ecosystem that most Haskell programmers use today. HaRe was originally implemented to support the Haskel 98 standard~\citep{huiqingThesis}. However, the Glasgow Haskell Compiler (GHC) has now become the de facto Haskell standard~\citep{refacTools} and HaRe has been updated to support the GHC. The second half of this chapter will describe the current implementation of HaRe and the major dependencies that it uses. 
 
 \section{The original implementation of HaRe}
-\todo{This needs cleaning up...}
 
-Work on HaRe was started at the University of Kent in the Spring of 2003~\citep{refacWebsite}. Since then it has formed the basis for the work Huiqing Li did for her PhD thesis~\citep{huiqingThesis}, and many other publications since then, including but not limited to~\citep{brownTypes,formalisationRefac,hareApi,haskellClones,brownThesis}. 
+Implementing an automated refactoring system requires several dependencies, a frontend for the language that you are targeting, a generic programming library, and a pretty printer. The language frontend is required for your refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs the modified AST. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
 
-Initially HaRe supported the full Haskell 98 standard and was integrated into both the Vim and Emacs text editors~\citep{huiqingThesis}. However, Haskell 98 is quite outdated and the Haskell community has adopted the Glasgow Haskell Compiler (GHC) as the language's de facto standard. The GHC uses the newer Haskell 2010 standard along with several language extensions. Work is currently ongoing to port HaRe from Haskell 98 to the GHC.   
+Strafunski-StrategyLib\comment{Write about strafunski}
 
-In \citep{huiqingThesis} the required dependencies of a Haskell-in-Haskell refactorer are said to be: 
-
-	\begin{itemize}
-	\item A lexer
-	\item A parser
-	\item A type-checker
-	\item A module analysis system
-	\item A pretty printer
-	\item A generic way to traverse an abstract syntax tree
-	\end{itemize}
-	
-The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. As discussed previously in section~\ref{strafunskiSection}~Strafunski-StrategyLib allows for generic traversals over typed data. Strafunski was used in HaRe to traverse and transform the Haskell AST without having to write and maintain all of the boilerplate code normally required to work with the large and complex tree that represents Haskell source code. Programatica provides the other five requirements for HaRe~\citep{huiqingThesis}. More in-depth discussion of these tools is not in this section as both of these tools were covered in previous chapters.
+Programmatica\comment{Write about programmatica} 
 
 
 \subsection{HaRe's original refactorings}\label{origRefactorings}
@@ -413,7 +399,7 @@ The most common pattern in strategic programming involves systhesizing a ``rewri
 
 
 
-\todo{incorporate the description of HaRe that I wrote for IFL paper.}
+\comment{incorporate the description of HaRe that I wrote for IFL paper.}
 
 \chapter{Data refactoring in a functional context}
 This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
@@ -570,7 +556,7 @@ csvFile = many line <* eof
 Another possible application of this refactoring applies to parts of code used to define Yesod webservers~\citep{yesod}. The preferred way to handle the creation and processing of web forms is using the applicative interface~\citep{yesodBook}. Yesod doesn't force forms to be handled applicatively because a monad instance is provided as well but it is the \textit{idiomatic} way to handle web forms. This refactoring would allow people to write in a monadic style and then refactor their code to fit the standard.
 
 \subsection{Other applications}
-\todo{Complete section conclusion here}
+\comment{Complete section conclusion here}
   
 
 \section{Refactoring Monadic Programs to Applicative}
@@ -955,7 +941,7 @@ Another Haskell program transformation project is HERMIT. Instead of performing 
 
 Finally there is the Haskell Refactorer (HaRe). Since HaRe is where I will be implementing my research I have dedicated an entire chapter (chapter ~\ref{hareChapter}) to describing its implementation. 
 
-\todo{\textbf{Add section about ML languages.}}
+\comment{\textbf{Add section about ML languages.}}
 
 \chapter{Conclusion}
 Summarise my contribution here. The main contributions of my thesis are the development of type changing refactorings for GHC. With a particular emphasis on changing the abstractions that programs use.
