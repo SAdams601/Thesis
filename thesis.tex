@@ -241,14 +241,19 @@ Work on creating the refactoring tool HaRe started in early 2003 at the Universi
 
 Implementing an automated refactoring system requires several dependencies, a frontend for the language that you are targeting, a generic programming library, and a pretty printer. The language frontend is required for your refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs the modified AST. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
 
-Strafunski-StrategyLib\comment{Write about strafunski}
+\subsection{Programatica and Strafunski}\label{prog&Strafunski}
 
-Programmatica\comment{Write about programmatica} 
+Programatica was a project at the OGI School of Science and Engineering to build tool support for validating Haskell programs~\cite{programaticaTools}. The Programatica team open sourced their frontend so that other tools could also use it~\citep{refacWebsite}. HaRe chose to use Programatica over other available front ends because it supported the full Haskell 98 standard along with a number of its extensions~\citep{huiqingThesis}. Programatica's Haskell front end is broken up into multiple components including a lexer, a parser, an abstract syntax, a module system, a type checker, and a pretty printer. Programatica's frontend allows for HaRe to focus on refactoring only rather than having to build all of these components as well.
 
+Proogramatica's abstract syntax contains 20 data types with 110 data constructors in total. Working with the syntax directly would introduce a large amount of ``boilerplate" code into HaRe that would make maintenance and reusability of much more difficult~\citep{huiqingThesis}. Instead HaRe used Strafunski-StrategyLib a generic programming to traverse the abstract syntax tree (AST) of the source code. Strafunski-StrategyLib is a combinator library for generic programming~\citep{strafunski}. 
 
+Transforming a program often only modifies small sections of the source program's AST at one time. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used, all other sections of the AST remain unmodified. Strafunski takes code that works only on a few data constructors\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replacing it with the new name.} and ``extends" it to work with every type in the AST. Strafunski also provides ``strategies" that define how that extended function will be applied to the syntax tree~\citep{strafunski}\footnote{e.g. top-down or bottom-up}.
+
+These two dependencies allowed the original implementation of HaRe to obtain the abstract syntax tree of source code to be refactored, traverse and transform that AST, and output the modified program. All these tasks are still things that HaRe needs to do but the dependencies that it relies on have changed somewhat. The Haskell standard was updated in 2010~\citep{haskell2010} and GHC continues to expand the number of language extensions it supports. Unfortunately Programatica has not kept up with these changes and does not support anything beyond Haskell98. At the same time GHC's own API has matured. HaRe now relies on this and a few other projects for its language frontend. For generic traversals Scrap Your Boilerplate has been added as a dependency though Strafunski-StrategyLib is still used.
+ 
 \subsection{HaRe's original refactorings}\label{origRefactorings}
 
-HaRe's original refactorings fall into three categories, structural, module, and data-oriented refactorings. These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. The following is a brief discussion of these three categories and some sample refactorings within them.
+HaRe's original refactorings fall into three categories, structural, module, and data-oriented refactorings.
 
 \subsubsection{Structural Refactorings}
 
@@ -262,20 +267,12 @@ Other examples of structural refactorings include delete a definition, duplicate
 
 Module refactorings are those refactorings that concern the imports and exports of individual modules, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be ``clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the ``move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another.
 
-\subsubsection{Data-Oriented Refactorings}
+\subsubsection{Data Type Based Refactorings}
 
 The third category of refactorings are those that are associated with data type definitions~\citep{huiqingThesis}. ``Add field names" is a good example of a data-oriented refactoring.  The add field names refactoring will add field names to a data type. These names can then be used as selector functions that make extraction of a particular part of a type a simple function call. The new field names are generated by HaRe but can be renamed by the user~\citep{huiqingThesis}.
 
+These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers an API was exposed so that other developers could implement their own refactorings~\citep{hareApi}.
 
-\subsection{Multi-module refactoring}\label{multiModRefac}
-
-In its initial release HaRe only supported a small set of structural refactorings. Even at this initial stage it was still recognised that, for HaRe to continue to grow, it was going to have to be aware of modules~\citep{toolSupport}. For example, in a multi-module program if a renaming takes place any other modules that reference the renamed identifier will have to be updated to use the new name as well.
-
-A multi-module refactoring is done is two separate steps: transforming the module where the refactoring is initiated (this module is referred to as the \textit{current module}) and transforming the module which import the current module (these modules are called \textit{client modules}). 
-
-When performing a multi-module refactoring HaRe needs to extend both side-condition checking and program transformation. During a renaming refactoring, as mentioned previously, any client modules that reference the renamed definition need to be modified to use the new name; additionally the checks that detect issues such as name clashes and captures need to be performed in every client module as well~\citep{huiqingThesis}.
-
-In reality just extending the side condition and transformation functions to operate over client modules is not the most effective implementation. One of the general strategies HaRe has adopted to improve efficiency is reducing the amount of AST traversal that each refactoring does~\citep{huiqingThesis}. The most obvious way this happens is that side-condition checking in client modules happens during program transformation, rather than happening previously in its own step.
 
 \subsection{HaRe's API}\label{hareApi}
 
@@ -283,39 +280,25 @@ Early in the development cycle of HaRe it was restructured to expose an API for 
 
 The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the user but with the generic programming provided by Strafunski only small sections of the AST need to be dealt with~\citep{hareApi}. Another key feature of the API was to hide layout and comment preservation allowing the programmer to focus on program transformation instead. This is done by having the API's transformation functions modify the token stream and the AST simultaneously~\citep{hareApi}. 
 
-The overall goal of the HaRe API is to help ensure the correctness of new refactorings by limiting the amount of code required that is not related to program transformation and isolating common error sources~\citep{hareApi}. This design goal still guides development of HaRe, and many of the functions that were provided in the original HaRe API have been updated to HaRe's latest incarnation.
+The overall goal of the HaRe API is to help ensure the correctness of new refactorings by limiting the amount of code required that is not related to program transformation and isolating common error sources~\citep{hareApi}. This design goal still guides development of HaRe, and many of the functions that were provided in the original HaRe API have been updated to HaRe's latest incarnation. 
+ 
+\section{The Current Implementation of HaRe}
 
-\section{Haskell Frontends}
-At its most basic level refactoring is about modifying source code. Without some way to represent source code within a separate program an automatic refactorer would not be possible. A programming language frontend provides this representation. This section will look at two Haskell frontends Programatica and the GHC API.
-
-\subsection{Programatica}
-The original implementation of HaRe used Programatica as its frontend. Programatica was selected for use in HaRe because it supports the full Haskel 98 standard and at the time it reported more information than other frontends~\citep{huiqingThesis}.
-
-Programatica's abstract syntax for Haskell 98 uses 20 data type and 110 data constructors~\citep{huiqingThesis}. This abstract syntax is produced by Programatica's parser, which is based on Haskell 98's HsParser. Instead of using HsParser's lexer Programatica provides it's own. Programatica's lexer produces a token stream that includes a token's position in the source. The type of the lexer is:
-
-\begin{verbatim}
-     lexer :: String -> [(Token,(Pos,String))]
-\end{verbatim}
-
-The input string is the program source, the token data type classifies different kinds of tokens, pos represents the token's position in the source file by row and column numbers, and the final string is the contents of the token. From this lexer the parser produces an abstract syntax that includes source locations for each identifier~\citep{huiqingThesis}.
-
-In addition to providing an AST with source location annotations, Programatica can also generate a syntax tree annotated with type information. This is provided by Programatica's type checking system. In this variation of the syntax tree declaration lists have been annotated with the kinds and types of the entities defined in the list, and all applications of polymorphic functions have been decorated with the instantiation of the type variables~\citep{huiqingThesis}.
+As was mentioned in subsection~\ref{prog&Strafunski} HaRe's dependencies have changed somewhat in its current implementation. In particular the language frontend is composed of several projects now, the GHC API, ghc-mod, and ghc-exactprint~\citep{ghcApi,ghcMod,exactprint}. This section will describe these new dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
 
 \subsection{The GHC API}
 
-The GHC API exposes the entire inner structure and working of the GHC to users~\citep{ghcDesign}. The GHC API isn't so much a layer over the top of the internal workings of the compiler rather than the compiler itself. The GHC was built as a set of smaller components rather than as a monolithic executable. What people think of as the GHC executable is just a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are what constitute the GHC API. This subsection will discuss these components and how the GHC identifies definitions. An in-depth discussion of how the AST is structured can be found it section~\ref{ghcAst}.
+Rather than being a monolithic executable the GHC is composed of several smaller components that each correspond to a separate compiler stage. The GHC executable is just a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
 
 \subsubsection{Compiler stages of the GHC}
 
-I have listed the first few GHC compiler steps in figure~\ref{compilerStages} because they are the stages that my research interacts with. The full GHC pathway diagram can be found in~\citep{ghcDesign}. The label after each stage of the compiler indicates the type of the AST that is produced by that stage. After desugaring the GHC has fully translated Haskell into an intermediate language known as Core~\citep{ghcDesign}. 
+Some of the major components and the order that the GHC uses them is show in figure~\ref{compilerStages}. This figure is not a complete list of all the components the GHC uses just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
 
-\begin{wrapfigure}{l}{0.5\textwidth}\label{compilerStages}
-	\vspace{-15pt}
-	%\begin{center}
+\begin{wrapfigure}{L}{0.5\textwidth}\label{compilerStages}
+	\begin{center}
 		\includegraphics[scale=.3]{images/compilerStages.png}
-	%\end{center}
+	\end{center}
 	\caption{GHC Compiler stages. Adapted from \citep{ghcDesign}}
-	\vspace{-78pt}
 \end{wrapfigure}
 
 The first step in the GHC pathway is the parser which translates Haskell source code into an AST of the type $HsSyn~RdrName$. $HsSyn$ is the top level abstract syntax datatype; it is parameterised by the type of identifier that it contains. $HsSyn$ is a large collection of datatypes that, together, describe the full abstract syntax of Haskell. At last count there are 52 different datatypes that make up $HsSyn$~\citep{hssynWiki}.
