@@ -386,6 +386,10 @@ After using generic programming to transform the parsed abstract syntax, HaRe ne
 
 Prior to GHC version 7.10.1 the location of certain keywords (such as $do$ and $let$)was lost after parsing, this made exactly reproducing a Haskell file that was parsed using GHC's parser impossible. GHC's first 7.10 release added annotations of certain syntax elements that had previously not been reflected in the parsed abstract syntax~\citep{apiAnns}. 
 
+Even with every syntax element's position being recorded, printing a module after the AST has been modified is not easy. Many AST elements are ``located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
+
+
+
 \comment{incorporate the description of HaRe that I wrote for IFL paper.}
 
 \chapter{Data refactoring in a functional context}
