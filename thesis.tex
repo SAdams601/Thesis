@@ -290,7 +290,7 @@ As was mentioned in subsection~\ref{prog&Strafunski} HaRe's dependencies have ch
 
 Rather than being a monolithic executable the GHC is composed of several smaller components that each correspond to a separate compiler stage. The GHC executable is just a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
 
-\subsubsection{Compiler stages of the GHC}
+\subsubsection{Compiler stages of the GHC}\label{ghcStages}
 
 Some of the major components and the order that the GHC uses them is show in figure~\ref{compilerStages}. This figure is not a complete list of all the components the GHC uses just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
 
@@ -301,13 +301,23 @@ Some of the major components and the order that the GHC uses them is show in fig
 	\caption{GHC Compiler stages. Adapted from \citep{ghcDesign}}
 \end{wrapfigure}
 
-The first step in the GHC pathway is the parser which translates Haskell source code into an AST of the type $HsSyn~RdrName$. $HsSyn$ is the top level abstract syntax datatype; it is parameterised by the type of identifier that it contains. $HsSyn$ is a large collection of datatypes that, together, describe the full abstract syntax of Haskell. At last count there are 52 different datatypes that make up $HsSyn$~\citep{hssynWiki}.
+The top level datatype for all of GHS's abstract syntax is $HsSyn$~\citep{ghcDesign}. $HsSyn$ is parameterised by some identifier; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by $Name$ and returns an AST parameterised by $Id$ which is a $Name$ with additional type information.
 
-\subsubsection{GHC's Identifiers}
+\subsubsection{GHC's Name Types}
 
-The GHC has five different identifier types~\citep{ghcHackage}. The main pathway only uses three identifiers $RdrName$, $Name$, and $Id$, the other two types of identifiers are records in the other identifier types. $OccName$ is the most basic name type the GHC uses. An $OccName$ just consists of a string representing the name of the identifier and the namespace it exists in. $OccName$ is used by all the other name types.
+There are five name types that GHC uses, they are:
 
-An $RdrName$ is the type of identifier that the parsed AST uses. It consists of an $OccName$ paired with module information, the module where the identifier is defined and the module that the identifier is imported from. In the tree that results from renaming the $Name$ identifier is used. A $Name$ has its scoping and binding information resolved. $Name$ also contains a $Unique$ type. A $Unique$ is a datatype for performing fast ordering and equality tests and is used throughout the GHC~\citep{ghcHackage}. After type checking the AST uses $Id$s. $Id$s contain type information in addition to the data $Name$s already store. 
+\begin{itemize}
+	\item $OccName$
+	\item $RdrName$
+	\item $Name$
+	\item $Id$
+	\item $Var$
+\end{itemize}
+
+$OccName$ is the simplest type of name it is really just a wrapper around a $FastString$ and an optional $NameSpace$. It isn't produced by any the other four name types, rather an $OccName$ is contained in each of the other names. An $RdrName$ is the type that parameterises the parsed abstract  syntax. $RdrName$s aren't much more than an $OccName$ and possibly a module name that indicates what module the name is defined in.
+
+The renamer produces an AST that uses $Name$s. $Name$s form the basis for the rest of the GHC's identifiers. A $Name$ is a fully sourced 
 
 
 \section{Generic programming}
