@@ -301,24 +301,38 @@ Some of the major components and the order that the GHC uses them is show in fig
 	\caption{GHC Compiler stages. Adapted from \citep{ghcDesign}}
 \end{wrapfigure}
 
-The top level datatype for all of GHS's abstract syntax is $HsSyn$~\citep{ghcDesign}. $HsSyn$ is parameterised by some identifier; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by $Name$ and returns an AST parameterised by $Id$ which is a $Name$ with additional type information.
+The top level datatype for all of GHS's abstract syntax is \texttt{HsSyn}~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
 
 \subsubsection{GHC's Name Types}
 
 There are five name types that GHC uses, they are:
 
 \begin{itemize}
-	\item $OccName$
-	\item $RdrName$
-	\item $Name$
-	\item $Id$
-	\item $Var$
+	\item \texttt{OccName}
+	\item \texttt{RdrName}
+	\item \texttt{Name}
+	\item \texttt{Id}
+	\item \texttt{Var}
 \end{itemize}
 
-$OccName$ is the simplest type of name it is really just a wrapper around a $FastString$ and an optional $NameSpace$. It isn't produced by any the other four name types, rather an $OccName$ is contained in each of the other names. An $RdrName$ is the type that parameterises the parsed abstract  syntax. $RdrName$s aren't much more than an $OccName$ and possibly a module name that indicates what module the name is defined in.
+\texttt{OccName} is the simplest type of name it is really just a wrapper around a \texttt{FastString} and an optional \texttt{NameSpace}. It isn't produced by any the other four name types, rather an \texttt{OccName} is contained in each of the other names. An \texttt{RdrName} is the type that parameterises the parsed abstract  syntax. \texttt{RdrName}s aren't much more than an \texttt{OccName} and possibly a module name that indicates what module the name is defined in.
 
-The renamer produces an AST that uses $Name$s. $Name$s form the basis for the rest of the GHC's identifiers. A $Name$ is a fully sourced 
+The renamer produces an AST that uses \texttt{Name}s. \texttt{Name}s form the basis for the rest of the GHC's identifiers. A \texttt{Name} wraps \texttt{OccName} along with what type of name it is (user-defined or system-defined), where that \texttt{Name} is defined, and a unique integer so that names with the same \texttt{OccName} can be differentiated. 
 
+The other two name types, \texttt{Id} and \texttt{Var}, are actually synonyms.
+
+\begin{lstlisting}[frame=single,caption={Id's definition from Var.hs in~\cite{ghcHackage}}]
+type Id = Var
+\end{lstlisting}
+
+These types are essentially just typed \texttt{Name}s. The difference between \texttt{Id}s and \texttt{Var}s is that instead of a type \texttt{Vars} have a kind, and \texttt{Id}s contain more information about what sort of syntax element the \texttt{Id} refers to. 
+
+All these different types of names change throughout the compilation process but these names only parameterises the syntax tree, the shape~\comment{shape? form?} of the tree itself stays the same through compilation. 
+
+\subsubsection{GHC's syntax tree}
+GHC's abstract syntax is currently made up of over 90 data types. 
+
+\comment{How do I describe the AST? Do I want to go into much detail? It seems like this could help motivate the need for generic programming if done correctly.}
 
 \section{Generic programming}
 The abstract syntax tree of a real world programming language is large and complex. Typically an individual refactoring will focus on changing only a small part of the larger structure of the AST. Manual traversals of the AST will produce copious amounts of boilerplate code~\citep{syb}. Boilerplate code is the code that just ``walks" the structure of the AST without changing anything. Generic programming can significantly reduce this boilerplate code\citep{syb,uniplate}. This section will examine two generic programming libraries for Haskell.
@@ -353,9 +367,9 @@ renameXVar (Add e1 e2) = Add (renameXVar e1) (renameXVar e2)
 renameXVar v = v
 	\end{verbatim}
 	
-	This is fairly straight forward and doesn't take much time to write. However, if subtraction was added to the definition of expression $renameXVar$ would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what's known as ``boilerplate" code~\citep{syb}. In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like $renameXVar$ become much more time-consuming and a nightmare to maintain. 
+	This is fairly straight forward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what's known as ``boilerplate" code~\citep{syb}. In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} become much more time-consuming and a nightmare to maintain. 
 	
-	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite $renameXVar$ as:
+	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as:
 	
 	\begin{verbatim}
 rename :: Name -> Name
@@ -375,18 +389,18 @@ renameXVar = everywhere (mkT rename)
 		\item The data type to be traversed must be an instance of the Typeable and Data classes
 	\end{itemize}
 	
-	From the example mentioned previously the ``interesting" part of this traversal is the rename function because this function contains the code that actually changes the name ``x" to the name ``a." The $mkT$ function extends the type of the $rename$ function to $Typeable~a = > a~ -> a$. 
+	From the example mentioned previously the ``interesting" part of this traversal is the rename function because this function contains the code that actually changes the name ``x" to the name ``a." The \texttt{mkT} function extends the type of the \texttt{rename} function to \texttt{Typeable~a = > a~ -> a}. 
 	
-	Type extension allows for the $rename$ function to work over many types. After type extending $rename$ it will work as expected when applied to an argument of type name, and as the identity function when applied to any other type.
+	Type extension allows for the \texttt{rename} function to work over many types. After type extending \texttt{rename} it will work as expected when applied to an argument of type name, and as the identity function when applied to any other type.
 	
-	The $everywhere$ function is this traversal's combinator, $everywhere$ applies the extended function to every node in the tree. Finally as you can see in the declaration of $Expr$ that it derives both the Typeable and Data classes. A member of the Typeable class has defined a generic representation of itself and members of the Data class implement generic folding operations. Put together these two classes are what allow generic traversals. 
+	The \texttt{everywhere} function is this traversal's combinator, \texttt{everywhere} applies the extended function to every node in the tree. Finally as you can see in the declaration of \texttt{Expr} that it derives both the Typeable and Data classes. A member of the Typeable class has defined a generic representation of itself and members of the Data class implement generic folding operations. Put together these two classes are what allow generic traversals. 
 	
 The idea of type extension and needing data types to be members of certain classes are requirements of Haskell's typing system. The other two components of an SYB traversal correspond with the term rewriting function (the ``interesting" part of our problem), and how the tree will be traversed (the generic combinator) from Stratego.
 	  
 \subsection{Strafunski-StrategyLib}\label{strafunskiSection}
 Strafunski is a library of language processing components~\citep{strafunski}. Strafunski looks at generic traversals as a generic function that can traverse into terms, mixing uniform and type-specific behaviour. This type of generic function is known as a functional strategy~\citep{strafunski}.
 
-Strafunski has two different types of strategy combinators, type preserving and type unifying~\citep{strafunski}. A type preserving, or ``$TP$" strategy when applied to some term of type $t$ will return type $t$, whereas type unifying ($TU$) strategies return a different type. All of Strafunski's combinators are qualified with either a $TU$ or $TP$ postfix. In general the type preserving strategies are used for transformation whereas type unifying strategies are for analysis. 
+Strafunski has two different types of strategy combinators, type preserving and type unifying~\citep{strafunski}. A type preserving, or ``\texttt{TP}" strategy when applied to some term of type \texttt{t} will return type \texttt{t}, whereas type unifying (\texttt{TU}) strategies return a different type. All of Strafunski's combinators are qualified with either a \texttt{TU} or \texttt{TP} postfix. In general the type preserving strategies are used for transformation whereas type unifying strategies are for analysis. 
 
 The most common pattern in strategic programming involves systhesizing a ``rewrite step" with a traversal combinator~\citep{strafunski}. The rewrite step is first defined by the user to be type specific. Then this step is ``lifted" to a generic rewrite step using the built in functions $adhocTU$ or $adhocTP$. Finally this generic rewrite step can be passed to a traversal combinator such as $full\_tdTU$ which visits all nodes from the top of the tree downwards, in a type unifying manner.
 
