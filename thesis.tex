@@ -390,6 +390,14 @@ Strafunski has two different types of strategy combinators, type preserving and 
 
 The most common pattern in strategic programming involves systhesizing a ``rewrite step" with a traversal combinator~\citep{strafunski}. The rewrite step is first defined by the user to be type specific. Then this step is ``lifted" to a generic rewrite step using the built in functions $adhocTU$ or $adhocTP$. Finally this generic rewrite step can be passed to a traversal combinator such as $full\_tdTU$ which visits all nodes from the top of the tree downwards, in a type unifying manner.
 
+\section{ghc-exactprint}
+
+After using generic programming to transform the parsed abstract syntax, HaRe needs to be able to write the modified code. A challenging part of building a refactoring tool is that a user wont want non refactored parts of their code to change at all. HaRe needs to preserve the user's comments and spacing from the source file.
+
+Prior to GHC version 7.10.1 the location of certain keywords (such as $do$ and $let$)was lost after parsing, this made exactly reproducing a Haskell file that was parsed using GHC's parser impossible. GHC's first 7.10 release added annotations of certain syntax elements that had previously not been reflected in the parsed abstract syntax~\citep{apiAnns}. 
+
+Even with every syntax element's position being recorded, printing a module after the AST has been modified is not easy. Many AST elements are ``located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
+
 
 
 \comment{incorporate the description of HaRe that I wrote for IFL paper.}
