@@ -335,8 +335,7 @@ GHC's abstract syntax is currently made up of over 90 data types.
 \comment{How do I describe the AST? Do I want to go into much detail? It seems like this could help motivate the need for generic programming if done correctly.}
 
 \section{Generic programming}
-The abstract syntax tree of a real world programming language is large and complex. Typically an individual refactoring will focus on changing only a small part of the larger structure of the AST. Manual traversals of the AST will produce copious amounts of boilerplate code~\citep{syb}. Boilerplate code is the code that just ``walks" the structure of the AST without changing anything. Generic programming can significantly reduce this boilerplate code\citep{syb,uniplate}. This section will examine two generic programming libraries for Haskell.
-
+The need for a generic programming library, as previously discussed in section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}.
 \subsection{Generic Traversals}
 The Stratego/XT library was one of first transformation systems~\citep{stratego}. Stratego developed the idea of a transformation strategy. A transformation strategy is the combination of a term rewriting function and how that rewriting will be applied to the tree of terms. Stratego provides combinators from which term rewriting functions can be constructed and tree traversal functions\citep{stratego}.
 
