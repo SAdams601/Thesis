@@ -164,7 +164,7 @@
 %%%%% document start
 \begin{document}
 
-\title{Type-Changing Refactorings in Haskell}
+\title{Data Driven Refactorings for Haskell}
 \author{Stephen Adams}
 \subject{Computer Science}
 \degree{PhD}
@@ -235,7 +235,9 @@ A brief outline of this chapter:
 \end{enumerate}
 }
 
-Work on creating the refactoring tool HaRe started in early 2003 at the University of Kent and was originally worked on by Huiqing Li, Claus Reinke, and Simon Thompson~\citep{refacWebsite}. This chapter will start with a brief discussion of this original implementation. The Haskell ecosystem that the original HaRe supported is very different from the Haskell ecosystem that most Haskell programmers use today. HaRe was originally implemented to support the Haskel 98 standard~\citep{huiqingThesis}. However, the Glasgow Haskell Compiler (GHC) has now become the de facto Haskell standard~\citep{refacTools} and HaRe has been updated to support the GHC. The second half of this chapter will describe the current implementation of HaRe and the major dependencies that it uses. 
+Work on HaRe started in early 2003 at the University of Kent. HaRe was originally created by Huiqing Li, Claus Reinke, and Simon Thompson~\citep{refacWebsite}. This chapter begins with a brief discussion of the original implementation of HaRe. HaRe was originally implemented to support the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is the current formal language standard but the Glasgow Haskell Compiler (GHC) has become the de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that do everything from changing the type system to adding new syntax features~ \cite{langExts}.
+
+
 
 \section{The original implementation of HaRe}
 
@@ -245,9 +247,9 @@ Implementing an automated refactoring system requires several dependencies, a fr
 
 Programatica was a project at the OGI School of Science and Engineering to build tool support for validating Haskell programs~\cite{programaticaTools}. The Programatica team open sourced their frontend so that other tools could also use it~\citep{refacWebsite}. HaRe chose to use Programatica over other available front ends because it supported the full Haskell 98 standard along with a number of its extensions~\citep{huiqingThesis}. Programatica's Haskell front end is broken up into multiple components including a lexer, a parser, an abstract syntax, a module system, a type checker, and a pretty printer. Programatica's frontend allows for HaRe to focus on refactoring only rather than having to build all of these components as well.
 
-Proogramatica's abstract syntax contains 20 data types with 110 data constructors in total. Working with the syntax directly would introduce a large amount of ``boilerplate" code into HaRe that would make maintenance and reusability of much more difficult~\citep{huiqingThesis}. Instead HaRe used Strafunski-StrategyLib a generic programming to traverse the abstract syntax tree (AST) of the source code. Strafunski-StrategyLib is a combinator library for generic programming~\citep{strafunski}. 
+Proogramatica's abstract syntax contains 20 data types with 110 data constructors in total. Working with the syntax directly would introduce a large amount of "boilerplate" code into HaRe that would make maintenance and reusability of much more difficult~\citep{huiqingThesis}. Instead HaRe used Strafunski-StrategyLib a generic programming to traverse the abstract syntax tree (AST) of the source code. Strafunski-StrategyLib is a combinator library for generic programming~\citep{strafunski}. 
 
-Transforming a program often only modifies small sections of the source program's AST at one time. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used, all other sections of the AST remain unmodified. Strafunski takes code that works only on a few data constructors\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replacing it with the new name.} and ``extends" it to work with every type in the AST. Strafunski also provides ``strategies" that define how that extended function will be applied to the syntax tree~\citep{strafunski}\footnote{e.g. top-down or bottom-up}.
+Transforming a program often only modifies small sections of the source program's AST at one time. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used, all other sections of the AST remain unmodified. Strafunski takes code that works only on a few data constructors\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replacing it with the new name.} and "extends" it to work with every type in the AST. Strafunski also provides "strategies" that define how that extended function will be applied to the syntax tree~\citep{strafunski}\footnote{e.g. top-down or bottom-up}.
 
 These two dependencies allowed the original implementation of HaRe to obtain the abstract syntax tree of source code to be refactored, traverse and transform that AST, and output the modified program. All these tasks are still things that HaRe needs to do but the dependencies that it relies on have changed somewhat. The Haskell standard was updated in 2010~\citep{haskell2010} and GHC continues to expand the number of language extensions it supports. Unfortunately Programatica has not kept up with these changes and does not support anything beyond Haskell98. At the same time GHC's own API has matured. HaRe now relies on this and a few other projects for its language frontend. For generic traversals Scrap Your Boilerplate has been added as a dependency though Strafunski-StrategyLib is still used.
  
@@ -265,11 +267,11 @@ Other examples of structural refactorings include delete a definition, duplicate
 
 \subsubsection{Module Refactorings}
 
-Module refactorings are those refactorings that concern the imports and exports of individual modules, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be ``clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the ``move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another.
+Module refactorings are those refactorings that concern the imports and exports of individual modules, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be "clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the "move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another.
 
 \subsubsection{Data Type Based Refactorings}
 
-The third category of refactorings are those that are associated with data type definitions~\citep{huiqingThesis}. ``Add field names" is a good example of a data-oriented refactoring.  The add field names refactoring will add field names to a data type. These names can then be used as selector functions that make extraction of a particular part of a type a simple function call. The new field names are generated by HaRe but can be renamed by the user~\citep{huiqingThesis}.
+The third category of refactorings are those that are associated with data type definitions~\citep{huiqingThesis}. "Add field names" is a good example of a data-oriented refactoring.  The add field names refactoring will add field names to a data type. These names can then be used as selector functions that make extraction of a particular part of a type a simple function call. The new field names are generated by HaRe but can be renamed by the user~\citep{huiqingThesis}.
 
 These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers an API was exposed so that other developers could implement their own refactorings~\citep{hareApi}.
 
@@ -339,7 +341,7 @@ The need for a generic programming library, as previously discussed in section~\
 \subsection{Generic Traversals}
 The Stratego/XT library was one of first transformation systems~\citep{stratego}. Stratego developed the idea of a transformation strategy. A transformation strategy is the combination of a term rewriting function and how that rewriting will be applied to the tree of terms. Stratego provides combinators from which term rewriting functions can be constructed and tree traversal functions\citep{stratego}.
 
-Stratego is an untyped transformation system.
+Stratego is an untyped transformation system and so was unsuitable for working with the statically typed Haskell.  
 \subsection{Scrap Your Boilerplate}\label{syb}
 
 	Suppose there was a simple expression language that contained integers, integer addition, assignment, and variables. This language is represented by the type defined below.
@@ -356,7 +358,7 @@ data Expr =
       deriving(Data,Typeable,Show)
 	\end{verbatim}
 	
-	If you wanted to define a function that renamed the variable called ``x" to one called ``a" it would look something like this:
+	If you wanted to define a function that renamed the variable called "x" to one called "a" it would look something like this:
 	
 	\begin{verbatim}
 renameXVar :: Expr -> Expr
@@ -366,7 +368,7 @@ renameXVar (Add e1 e2) = Add (renameXVar e1) (renameXVar e2)
 renameXVar v = v
 	\end{verbatim}
 	
-	This is fairly straight forward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what's known as ``boilerplate" code~\citep{syb}. In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} become much more time-consuming and a nightmare to maintain. 
+	This is fairly straight forward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what's known as "boilerplate" code~\citep{syb}. Boilerplate code is highly repetitive, verbose, and difficult to .  In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} become much more time-consuming and a nightmare to maintain. 
 	
 	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as:
 	
@@ -382,26 +384,26 @@ renameXVar = everywhere (mkT rename)
 	This example nicely illustrates the four key components of an SYB traversal~\citep{syb}.
 
 	\begin{itemize}
-		\item The function that performs the ``interesting" part of the traversal
+		\item The function that performs the "interesting" part of the traversal
 		\item A type extension for that function
 		\item A generic traversal combinator
 		\item The data type to be traversed must be an instance of the Typeable and Data classes
 	\end{itemize}
 	
-	From the example mentioned previously the ``interesting" part of this traversal is the rename function because this function contains the code that actually changes the name ``x" to the name ``a." The \texttt{mkT} function extends the type of the \texttt{rename} function to \texttt{Typeable~a = > a~ -> a}. 
+	From the example mentioned previously the "interesting" part of this traversal is the rename function because this function contains the code that actually changes the name "x" to the name "a." The \texttt{mkT} function extends the type of the \texttt{rename} function to \texttt{Typeable~a = > a~ -> a}. 
 	
-	Type extension allows for the \texttt{rename} function to work over many types. After type extending \texttt{rename} it will work as expected when applied to an argument of type name, and as the identity function when applied to any other type.
+	Type extension allows for the \texttt{rename} function to work over any members of the \texttt{Typeable} class rather than just \texttt{Name}s. The extended version of \texttt{rename} will work as expected when provided with an argument of type \texttt{Name}, and will act as the identity function if an argument of any other type is provided.
 	
-	The \texttt{everywhere} function is this traversal's combinator, \texttt{everywhere} applies the extended function to every node in the tree. Finally as you can see in the declaration of \texttt{Expr} that it derives both the Typeable and Data classes. A member of the Typeable class has defined a generic representation of itself and members of the Data class implement generic folding operations. Put together these two classes are what allow generic traversals. 
+	The \texttt{everywhere} function is this traversal's generic combinator, \texttt{everywhere} applies the extended rename function to every node in the tree. Finally as you can see in the declaration of \texttt{Expr} that it derives both the Typeable and Data classes. A member of the Typeable class has defined a generic representation of itself and members of the Data class implement generic folding operations. Put together these two classes are what allow generic traversals. 
 	
-The idea of type extension and needing data types to be members of certain classes are requirements of Haskell's typing system. The other two components of an SYB traversal correspond with the term rewriting function (the ``interesting" part of our problem), and how the tree will be traversed (the generic combinator) from Stratego.
+The idea of type extension and needing data types to be members of certain classes are requirements of Haskell's typing system. The other two components of an SYB traversal correspond with the term rewriting function (the "interesting" part of our problem), and how the tree will be traversed (the generic combinator) from Stratego.
 	  
 \subsection{Strafunski-StrategyLib}\label{strafunskiSection}
 Strafunski is a library of language processing components~\citep{strafunski}. Strafunski looks at generic traversals as a generic function that can traverse into terms, mixing uniform and type-specific behaviour. This type of generic function is known as a functional strategy~\citep{strafunski}.
 
-Strafunski has two different types of strategy combinators, type preserving and type unifying~\citep{strafunski}. A type preserving, or ``\texttt{TP}" strategy when applied to some term of type \texttt{t} will return type \texttt{t}, whereas type unifying (\texttt{TU}) strategies return a different type. All of Strafunski's combinators are qualified with either a \texttt{TU} or \texttt{TP} postfix. In general the type preserving strategies are used for transformation whereas type unifying strategies are for analysis. 
+Strafunski has two different types of strategy combinators, type preserving and type unifying~\citep{strafunski}. A type preserving, or "\texttt{TP}" strategy when applied to some term of type \texttt{t} will return type \texttt{t}, whereas type unifying (\texttt{TU}) strategies return a different type. All of Strafunski's combinators are qualified with either a \texttt{TU} or \texttt{TP} postfix. In general the type preserving strategies are used for transformation whereas type unifying strategies are for analysis. 
 
-The most common pattern in strategic programming involves systhesizing a ``rewrite step" with a traversal combinator~\citep{strafunski}. The rewrite step is first defined by the user to be type specific. Then this step is ``lifted" to a generic rewrite step using the built in functions $adhocTU$ or $adhocTP$. Finally this generic rewrite step can be passed to a traversal combinator such as $full\_tdTU$ which visits all nodes from the top of the tree downwards, in a type unifying manner.
+The most common pattern in strategic programming involves systhesizing a "rewrite step" with a traversal combinator~\citep{strafunski}. The rewrite step is first defined by the user to be type specific. Then this step is "lifted" to a generic rewrite step using the built in functions $adhocTU$ or $adhocTP$. Finally this generic rewrite step can be passed to a traversal combinator such as $full\_tdTU$ which visits all nodes from the top of the tree downwards, in a type unifying manner.
 
 \section{ghc-exactprint}
 
@@ -409,7 +411,7 @@ After using generic programming to transform the parsed abstract syntax, HaRe ne
 
 Prior to GHC version 7.10.1 the location of certain keywords (such as $do$ and $let$)was lost after parsing, this made exactly reproducing a Haskell file that was parsed using GHC's parser impossible. GHC's first 7.10 release added annotations of certain syntax elements that had previously not been reflected in the parsed abstract syntax~\citep{apiAnns}. 
 
-Even with every syntax element's position being recorded, printing a module after the AST has been modified is not easy. Many AST elements are ``located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
+Even with every syntax element's position being recorded, printing a module after the AST has been modified is not easy. Many AST elements are "located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
 
 
 
@@ -434,7 +436,7 @@ A brief outline of this chapter:
 \label{applicative}
 The previous chapter introduced the concept of a functional data refactoring and gave two examples, introducing a type synonym and generalising Maybe to MonadPlus. This chapter will cover another generalising refactoring in more depth, rewriting monadic functions to use applicative functors. 
 
-In their 2008 functional pearl ``Applicative programming with effects" Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are also known as Applicative Functors~\citep{mcbrideIdioms}. Idioms provide a way to run effectful computations and collect them in some way. They are more expressive than functors but more general than Monads, further work was done in~\citep{arrowsAndIdioms} to prove that Idioms are also less powerful than Arrows.
+In their 2008 functional pearl "Applicative programming with effects" Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are also known as Applicative Functors~\citep{mcbrideIdioms}. Idioms provide a way to run effectful computations and collect them in some way. They are more expressive than functors but more general than Monads, further work was done in~\citep{arrowsAndIdioms} to prove that Idioms are also less powerful than Arrows.
 
 Applicative functors were implemented in GHC as the typeclass \texttt{Applicative}. An interesting part of the history of GHC is that despite McBride and Paterson proving in their original functional pearl that all monads are also applicative functors, however,  GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
 
@@ -459,7 +461,7 @@ pure :: a -> f a
 (<*>) :: f (a -> b) -> f a -> f b
 \end{lstlisting}
 
-The \texttt{pure} function is the equivalent of monad's \texttt{return}, it simply lifts a value into the applicative context. The other function \texttt{(<*>)} (which is typically pronounced ``applied over" or just ``apply"). Apply take in two arguments, both of which are applicative values. The first argument is function within an applicative context from types a to b, and the second argument is of type a. Apply returns a value of type b inside of the same functional context. Apply ``extracts" the function from the first argument and the value from the second argument and applies it to the function, all within whatever the applicative context is.
+The \texttt{pure} function is the equivalent of monad's \texttt{return}, it simply lifts a value into the applicative context. The other function \texttt{(<*>)} (which is typically pronounced "applied over" or just "apply"). Apply take in two arguments, both of which are applicative values. The first argument is function within an applicative context from types a to b, and the second argument is of type a. Apply returns a value of type b inside of the same functional context. Apply "extracts" the function from the first argument and the value from the second argument and applies it to the function, all within whatever the applicative context is.
 
 \subsection{Other useful functions}
 
@@ -499,7 +501,7 @@ f <$> is_1 <*> ... <*> is_n
 This is the form that most programs will take when they are refactored from a monadic style. 
 
 
- Context-free parsing is a good use case of the applicative type and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>} e.g. ``\$4.59" or ``\textsterling64.56".
+ Context-free parsing is a good use case of the applicative type and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>} e.g. "\$4.59" or "\textsterling64.56".
  
  \begin{lstlisting}[frame=tblr]
  data Currency = Dollar
@@ -595,7 +597,7 @@ parseStr :: CharParser() String
 parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
 \end{lstlisting}
 
-The refactoring goes through the monadic version of the function line by line and composes computations with the applicative operators. In this case the first line of the \texttt{do} block does not affect the final result so it is followed by the \texttt{*>} which performs the action on the left hand side of the operator but discards that value. The next line's value is assigned to the variable str which is returned by the function so this means that on both sides of this computation the operator that composes it with its neighbours will have to ``point" to it as well\footnote{This means \texttt{<*>} could occur on both sides, \texttt{*>} on the left, or \texttt{<*} on the right of the computation}. To determine which operator needs to be used on the right of the call to \texttt{many1} the refactoring needs to look at the next line and see if it also contributes a value to the final result. If it does then it and \texttt{many1} will be composed by the \texttt{<*>} operator, but since \texttt{char} doesn't, the operator between the call to \texttt{many1} and the second call to \texttt{char} becomes \texttt{<*} which discards the value \texttt{char} returns.
+The refactoring goes through the monadic version of the function line by line and composes computations with the applicative operators. In this case the first line of the \texttt{do} block does not affect the final result so it is followed by the \texttt{*>} which performs the action on the left hand side of the operator but discards that value. The next line's value is assigned to the variable str which is returned by the function so this means that on both sides of this computation the operator that composes it with its neighbours will have to "point" to it as well\footnote{This means \texttt{<*>} could occur on both sides, \texttt{*>} on the left, or \texttt{<*} on the right of the computation}. To determine which operator needs to be used on the right of the call to \texttt{many1} the refactoring needs to look at the next line and see if it also contributes a value to the final result. If it does then it and \texttt{many1} will be composed by the \texttt{<*>} operator, but since \texttt{char} doesn't, the operator between the call to \texttt{many1} and the second call to \texttt{char} becomes \texttt{<*} which discards the value \texttt{char} returns.
 
 This is a fairly simple function to convert to applicative style. Let's look at another example that adds in more complexity by having multiple computations that contribute to the final value of the function. This function comes from the money parser that was used in~\ref{sec:appProgStyle} as well. 
 \pagebreak
@@ -623,7 +625,7 @@ parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
                            return d}))
 \end{lstlisting}
 
-On the left hand side of the chain of applicative actions there is a call to a pure operation, in this case the constructor \texttt{M}. Any pure computations that ``collect" the values returned from applicative computations will appear on the left of the chain of operations. The pure computations are composed with applicative computations with the \texttt{<\$>} operator which lifts the computation into the applicative context. The three computations are composed together with the \texttt{<*>} operator because they all contribute to the final result of \texttt{parseMoney}.
+On the left hand side of the chain of applicative actions there is a call to a pure operation, in this case the constructor \texttt{M}. Any pure computations that "collect" the values returned from applicative computations will appear on the left of the chain of operations. The pure computations are composed with applicative computations with the \texttt{<\$>} operator which lifts the computation into the applicative context. The three computations are composed together with the \texttt{<*>} operator because they all contribute to the final result of \texttt{parseMoney}.
 
 The chains of applicative computations can get more complicated. The following snippet of code parses a single in a JSON object which consists of a string key and a value which can be any valid JSON value, separated by a colon, and stores the key and value in a tuple. 
 
@@ -923,11 +925,11 @@ This section covers some of the relevant previous work done in the fields of ref
 
 \subsection{Type and transform systems}
 
-Work on a theoretical type changing program transformation system is being done currently at Utrecht University. They have proposed a type changing program transformation system known as a ``type-and-transform" system~\citep{typeAndTransform}. This type-and-transform system can transform standard Haskell lists to Hughes' lists and perform stream fusion~\citep{typeAndTransform}. The type-and-transform system was expanded in~\citep{typeAndTransformPatterns} to properly transform Haskel lists to the $Seq~a$ type found in the \textit{Data.Sequence} module. At this point the type-and-transform system only works on a subset of the Haskell language~\citep{typeAndTransform}
+Work on a theoretical type changing program transformation system is being done currently at Utrecht University. They have proposed a type changing program transformation system known as a "type-and-transform" system~\citep{typeAndTransform}. This type-and-transform system can transform standard Haskell lists to Hughes' lists and perform stream fusion~\citep{typeAndTransform}. The type-and-transform system was expanded in~\citep{typeAndTransformPatterns} to properly transform Haskel lists to the $Seq~a$ type found in the \textit{Data.Sequence} module. At this point the type-and-transform system only works on a subset of the Haskell language~\citep{typeAndTransform}
 
 \subsection{Automatic Monadification}\label{erwigMonad}
 
-Another type of program transformation that many people are interested in involves the ``monadification" of code. Monads are necessary for Haskell code to perform any operation that would typically cause side-effects (I/O, state, etc.). This means that a system that can transform code without monads to code with monads, would be highly desirable to the Haskell community.
+Another type of program transformation that many people are interested in involves the "monadification" of code. Monads are necessary for Haskell code to perform any operation that would typically cause side-effects (I/O, state, etc.). This means that a system that can transform code without monads to code with monads, would be highly desirable to the Haskell community.
 
 Erwig and Ran have proposed just such a system in~\citep{monadification}. Their system can be broken down into three steps. \textit{Navigating} involves finding the expression that will be returned by the function. Next \textit{binding} identifies recursive calls and replace the with variable binding. Finally the return is applied to the expression \textit{navigating} identified in the \textit{wrapping} step.
 
@@ -945,7 +947,7 @@ Erlang is another functional programming language that puts a heavy emphasis on 
  
 Several projects exist to improve the quality of Erlang code. RefactErl is a source code analysis tool that also supports a few refactorings~\citep{refactErlWiki}. Tidier is an automated Erlang refactorer. Unlike many of the tools discussed in this paper Tidier runs without user input, cleaning up Erlang source code automatically~\citep{erlangTidier}.
 
-Wrangler is another refactoring tool for Erlang made by Huiqing Li and Simon Thompson here at the University of Kent~\citep{refacTools}. In addition to refactorings Wrangler also provides ``decision support tools" that detect code smells and highlight other issues within an Erlang project. Wrangler is also user extensible, it supports a domain-specific language allowing users to script their own complex refactorings~\citep{refacTools}. Wrangler has been integrated into the Emacs and Eclipse IDEs.
+Wrangler is another refactoring tool for Erlang made by Huiqing Li and Simon Thompson here at the University of Kent~\citep{refacTools}. In addition to refactorings Wrangler also provides "decision support tools" that detect code smells and highlight other issues within an Erlang project. Wrangler is also user extensible, it supports a domain-specific language allowing users to script their own complex refactorings~\citep{refacTools}. Wrangler has been integrated into the Emacs and Eclipse IDEs.
 
 \subsubsection{Haskell}
 
