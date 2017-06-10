@@ -346,7 +346,6 @@ Stratego is an untyped transformation system and so was unsuitable for working w
 
 	Suppose there was a simple expression language that contained integers, integer addition, assignment, and variables. This language is represented by the type defined below.
 	
-	%\clearpage
 	\begin{verbatim}
 type Name = String
 
@@ -354,16 +353,18 @@ data Expr =
      Value Int
    | Var Name
    | Add Expr Expr
-   | Assign Char Expr
-      deriving(Data,Typeable,Show)
+   | Assign Name Expr
+      deriving(Data,Typeable)
 	\end{verbatim}
 	
-	If you wanted to define a function that renamed the variable called "x" to one called "a" it would look something like this:
+	If you wanted to define a function that renamed the variable called "x" to be called "a" it would look something like this:
 	
 	\begin{verbatim}
 renameXVar :: Expr -> Expr
 renameXVar (Var "x") = Var "a"
-renameXVar (Assign c e) = Assign c (renameXVar e)
+renameXVar (Assign c e) = 
+	| c == "x" = Assign "a" (renameXVar e)
+	| otherwise = Assign c (renameXVar e)
 renameXVar (Add e1 e2) = Add (renameXVar e1) (renameXVar e2)
 renameXVar v = v
 	\end{verbatim}
@@ -373,6 +374,8 @@ renameXVar v = v
 	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as:
 	
 	\begin{verbatim}
+import Data.Generics	
+	
 rename :: Name -> Name
 rename "x" = "a"
 rename n = n
@@ -394,16 +397,18 @@ renameXVar = everywhere (mkT rename)
 	
 	Type extension allows for the \texttt{rename} function to work over any members of the \texttt{Typeable} class rather than just \texttt{Name}s. The extended version of \texttt{rename} will work as expected when provided with an argument of type \texttt{Name}, and will act as the identity function if an argument of any other type is provided.
 	
-	The \texttt{everywhere} function is this traversal's generic combinator, \texttt{everywhere} applies the extended rename function to every node in the tree. Finally as you can see in the declaration of \texttt{Expr} that it derives both the Typeable and Data classes. A member of the Typeable class has defined a generic representation of itself and members of the Data class implement generic folding operations. Put together these two classes are what allow generic traversals. 
+	The \texttt{everywhere} function is this traversal's generic combinator, \texttt{everywhere} applies a generic function to every node in the tree. Finally as you can see in the declaration of \texttt{Expr} derives both the Typeable and Data classes so it can be traversed by \texttt{everywhere}. A member of the Typeable class has defined a generic representation of itself and members of the Data class implement generic folding operations. Put together these two classes are what allow a data type to be generically traversed. 
 	
-The idea of type extension and needing data types to be members of certain classes are requirements of Haskell's typing system. The other two components of an SYB traversal correspond with the term rewriting function (the "interesting" part of our problem), and how the tree will be traversed (the generic combinator) from Stratego.
+\subsubsection{Types of Generic Algorithms}
+
+SYB defines three types of generic algorithms, transformations, queries, and monadic transformations. The \texttt{rename} example from the previous section is an example of a transformation. Transformations preserve the type of the structure that is traversed. Queries, on the other hand, are type unifying algorithms. Queries are good for summarizing information contained in a data structure. You would use a query, for example, to traverse an expression and collect all of it's the bound variables.
+
+It is also useful a lot of the time to do transformations from within some monadic context. This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by a \texttt{GhcMonad}.  
 	  
 \subsection{Strafunski-StrategyLib}\label{strafunskiSection}
-Strafunski is a library of language processing components~\citep{strafunski}. Strafunski looks at generic traversals as a generic function that can traverse into terms, mixing uniform and type-specific behaviour. This type of generic function is known as a functional strategy~\citep{strafunski}.
+Scrap your boilerplate is not the only generic programming library for Haskell, in fact in the past 15 years many other libraries have been released~\citep{comparingGenerics}. In addition to scrap your boilerplate HaRe continues to use Strafunski-StrategyLib the generic programming library that HaRe originally used\footnote{See \ref{strafunskiSection}}~\citep{strafunski}. HaRe continues to use Strafunski because it supports several unique traversal combinators that are very useful. Much like SYB, Strafunski defines traversals by whether they unify or preserve the types of the target datatype. 
 
-Strafunski has two different types of strategy combinators, type preserving and type unifying~\citep{strafunski}. A type preserving, or "\texttt{TP}" strategy when applied to some term of type \texttt{t} will return type \texttt{t}, whereas type unifying (\texttt{TU}) strategies return a different type. All of Strafunski's combinators are qualified with either a \texttt{TU} or \texttt{TP} postfix. In general the type preserving strategies are used for transformation whereas type unifying strategies are for analysis. 
 
-The most common pattern in strategic programming involves systhesizing a "rewrite step" with a traversal combinator~\citep{strafunski}. The rewrite step is first defined by the user to be type specific. Then this step is "lifted" to a generic rewrite step using the built in functions $adhocTU$ or $adhocTP$. Finally this generic rewrite step can be passed to a traversal combinator such as $full\_tdTU$ which visits all nodes from the top of the tree downwards, in a type unifying manner.
 
 \section{ghc-exactprint}
 
