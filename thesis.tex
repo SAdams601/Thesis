@@ -404,24 +404,18 @@ renameXVar = everywhere (mkT rename)
 SYB defines three types of generic algorithms, transformations, queries, and monadic transformations. The \texttt{rename} example from the previous section is an example of a transformation. Transformations preserve the type of the structure that is traversed. Queries, on the other hand, are type unifying algorithms. Queries are good for summarizing information contained in a data structure. You would use a query, for example, to traverse an expression and collect all of it's the bound variables.
 
 It is also useful a lot of the time to do transformations from within some monadic context. This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by a \texttt{GhcMonad}.  
-	  
-\subsection{Strafunski-StrategyLib}\label{strafunskiSection}
-Scrap your boilerplate is not the only generic programming library for Haskell, in fact in the past 15 years many other libraries have been released~\citep{comparingGenerics}. In addition to scrap your boilerplate HaRe continues to use Strafunski-StrategyLib the generic programming library that HaRe originally used\footnote{See \ref{strafunskiSection}}~\citep{strafunski}. HaRe continues to use Strafunski because it supports several unique traversal combinators that are very useful. Much like SYB, Strafunski defines traversals by whether they unify or preserve the types of the target datatype. 
-
-
-
+	 
 \section{ghc-exactprint}
 
-After using generic programming to transform the parsed abstract syntax, HaRe needs to be able to write the modified code. A challenging part of building a refactoring tool is that a user wont want non refactored parts of their code to change at all. HaRe needs to preserve the user's comments and spacing from the source file.
+After using generic programming to transform the parsed abstract syntax, HaRe needs to be able to print the modified code. A challenging part of building a refactoring tool is that a user wont want non refactored parts of their code to change at all. HaRe needs to preserve the user's comments and spacing from the source file.
 
-Prior to GHC version 7.10.1 the location of certain keywords (such as $do$ and $let$)was lost after parsing, this made exactly reproducing a Haskell file that was parsed using GHC's parser impossible. GHC's first 7.10 release added annotations of certain syntax elements that had previously not been reflected in the parsed abstract syntax~\citep{apiAnns}. 
+Prior to GHC version 7.10.1 the location of certain keywords and punctuation (such as \texttt{do} and \texttt{let}) and user comments were lost after parsing. This made parsing and then printing an exact copy of a GHC Haskell file impossible. GHC's 7.10.1 release added annotations of the lost syntax elements that had previously not been represented in the parsed abstract syntax~\citep{apiAnns}. 
+
+The parser produces a map that associates the keyword and the source span that the keyword can be found in with that keywords exact location. This approach was taken to avoid littering the existing AST with functionally meaningless keyword data~\citep{apiAnns}. 
 
 Even with every syntax element's position being recorded, printing a module after the AST has been modified is not easy. Many AST elements are "located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
 
-
-
-\comment{incorporate the description of HaRe that I wrote for IFL paper.}
-
+Ghc-exactprint simplifies this immensely by allowing us to position elements relative to their neighbours rather than absolutely.    
 \chapter{Data refactoring in a functional context}
 This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
 
