@@ -415,7 +415,16 @@ The parser produces a map that associates the keyword and the source span that t
 
 Even with every syntax element's position being recorded, printing a module after the AST has been modified is not easy. Many AST elements are "located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
 
-Ghc-exactprint simplifies this immensely by allowing us to position elements relative to their neighbours rather than absolutely.    
+Ghc-exactprint simplifies this immensely by allowing us to position elements relative to their neighbours rather than absolutely~\citep{exactprint}. After parsing a source file HaRe takes the annotations GHC returns with the parsed abstract syntax and relativise them using ghc-exactprint. For each syntax element ghc-exactprint creates a new data type called an "\texttt{Annotation}" which contains an offset that indicates where this element should be positioned compared to the previous element. Take for example the following definition.
+
+\begin{lstlisting} 
+f a = (a+ 1 )
+\end{lstlisting}
+
+The absolute position of the plus sign is row one column nine (GHC's locations are one-based) but using ghc-exactprint we instead can think of the position of the plus sign using the offset \texttt{(0,0)} because there is no space between it and the previous element (the variable \texttt{a}). Using this system the number literal following the plus sign has an offset of (0,1) because of the single column of space before it. 
+
+The \texttt{Annotation}s are stored in a map that is keyed based on the parsed location of a syntax element and the string representation of the AST constructor. In the previous example the right hand side of the definition is located at the source span (1,7)-(1,13) which stands for row one columns seven through thirteen and GHC represents this expression with the \texttt{HsPar} which is a constructor for the \texttt{HsExpr} type. The source span and the constructor together can be combined to retrieve the annotation data associated with this bit of the AST. This syntax tree has two elements associated with it, the opening and closing parenthesis. Each of these keywords is given its own offset, which in this case is (0,0) for the opening parenthesis\footnote{The offset in this case is (0,0) and not (0,1) as you might expect because the space between the equals sign and the opening parenthesis is represented in the offset for the entire right hand side expression.} and (0,1) for the closing parenthesis. We could obviously infer from the use of the \texttt{HsPar} constructor that this tree is wrapped in parenthesis however the users specific spacing would be lost without the annotations.  
+
 \chapter{Data refactoring in a functional context}
 This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
 
