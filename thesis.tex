@@ -425,6 +425,16 @@ The absolute position of the plus sign is row one column nine (GHC's locations a
 
 The \texttt{Annotation}s are stored in a map that is keyed based on the parsed location of a syntax element and the string representation of the AST constructor. In the previous example the right hand side of the definition is located at the source span (1,7)-(1,13) which stands for row one columns seven through thirteen and GHC represents this expression with the \texttt{HsPar} which is a constructor for the \texttt{HsExpr} type. The source span and the constructor together can be combined to retrieve the annotation data associated with this bit of the AST. This syntax tree has two elements associated with it, the opening and closing parenthesis. Each of these keywords is given its own offset, which in this case is (0,0) for the opening parenthesis\footnote{The offset in this case is (0,0) and not (0,1) as you might expect because the space between the equals sign and the opening parenthesis is represented in the offset for the entire right hand side expression.} and (0,1) for the closing parenthesis. We could obviously infer from the use of the \texttt{HsPar} constructor that this tree is wrapped in parenthesis however the users specific spacing would be lost without the annotations.  
 
+\section{The current implementation of HaRe}
+
+This section has previously discussed the major dependencies that HaRe uses. The ghc-api give us access to the internal representation of Haskell, the generic programming libraries Scrap Your Boilerplate and Strafunski-StrategyLib allows HaRe to more easily work with that internal representation, and ghc-exactprint is how HaRe preserves the source files spacing when writing the output file. From this foundation we can make HaRe much more focused on refactoring rather than solving these more generic problems. This section will discuss how HaRe is implemented, what its API provides, and some general conventions that it's refactorings use.
+
+\subsection{HaRe's inner workings}
+
+\subsection{HaRe's API}
+
+\subsection{Implementing Refactorings in HaRe}
+
 \chapter{Data refactoring in a functional context}
 This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
 
