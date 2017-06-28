@@ -429,11 +429,32 @@ The \texttt{Annotation}s are stored in a map that is keyed based on the parsed l
 
 This section has previously discussed the major dependencies that HaRe uses. The ghc-api give us access to the internal representation of Haskell, the generic programming libraries Scrap Your Boilerplate and Strafunski-StrategyLib allows HaRe to more easily work with that internal representation, and ghc-exactprint is how HaRe preserves the source files spacing when writing the output file. From this foundation we can make HaRe much more focused on refactoring rather than solving these more generic problems. This section will discuss how HaRe is implemented, what its API provides, and some general conventions that it's refactorings use.
 
-\subsection{HaRe's inner workings}
+\subsection{HaRe's inner workings}\label{hareInners}
+
+The GHC API work within the \texttt{GhcMonad} that provides the features GHC needs to compile a single Haskell source file such as IO, logging warning, exception handling, and keeping track of the compilation session~\citep{ghcApi}. In reality Haskell programs consist of more than just single source files without dependencies. Projects are organised using build tools such as Cabal or Stack~\citep{cabal,stack} that handle these issues for the programmer. HaRe needs to be aware of the context that these tools provide because refactorings may change multiple modules or modify modules that import modules from external dependencies. In HaRe's case ghc-mod provides a monadic context that handles these build environments and compiler setup~\citep{ghcMod}. Within ghc-mod's context HaRe keeps track of the state of the refactoring session.
+
+\begin{lstlisting}[caption={HaRe's Monad \texttt{RefactGhc}},captionpos=b, label=refactghc] 
+newtype RefactGhc a = RefactGhc
+    { unRefactGhc :: GM.GhcModT (StateT RefactState IO) a}
+\end{lstlisting}
+
+Listing~\ref{refactghc} shows the definition of HaRe's monad that each refactoring runs in. \texttt{RefactState} is an ADT that keeps track of all the settings, abstract syntax, and filepath for refactoring a single file. When refactoring client modules you can just set the filepath in the \texttt{RefactState} to target another module and HaRe will parse and typecheck that module's information into the state.
+
+Even though there are three types of the AST the annotations are part of the parsed AST so ghc-exactprint works with the parsed AST only. Once a refactoring has finished it is expected that the parsed source and annotations will reflect all the changes that the refactoring made. HaRe's state still contains all three of the syntax trees because the renamed and typed source are useful for the additional information they contain about the source file. 
 
 \subsection{HaRe's API}
 
+Modifying and reasoning about GHC's abstract syntax and maintaining the annotations are still complex tasks even with the number of dependencies HaRe employs to simplify these tasks. HaRe defines its own API to help fill the gap between its dependencies and its refactorings. In addition to the obvious functions that are required for running a refactoring within the \texttt{RefactGhc} monad the API also includes helper functions that make handling the state easier. 
+
+HaRe also defines a large collection of program analysis and transformation functions. Pulling the binding of a top level variable from out of a module's abstract syntax is a task that many refactorings have to do so this functionality is part of HaRe's API. There are also smaller program transformations that are not in and of themselves refactorings but are common low level transformations that are useful to more than a single refactoring such as adding a new import declaration or making a function infix by wrapping it in back quotes (the \texttt{`} character).
+
+Additionally there are several transformations that don't affect the abstract syntax as much as they change the annotations that help format the document for ghc-exactprint. Functions that abstract away adding new lines before syntax elements or wrapping arbitrary expressions in parenthesis aren't meant to change the meaning of a program but are important for a refactoring to output well formatted and easy to read code. 
+
+HaRe's dependencies help abstract away the low level\footnote{Low level from the perspective of a refactoring at least.} details of a language back-end, build tools, and pretty printing. HaRe's API tries to close the gap still left between the dependencies and the refactorings themselves. In the next section we will take a look at how HaRe's refactorings are implemented.
+
 \subsection{Implementing Refactorings in HaRe}
+
+HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad and a refactoring session is expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows engineers to check the refactoring result before overwriting the existing module.}  
 
 \chapter{Data refactoring in a functional context}
 This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
