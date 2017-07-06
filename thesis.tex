@@ -284,7 +284,7 @@ The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the
 
 The overall goal of the HaRe API is to help ensure the correctness of new refactorings by limiting the amount of code required that is not related to program transformation and isolating common error sources~\citep{hareApi}. This design goal still guides development of HaRe, and many of the functions that were provided in the original HaRe API have been updated to HaRe's latest incarnation. 
  
-\section{The Current Implementation of HaRe}
+\section{Dependent technologies}
 
 As was mentioned in subsection~\ref{prog&Strafunski} HaRe's dependencies have changed somewhat in its current implementation. In particular the language frontend is composed of several projects now, the GHC API, ghc-mod, and ghc-exactprint~\citep{ghcApi,ghcMod,exactprint}. This section will describe these new dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
 
@@ -444,19 +444,21 @@ Even though there are three types of the AST the annotations are part of the par
 
 \subsection{HaRe's API}
 
-Modifying and reasoning about GHC's abstract syntax and maintaining the annotations are still complex tasks even with the number of dependencies HaRe employs to simplify these tasks. HaRe defines its own API to help fill the gap between its dependencies and its refactorings. In addition to the obvious functions that are required for running a refactoring within the \texttt{RefactGhc} monad the API also includes helper functions that make handling the state easier. 
+Modifying and reasoning about GHC's abstract syntax and maintaining the associated annotations is still a complex task even with help from HaRe's dependencies. HaRe defines its own API to help fill this gap between its dependencies and its refactorings. In addition to the obvious functions that are required for running a refactoring within the \texttt{RefactGhc} monad the API also includes helper functions that make working with the state easier. 
 
-HaRe also defines a large collection of program analysis and transformation functions. Pulling the binding of a top level variable from out of a module's abstract syntax is a task that many refactorings have to do so this functionality is part of HaRe's API. There are also smaller program transformations that are not in and of themselves refactorings but are common low level transformations that are useful to more than a single refactoring such as adding a new import declaration or making a function infix by wrapping it in back quotes (the \texttt{`} character).
+HaRe also defines a large collection of program analysis and transformation functions. For example, pulling the binding of a top level variable from a module's entire abstract syntax tree is a task that many refactorings have to do so this functionality is part of HaRe's API. There are also small program transformations that are not in and of themselves refactorings but common low level modifications that are useful to several refactorings, such as adding a new import declaration or making a function infix by wrapping it in back quotes (the \texttt{`} character).
 
-Additionally there are several transformations that don't affect the abstract syntax as much as they change the annotations that help format the document for ghc-exactprint. Functions that abstract away adding new lines before syntax elements or wrapping arbitrary expressions in parenthesis aren't meant to change the meaning of a program but are important for a refactoring to output well formatted and easy to read code. 
+Additionally there are several transformations that don't affect the abstract syntax as much as they change the annotations that format ghc-exactprint's output. Adding new lines before a syntax element doesn't change the meaning of a program but is important for a refactoring's output to be well formatted and easy to read. 
 
 HaRe's dependencies help abstract away the low level\footnote{Low level from the perspective of a refactoring at least.} details of a language back-end, build tools, and pretty printing. HaRe's API tries to close the gap still left between the dependencies and the refactorings themselves. In the next section we will take a look at how HaRe's refactorings are implemented.
 
 \subsection{Implementing Refactorings in HaRe}
 
-HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad and a refactoring session is expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows engineers to check the refactoring result before overwriting the existing module.}  
+HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad who's state is where the abstract syntax of a target module is stored. A refactoring is also expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows programmers to check the result of a refactoring before overwriting the existing module.}  
 
-\chapter{Data refactoring in a functional context}
+Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that 
+
+\chapter{Data driven refactorings in a functional context}
 This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
 
 This chapter will provide several examples of simple data refactorings for the functional language Haskell. These refactorings include transforming standard lists into Hughes lists~\citep{hughesList}, introducing a new type synonym, and generalising the Maybe type to the typeclass MonadPlus. 
