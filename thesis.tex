@@ -454,7 +454,9 @@ HaRe's dependencies help abstract away the low level\footnote{Low level from the
 
 \subsection{Implementing Refactorings in HaRe}
 
-HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad and a refactoring session is expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows engineers to check the refactoring result before overwriting the existing module.}  
+HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad and a refactoring session is expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows engineers to check the refactoring result before overwriting the existing module.}
+
+Beyond the return type everything else can be tailored to the requirements of the refactoring. 
 
 \chapter{Data refactoring in a functional context}
 This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
@@ -463,13 +465,16 @@ This chapter will provide several examples of simple data refactorings for the f
 
 A brief outline of this chapter:
 
-\begin{enumerate}
-\item Data refactorings in an Object Oriented Context
-\item Functional Data refactorings
-\item Experience report on developing refactorings with GHC-Exactprint and the GHC API
-\item Introducing a Type Synonym
-\item Generalising Maybe to MonadPlus
-\end{enumerate}
+\section{Object Oriented Data Refactorings}
+
+\section{Data Driven Refactorings in Haskell}
+
+\subsection{Introducing a Type Synonym}
+
+\section{Lists to Hughes Lists an Isomorphic Refactoring}
+
+\section{Generalisation: Refactoring Maybe to MonadPlus}
+
 
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
