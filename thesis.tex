@@ -456,6 +456,7 @@ HaRe's dependencies help abstract away the low level\footnote{Low level from the
 
 HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad who's state is where the abstract syntax of a target module is stored. A refactoring is also expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows programmers to check the result of a refactoring before overwriting the existing module.}  
 
+
 Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that 
 
 \chapter{Data driven refactorings in a functional context}
@@ -465,13 +466,16 @@ This chapter will provide several examples of simple data refactorings for the f
 
 A brief outline of this chapter:
 
-\begin{enumerate}
-\item Data refactorings in an Object Oriented Context
-\item Functional Data refactorings
-\item Experience report on developing refactorings with GHC-Exactprint and the GHC API
-\item Introducing a Type Synonym
-\item Generalising Maybe to MonadPlus
-\end{enumerate}
+\section{Object Oriented Data Refactorings}
+
+\section{Data Driven Refactorings in Haskell}
+
+\subsection{Introducing a Type Synonym}
+
+\section{Lists to Hughes Lists an Isomorphic Refactoring}
+
+\section{Generalisation: Refactoring Maybe to MonadPlus}
+
 
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
