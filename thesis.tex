@@ -164,7 +164,7 @@
 %%%%% document start
 \begin{document}
 
-\title{Data Driven Refactorings for Haskell}
+\title{Data-Driven Refactorings for Haskell}
 \author{Stephen Adams}
 \subject{Computer Science}
 \degree{PhD}
@@ -457,22 +457,21 @@ HaRe's dependencies help abstract away the low level\footnote{Low level from the
 HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad who's state is where the abstract syntax of a target module is stored. A refactoring is also expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows programmers to check the result of a refactoring before overwriting the existing module.}  
 
 
-Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that 
+Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that checking \textit{pre}conditions would be the first thing the implementation of that refactoring computes. A more efficient implementation checks preconditions throughout computation alongside the AST transformation. Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times, for example, the renaming refactoring checks for name conflicts while it descends the AST replacing the old name with the new one. Obviously this strategy only works for certain preconditions the only precondition for deleting a definition is that the target definition isn't used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not. 
 
-\chapter{Data driven refactorings in a functional context}
-This chapter will aim to introduce the concept of a type changing or data refactoring. The concept of a data refactoring is taken from~\cite{fowler}, however many of these refactorings are not applicable outside of an object oriented context. This research has adapted the idea of a refactoring that changes the datatypes a program uses to fit into the functional paradigm.
+\chapter{Data-driven refactorings}
 
-This chapter will provide several examples of simple data refactorings for the functional language Haskell. These refactorings include transforming standard lists into Hughes lists~\citep{hughesList}, introducing a new type synonym, and generalising the Maybe type to the typeclass MonadPlus. 
+Data-driven or data-oriented refactorings for functional languages have been discussed in the literature for some time. Notable examples include work on monadification(\cite{monadification},\cite{monadSurvey}) and transforming datatypes~(\cite{datatypeTransformation}, \cite{brownThesis}). One of the contributions of this thesis is to expand the scope of data-driven refactorings and refine what they are.
 
-A brief outline of this chapter:
+This chapter will first begin with a discussion of the data refactorings for object oriented languages which helped inspire this thesis then there will be a brief discussion of  
 
 \section{Object Oriented Data Refactorings}
 
-\section{Data Driven Refactorings in Haskell}
+\section{Data-Driven Refactorings in Haskell}
 
 \subsection{Introducing a Type Synonym}
 
-\section{Lists to Hughes Lists an Isomorphic Refactoring}
+\section{Lists to Hughes Lists a Refactoring for Isomorphic Types}
 
 \section{Generalisation: Refactoring Maybe to MonadPlus}
 
