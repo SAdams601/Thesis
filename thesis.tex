@@ -461,11 +461,31 @@ Beyond those two features refactorings are free to be implemented however the pr
 
 \chapter{Data-driven refactorings}
 
-Data-driven or data-oriented refactorings for functional languages have been discussed in the literature for some time. Notable examples include work on monadification(\cite{monadification},\cite{monadSurvey}) and transforming datatypes~(\cite{datatypeTransformation}, \cite{brownThesis}). One of the contributions of this thesis is to expand the scope of data-driven refactorings and refine what they are.
+\comment{Is this too introductory? Should I move this to the first chapter?}
 
-This chapter will first begin with a discussion of the data refactorings for object oriented languages which helped inspire this thesis. After that section there will be a brief discussion of how these object-oriented refactorings translate (or don't) to a functional language. From there the chapter will give several examples of data-driven refactorings for Haskell. 
+On the first day of the first programming course of my Bachelors degree my professor tasked us with defining what a "program" is. In the end the classes conclusion was that a program is a process that computes a result from some input. The input and output are the "data" that a program operates over. Through my education I've found that understanding the relationship between input and output is key to writing a program.
+
+The data a program works over highly influences its structure and definition. However one major challenge that programmers face is that there are still multiple correct solutions for many problems though many of those solutions may be suboptimal. On top of this challenge a programmers understanding of the problem could change or the requirements could evolve as the project develops. All of this means that the first implementation of a program is rarely optimal and if it is, it rarely remains optimal as time goes on. 
+
+Data-driven or data-oriented refactorings for functional languages have been discussed in the literature for some time. Notable examples include work on monadification(\cite{monadification},\cite{monadSurvey}) and transforming datatypes~(\cite{datatypeTransformation}, \cite{brownThesis}).  The goal of this thesis is to refine this class of refactorings.
+
+This chapter will introduce what I mean by "data-driven" refactorings. The chapter begins with discussion of how these object-oriented refactorings translate (or don't) to a functional language. From there the chapter will give several examples of data-driven refactorings for Haskell.
 
 \section{Object-Oriented Data Refactorings}
+
+The origins of refactoring are deeply rooted in the object-oriented world~(\cite{programRestructuring},~\cite{refactOOFrameworks}). The canonical catalogue of refactorings remains Martin Fowler's \underline{Refactoring: Improving the Design of Existing Code} ~\citep{fowler}. Fowler's catalogue of refactorings are all written in Java though he purposefully avoided using any features that were unique to Java so that the refactorings could be useful in many different programming languages.
+
+As a functional programmer when going through this catalogue of refactorings there seem to be three types of refactorings.
+
+\begin{itemize}
+	\item Refactorings that are applicable in a functional language
+	\item Refactorings not applicable to a functional language
+	\item Refactorings that could be adapted for use in a functional language
+\end{itemize}
+
+That first type of refactorings' usefulness to a functional program is easily understood. Refactorings like renaming or adding a parameter don't depend on object-oriented features of the target language. 
+
+The second type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or are meaningless in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, doesn't 
 
 \section{Data-Driven Refactorings in Haskell}
 
