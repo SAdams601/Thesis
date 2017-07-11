@@ -99,6 +99,7 @@
 \newcommand{\td}[1]{{\bf {\tt{#1}}}}
 \newcommand{\comment}[1]{\textcolor{red}{\td{{#1}}}}
 \usepackage{textcomp}
+\usepackage{csquotes}
 \lstset{
   frame=none,
   xleftmargin=2pt,
@@ -235,23 +236,23 @@ A brief outline of this chapter:
 \end{enumerate}
 }
 
-Work on HaRe started in early 2003 at the University of Kent. HaRe was originally created by Huiqing Li, Claus Reinke, and Simon Thompson~\citep{refacWebsite}. This chapter begins with a brief discussion of the original implementation of HaRe. HaRe was originally implemented to support the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is the current formal language standard but the Glasgow Haskell Compiler (GHC) has become the de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that do everything from changing the type system to adding new syntax features~ \cite{langExts}.
+Work on HaRe started in early 2003 at the University of Kent. HaRe was originally created by Huiqing Li, Claus Reinke, and Simon Thompson~\citep{refacWebsite}. This chapter begins with a brief discussion of the original implementation of HaRe. HaRe was originally implemented to support the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is the current formal language standard but the Glasgow Haskell Compiler (GHC) has become the de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that do everything from changing the type system to adding new syntax features~\citep{langExts}.
 
 
 
 \section{The original implementation of HaRe}
 
-Implementing an automated refactoring system requires several dependencies, a frontend for the language that you are targeting, a generic programming library, and a pretty printer. The language frontend is required for your refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs the modified AST. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
+Implementing an automated refactoring system has several dependencies, a frontend for the language that you are targeting, a generic programming library, and a pretty printer. The language frontend is required for the refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs the modified AST in a form recognizable by the author of the original program. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
 
 \subsection{Programatica and Strafunski}\label{prog&Strafunski}
 
-Programatica was a project at the OGI School of Science and Engineering to build tool support for validating Haskell programs~\cite{programaticaTools}. The Programatica team open sourced their frontend so that other tools could also use it~\citep{refacWebsite}. HaRe chose to use Programatica over other available front ends because it supported the full Haskell 98 standard along with a number of its extensions~\citep{huiqingThesis}. Programatica's Haskell front end is broken up into multiple components including a lexer, a parser, an abstract syntax, a module system, a type checker, and a pretty printer. Programatica's frontend allows for HaRe to focus on refactoring only rather than having to build all of these components as well.
+Programatica was a project at the OGI School of Science and Engineering to build tool support for validating Haskell programs~\citep{programaticaTools}. The Programatica team open sourced their frontend so that other tools could also use it~\citep{refacWebsite}. The HaRe team chose to use Programatica over other available front ends (such as GHC's internal front end) because it was the simplest front end that supported the full Haskell 98 standard along with a number of its extensions~\citep{huiqingThesis}. Programatica's Haskell front end is broken up into multiple components including a lexer, a parser, an abstract syntax, a module system, a type checker, and a pretty printer. Programatica's frontend allows for HaRe to focus on refactoring only rather than having to build all of these components as well.
 
-Proogramatica's abstract syntax contains 20 data types with 110 data constructors in total. Working with the syntax directly would introduce a large amount of "boilerplate" code into HaRe that would make maintenance and reusability of much more difficult~\citep{huiqingThesis}. Instead HaRe used Strafunski-StrategyLib a generic programming to traverse the abstract syntax tree (AST) of the source code. Strafunski-StrategyLib is a combinator library for generic programming~\citep{strafunski}. 
+Programatica's abstract syntax contains 20 data types with 110 data constructors in total. Working with the syntax directly would introduce a large amount of "boilerplate" code into HaRe that would make maintenance and reusability of much more difficult~\citep{huiqingThesis}. Instead HaRe used Strafunski-StrategyLib, a combinator library for generic programming, to traverse the abstract syntax tree (AST) of the source code~\citep{strafunski}. 
 
-Transforming a program often only modifies small sections of the source program's AST at one time. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used, all other sections of the AST remain unmodified. Strafunski takes code that works only on a few data constructors\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replacing it with the new name.} and "extends" it to work with every type in the AST. Strafunski also provides "strategies" that define how that extended function will be applied to the syntax tree~\citep{strafunski}\footnote{e.g. top-down or bottom-up}.
+Commonly transforming a program only modifies small sections of the source program's AST. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used; all other sections of the AST remain unmodified. A commonly used operation in Strafunski takes a function that works on a particular data type (or types)\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replacing it with the new name.} and extends it to work on all types by leaving all other types unmodified. Strafunski also provides "strategies" that define how that extended function will be applied to the syntax tree~\citep{strafunski}\footnote{e.g. top-down or bottom-up}. The using Strafunski will be discussed in more detail in section~\ref{genProg}.
 
-These two dependencies allowed the original implementation of HaRe to obtain the abstract syntax tree of source code to be refactored, traverse and transform that AST, and output the modified program. All these tasks are still things that HaRe needs to do but the dependencies that it relies on have changed somewhat. The Haskell standard was updated in 2010~\citep{haskell2010} and GHC continues to expand the number of language extensions it supports. Unfortunately Programatica has not kept up with these changes and does not support anything beyond Haskell98. At the same time GHC's own API has matured. HaRe now relies on this and a few other projects for its language frontend. For generic traversals Scrap Your Boilerplate has been added as a dependency though Strafunski-StrategyLib is still used.
+These two dependencies allowed the original implementation of HaRe to obtain the abstract syntax tree of source code to be refactored, traverse and transform that AST, and output the modified program. All these tasks are things that the current implementation of HaRe needs to do but the dependencies that it relies on have changed somewhat. The Haskell standard was updated in 2010~\citep{haskell2010} and GHC continues to expand the number of language extensions it supports. Unfortunately Programatica has not kept up with these changes and does not support anything beyond Haskell 98. At the same time GHC's own API has matured so that it can replace Programatica as HaRe's front end. HaRe now relies on this and a few other projects for its language frontend. For generic traversals "Scrap Your Boilerplate" has been added as a dependency though Strafunski-StrategyLib is still used~\citep{syb}.
  
 \subsection{HaRe's original refactorings}\label{origRefactorings}
 
@@ -259,42 +260,45 @@ HaRe's original refactorings fall into three categories, structural, module, and
 
 \subsubsection{Structural Refactorings}
 
-Structural refactorings mainly concern the name and scope of entities defined in a program~\citep{huiqingThesis}. These refactorings tend to modify functions, and smaller, sections of code. A traditional example of this is the renaming refactoring. 
+Structural refactorings principally concern the name and scope of entities defined in a program~\citep{huiqingThesis}. These refactorings modify functions, and smaller sections of code. A traditional example of this is the renaming refactoring. 
 
-Renaming is one of the most basic refactorings. The purpose of renaming is to change the name of a given identifier. This allows for the way in which you refer to your code to easily stay up to date with what your code actually does. 
+Renaming is one of the most basic refactorings. The purpose of renaming is to change the name of a given identifier. A renaming refactoring could target a variable, function name, type, or any other piece of syntax that a programmer can name. This allows for the way in which you refer to your code to easily stay up to date with what your code actually does. 
 
-Other examples of structural refactorings include delete a definition, duplicate a function, and add an argument~\citep{huiqingThesis}.
+Other examples of structural refactorings include deleting a definition, duplicating a function, and adding an argument~\citep{huiqingThesis}.
 
 \subsubsection{Module Refactorings}
 
-Module refactorings are those refactorings that concern the imports and exports of individual modules, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be "clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the "move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another.
+Module refactorings concern the imports and exports of an individual module, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be "clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the "move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another and fixes the imports and exports of any affected modules. For example if we were moving some function \texttt{foo} from module \texttt{A} to module \texttt{B} any external dependencies of \texttt{foo} need to be imported into \texttt{B} and if those dependencies are no longer used in \texttt{A} the import relevant statements should be removed. If \texttt{foo} is still being used in \texttt{A} then \texttt{A} needs to import \texttt{B} (if it does not already do so). Finally any other modules that currently depend on \texttt{foo} need to now import \texttt{B} (if it's not already imported) and remove the import of \texttt{A} (assuming none of \texttt{A}'s other definitions are used).
 
 \subsubsection{Data Type Based Refactorings}
 
 The third category of refactorings are those that are associated with data type definitions~\citep{huiqingThesis}. "Add field names" is a good example of a data-oriented refactoring.  The add field names refactoring will add field names to a data type. These names can then be used as selector functions that make extraction of a particular part of a type a simple function call. The new field names are generated by HaRe but can be renamed by the user~\citep{huiqingThesis}.
 
+The adding of field names alone seems like an unusual 
+\comment{Add description of concrete to abstract data type refactoring. Also use it to introduce composite refactoring. See: https://www.cs.kent.ac.uk/projects/refactor-fp/catalogue/ConcreteToAbstract.html and huiqings thesis}
+
 These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers an API was exposed so that other developers could implement their own refactorings~\citep{hareApi}.
 
 
-\subsection{HaRe's API}\label{hareApi}
+\subsection{The HaRe API}\label{hareApi}
 
-Early in the development cycle of HaRe it was restructured to expose an API for implementing refactorings and general Haskell program transformations~\citep{hareApi}. HaRe's API contains a collection of functions for program analysis and transformation of Haskell 98 programs. These functions along with the functionality provided by Strafunski and Programatica form the basis for implementing basic refactorings~\citep{hareApi}.
+Early in the development cycle of HaRe it was restructured to expose an API for implementing refactorings and general Haskell program transformations~\citep{hareApi}. The HaRe API contains a collection of functions for program analysis and transformation of Haskell 98 programs. These functions along with the functionality provided by Strafunski and Programatica form the basis for implementing basic refactorings~\citep{hareApi}.
 
-The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the user but with the generic programming provided by Strafunski only small sections of the AST need to be dealt with~\citep{hareApi}. Another key feature of the API was to hide layout and comment preservation allowing the programmer to focus on program transformation instead. This is done by having the API's transformation functions modify the token stream and the AST simultaneously~\citep{hareApi}. 
+The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the user but because of generic programming with Strafunski only the to be transformed parts of the AST have to be explicitly referenced in a refactoring~\citep{hareApi}. Another key feature of the API was to hide layout and comment preservation allowing the programmer to focus on program transformation instead. Each subtree in the AST is tagged with its absolute location in the source file. Any modifications to the AST will change the location of all elements that occur after the change. The API abstracts over this cascade of changes that follows even the simplest of changes. The HaRe API transformation functions modify the token stream and the AST simultaneously which keeps refactoring definitions free of this location bookkeeping ~\citep{hareApi}. 
 
-The overall goal of the HaRe API is to help ensure the correctness of new refactorings by limiting the amount of code required that is not related to program transformation and isolating common error sources~\citep{hareApi}. This design goal still guides development of HaRe, and many of the functions that were provided in the original HaRe API have been updated to HaRe's latest incarnation. 
+The overall goal of the HaRe API is to help ensure the correctness of new refactorings by limiting the amount of code required that is not related to program transformation, and isolating common error sources~\citep{hareApi}. This design goal still guides the development of HaRe, and many of the functions that were provided in the original HaRe API have been updated to HaRe's latest implementation. 
  
-\section{Dependent technologies}
+\section{Underlying technologies}
 
-As was mentioned in subsection~\ref{prog&Strafunski} HaRe's dependencies have changed somewhat in its current implementation. In particular the language frontend is composed of several projects now, the GHC API, ghc-mod, and ghc-exactprint~\citep{ghcApi,ghcMod,exactprint}. This section will describe these new dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
+As was mentioned in Section~\ref{prog&Strafunski}, HaRe's dependencies have changed somewhat in its current implementation. HaRe originally used Programatica as its front end, now the language front end is composed of several projects now, the GHC API, ghc-mod, and ghc-exactprint~\citep{ghcApi}, \citep{ghcMod}, and \citep{exactprint}. This section will describe these dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
 
 \subsection{The GHC API}
 
-Rather than being a monolithic executable the GHC is composed of several smaller components that each correspond to a separate compiler stage. The GHC executable is just a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
+Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is composed of several smaller components that each correspond to a separate compiler stage. The GHC executable consists of a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
 
-\subsubsection{Compiler stages of the GHC}\label{ghcStages}
+\subsubsection{Compiler stages of GHC}\label{ghcStages}
 
-Some of the major components and the order that the GHC uses them is show in figure~\ref{compilerStages}. This figure is not a complete list of all the components the GHC uses just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
+Some of the major components and the order that GHC uses them are shown in figure~\ref{compilerStages}. This figure is not a complete list of all the components GHC uses just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
 
 \begin{wrapfigure}{L}{0.5\textwidth}\label{compilerStages}
 	\begin{center}
@@ -303,7 +307,7 @@ Some of the major components and the order that the GHC uses them is show in fig
 	\caption{GHC Compiler stages. Adapted from \citep{ghcDesign}}
 \end{wrapfigure}
 
-The top level datatype for all of GHS's abstract syntax is \texttt{HsSyn}~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
+The top level datatype for all of the GHC abstract syntax is \texttt{HsSyn}~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
 
 \subsubsection{GHC's Name Types}
 
@@ -336,7 +340,7 @@ GHC's abstract syntax is currently made up of over 90 data types.
 
 \comment{How do I describe the AST? Do I want to go into much detail? It seems like this could help motivate the need for generic programming if done correctly.}
 
-\section{Generic programming}
+\section{Generic programming}\label{genProg}
 The need for a generic programming library, as previously discussed in section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}.
 \subsection{Generic Traversals}
 The Stratego/XT library was one of first transformation systems~\citep{stratego}. Stratego developed the idea of a transformation strategy. A transformation strategy is the combination of a term rewriting function and how that rewriting will be applied to the tree of terms. Stratego provides combinators from which term rewriting functions can be constructed and tree traversal functions\citep{stratego}.
@@ -485,7 +489,83 @@ As a functional programmer when going through this catalogue of refactorings the
 
 That first type of refactorings' usefulness to a functional program is easily understood. Refactorings like renaming or adding a parameter don't depend on object-oriented features of the target language. 
 
-The second type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or are meaningless in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, doesn't 
+The second type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or are meaningless in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, is not as ubiquitous in functional languages because many do not support objects and immutability makes a "setter" function not in the functional style. OCaml would be a notable exception to this rule. OCaml supports objects and allows the programmer to mark variables as mutable so getter and setter methods are possible.
+
+\begin{lstlisting}[caption={An OCaml object with getter and setter methods.},captionpos=b, language=caml, morekeywords={object,method},label=ocamlObj]
+let mInt init_i = object
+    val mutable i = init_i
+
+    method get_i = i
+    method set_i new_i =
+      i <- new_i
+  end
+\end{lstlisting}
+
+This OCaml object from Listing~\ref{ocamlObj} would be a valid target for this refactoring. However these methods are not as ubiquitous as they are in imperative object-oriented languages with mutable data as the default so a refactoring to remove a setter method is of limited value even for OCaml.
+
+The third type of refactoring found in~\citep{fowler} is much more interesting to a functional programmer. The specifics of these refactorings aren't directly applicable to functional programs but the underlying motivations are relevant to any programming paradigm. 
+
+For example here's the motivation for the "Replace Data Value with Object" refactoring in~\citep[pg. 175]{fowler}:
+
+\begin{displayquote}
+Often in early stages of development you make decisions about representing simple facts as simple data items. As development proceeds you realize that those simple items aren't so simple anymore. A telephone number may be represented as a string for a while, but later you realize that the telephone needs special behavior for formatting, extracting the area code, and the like. For one or two items you may put methods in the owning object, but quickly the code smells of duplication and feature envy. When the smell begins, turn the data value into an object.
+\end{displayquote}
+
+This refactoring extracts a field that was some primitive type into an object. The example from~\citep{fowler} works over an order class with a string that representing the customer that placed the order.
+
+\begin{lstlisting}[caption={The Order class}, language = java, captionpos=b,tabsize=4]
+class Order {
+	public Order (String customer) {
+		_customer = customer;	
+	}
+	
+	public String getCustomer() {
+		return _customer;
+	}
+	
+	public void setCustomer(String arg){
+		_customer = arg;	
+	}
+	
+	private String _customer;
+}
+\end{lstlisting}
+
+The refactoring creates a new customer class that just has a string field with a getter method as seen in Listing~\ref{custCls}. The customer class doesn't add any additional features but the extra layer of abstraction sets up the code base for further development. The customer object could have fields added that represent contact info or further demographic information without polluting the order class with non order relevant data.
+
+\begin{lstlisting}[caption={The result of the Replace Data Value with Object refactoring when applied to the customer field of the order class.}, language = java, captionpos=b,label=custCls,tabsize=4]
+class Order {
+	public Order (String customer) {
+		_customer = new Customer(customer);	
+	}
+	
+	public String getCustomer() {
+		return _customer.getName();
+	}
+	
+	public void setCustomer(String arg){
+		_customer = new Customer(arg);	
+	}
+	
+	private Customer _customer;
+}
+
+class Customer {
+	public Customer(String name){
+		_name = name;
+	}
+	
+	public String getName() {
+		return _name;
+	}
+	
+	private final String _name;
+}
+\end{lstlisting}
+
+Functional programmers have to make similar data representation decisions as the object-oriented programmer. At the start of a project representing a customer just by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction is required. 
+
+The type of types that Object-oriented languages support is normally quite limited. Java, for example, has a set of primitive types that are not user extensible, interfaces 
 
 \section{Data-Driven Refactorings in Haskell}
 
@@ -549,7 +629,7 @@ The next section will cover how these functions can be used in an applicative st
 \section{The Applicative Programming Style}
 \label{sec:appProgStyle}
 
-In~\cite{mcbrideIdioms} the authors prove that any expression built from the applicative combinators can take the following canonical form:
+In~\citep{mcbrideIdioms} the authors prove that any expression built from the applicative combinators can take the following canonical form:
 
 \begin{lstlisting}[frame=tblr]
 pure f <*> is_1 <*> ... <*> is_n
@@ -578,7 +658,7 @@ parseMoney :: CharParser () Money
 parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
  \end{lstlisting}
  
-The \texttt{parseMoney} function is in the canonical form as defined by~\cite{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount separately. 
+The \texttt{parseMoney} function is in the canonical form as defined by~\citep{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount separately. 
 
 The only difference between \texttt{readWhole} and \texttt{readDecimal} is that \texttt{readDecimal} has to consume the decimal point before reading the number. Instead of duplicating that number code let's perform a small refactoring to lift the parsing of the decimal into the \texttt{parseMoney} function which will allow us to reuse the \texttt{readWhole} function.
 
@@ -641,7 +721,7 @@ Another possible application of this refactoring applies to parts of code used t
 
 \section{Refactoring Monadic Programs to Applicative}
 \label{sec:appRefact}
-This section will cover the mechanics of refactoring monadic code to the applicative style. Many of these examples are taken from the parser for money amounts and a JSON parser. The full source of these parse can be found in~\cite{moneyParse} and~\cite{jsonParser}.
+This section will cover the mechanics of refactoring monadic code to the applicative style. Many of these examples are taken from the parser for money amounts and a JSON parser. The full source of these parse can be found in~\citep{moneyParse} and~\citep{jsonParser}.
 
 Take for example the following parser that parses strings that begin and end with double quotes.
 
@@ -866,7 +946,7 @@ fib n = do
 
 The new code could then be rewritten very easily (just by changing the type signature) to be within another monad. This allows for a developer to quickly create programs that can take advantage of monadic features such as IO or state. The monadic code could also be generalised to use applicatives with the refactoring detailed in chapter~\ref{applicative} but I also hope to develop a more straightforward way to introduce applicatives for this chapter.
 
-Finally another abstraction that would seem to have quite a bit of potential for automatic introduction is the \texttt{Arrow} typeclass. Arrows were originally introduced as a more general abstraction to monads in~\cite{genMonadsArrows}. The full relationship between arrows, monads, and applicative functors was more fully described in~\cite{arrowsAndIdioms}. Given the relationship between these three typeclasses I believe it will be worth exploring introducing arrows as well. A possible outline of this chapter would be:
+Finally another abstraction that would seem to have quite a bit of potential for automatic introduction is the \texttt{Arrow} typeclass. Arrows were originally introduced as a more general abstraction to monads in~\citep{genMonadsArrows}. The full relationship between arrows, monads, and applicative functors was more fully described in~\citep{arrowsAndIdioms}. Given the relationship between these three typeclasses I believe it will be worth exploring introducing arrows as well. A possible outline of this chapter would be:
 
 \begin{enumerate}
 \item Introducing the Applicative style
