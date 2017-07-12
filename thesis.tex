@@ -172,7 +172,15 @@
 
 \begin{preface}
 \section{Abstract}
-This mini-thesis tells you all you need to know about...
+
+Refactoring is the process of changing the internal structure of a program without changing its external behaviour. Refactoring increases code quality and reduces its technical debt. However, refactoring by hand is time consuming and error-prone. This makes automated refactoring tools very useful.
+
+Agile software development allows for software to evolve slowly over time. This evolution changes how a program processes, abstracts over, and views its data. This evolution, though necessary, comes with the cost of technical debt. As technical debt increases changes to a code base become more difficult. Refactoring is one of the primary ways to  reduce technical debt. 
+
+There exist refactorings that specifically help software to evolve its data model, however these refactorings are specific to the object-oriented programming paradigm. Haskell is a strongly typed, pure functional programming language. Haskell's rich type system allows for complex and powerful data models and abstractions. This thesis reports on work done to design and automate refactorings that help Haskell programmers develop these abstractions.
+
+This work also discussed the current design and implementation of HaRe (the \textit{Ha}skell \textit{Re}factorer). HaRe now supports the Glasgow Haskell Compiler's implementation of the Haskell 2010 standard and its extensions. 
+
 \section{Acknowledgements}
 I would like to thank...
 \end{preface}
@@ -563,9 +571,9 @@ class Customer {
 }
 \end{lstlisting}
 
-Functional programmers have to make similar data representation decisions as the object-oriented programmer. At the start of a project representing a customer just by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction is required. 
+Functional programmers have to make similar data representation decisions as the object-oriented programmer. At the start of a project representing a customer just by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction is required.
 
-The type of types that Object-oriented languages support is normally quite limited. Java, for example, has a set of primitive types that are not user extensible, interfaces 
+This section introduced how object-oriented refactorings help build up the data model over a projects lifetime. In an object-oriented language the primary abstraction method is to just introduce additional objects. These sorts of refactorings for a language with a rich type system like  Haskell offers many more choices for evolving a system's data model. The rest of this chapter will describe refactorings for Haskell that support this evolution.  
 
 \section{Data-Driven Refactorings in Haskell}
 
