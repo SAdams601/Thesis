@@ -483,7 +483,7 @@ Data-driven or data-oriented refactorings for functional languages have been dis
 
 This chapter will introduce what I mean by "data-driven" refactorings. The chapter begins with discussion of how these object-oriented refactorings translate (or don't) to a functional language. From there the chapter will give several examples of data-driven refactorings for Haskell.
 
-\section{Object-Oriented Data Refactorings}
+\section{Object-Oriented Data Refactorings}\label{ooRefs}
 
 The origins of refactoring are deeply rooted in the object-oriented world~(\cite{programRestructuring},~\cite{refactOOFrameworks}). The canonical catalogue of refactorings remains Martin Fowler's \underline{Refactoring: Improving the Design of Existing Code} ~\citep{fowler}. Fowler's catalogue of refactorings are all written in Java though he purposefully avoided using any features that were unique to Java so that the refactorings could be useful in many different programming languages.
 
@@ -577,7 +577,74 @@ This section introduced how object-oriented refactorings help build up the data 
 
 \section{Data-Driven Refactorings in Haskell}
 
+Haskell offers a rich environment for data representation. The Haskell 2010 standard defines several types that will be included in the prelude including tuples, lists, characters, strings (which are just lists of characters), several types of numbers, and the function type. Additionally programmers can construct new types with algebraic data types or rename an existing type with type synonyms. Type classes supports overloading as well. The standard library of GHC comes with many type classes that can help produce powerful abstractions~\citep{typeclassopedia}. Contrast this with how most object-oriented type systems are either unified where every type is a subclass of some top level \texttt{Object} class (e.g. C\# or Ruby) or there are a set of predefined primitive types which cannot be changed as well as the object hierarchy (e.g. C++ and Java's type systems). 
+
+These two different approaches to type systems both have pros and cons which has sparked a vigorous (and quite possibly eternal) debate. The goal of this thesis is not to add to this debate, instead hopefully a few things are clear at this point.
+
+\begin{itemize}
+	\item Data representation is a language independent problem that must be answered in every project.
+	\item The way a project manages and represents its data will (and should) evolve over a project's lifetime.
+	\item Refactoring is a structured way to support this evolution.
+	\item Refactorings for a language like Haskell need to take a different approach than those for object-oriented languages.
+\end{itemize} 
+
 \subsection{Introducing a Type Synonym}
+
+Type synonyms in Haskell, as mentioned previously, are a way to name an existing type. A simple example can be seen in listing~\ref{fooSyn}. 
+
+\begin{lstlisting}[label=fooSyn,caption={A simple type synonym.}]
+type Foo = (String, Int)
+
+f :: Foo -> Foo
+f x@(_, 0) = x
+f (str, i) = (tail str, i-1) 
+\end{lstlisting}
+
+Any place that where the \texttt{Foo} synonym is in scope the new name can be used to refer to any value of type \texttt{(String, Int)}. In fact "\texttt{Foo}s" and "\texttt{(String, Int)}s" are completely interchangeable. Introducing a synonym is a good way to quickly and simply name types to suggest their specific use in the current application.
+
+Returning to the example from~\citep{fowler} used in section~\ref{ooRefs} of an order type that keeps track of the customer who placed the order (among other things presumably but they have been left out here for brevity's sake), see listing~\ref{haskellOrder} for a Haskell implementation of this type and a function that counts how many orders a particular customer has placed in a list of orders.
+
+\begin{lstlisting}[label=haskellOrder,caption={An order algebraic data type.}]
+data Order = Order {customer :: String}
+
+numberOfOrdersFor :: [Order] -> String -> Int
+numberOfOrdersFor orders name = length (filter (\ord -> name == (customer ord)) orders)
+\end{lstlisting}
+
+The current representation of a customer as just a \texttt{String} is a bit underdeveloped as it is. Introducing a customer synonym is a simple step that sets up the code base for further development. The synonym will help clearly mark which strings in the program stand for customers and which are  not.
+
+The introduce a type synonym refactoring works by taking a type and a valid synonym name (as per the Haskel 2010 standard~\citep{haskell2010}) and creates a new synonym. In this case the type is \texttt{String} and the synonym name should be something like "\texttt{Customer}." The only precondition of the refactoring is that the new synonym name cannot cause a name clash. 
+
+\begin{lstlisting}[caption={The customer synonym}]
+type Customer = String
+\end{lstlisting}
+
+After this the next part of the refactoring involves replacing the appropriate uses of the type with the new synonym. This part of the refactoring is difficult to automate and needs to be interactive\footnote{This is not a feature of HaRe yet.}. There is no way to infer which instances of \texttt{String} (in the case of this example) should be replaced with the \texttt{Customer} synonym. The code from listing~\ref{haskellOrder} can have all of the string instances replaced by \texttt{Customer} because all the strings are being used to represent one. If there were a second function \texttt{printThankYou} which has type \texttt{String -> Order -> IO ()} which prints out a customized thank you message to the customer from the business for their order. 
+
+\begin{lstlisting}[caption={The printThankYou function}]
+printThankYou :: String -> Order -> IO ()
+printThankYou businessName order = do
+	putStrLn ("Thank you " ++ (customer order) ++ " for your order.")
+	putStrLn (businessName ++ " hopes to see you again soon!")
+\end{lstlisting}
+
+Though the first argument to \texttt{printThankYou} is a \texttt{String} it does not represent a customer therefore shouldn't be replaced by the new synonym. The implicit meaning of the first argument hasn't been encoded in the type system so the programmer has to intervene during the refactoring to make their intention for each instance of \texttt{String} clear. The final result of the refactoring can be seen in listing~\ref{orderRefact}. 
+
+\begin{lstlisting}[label=orderRefact,caption={The final result after adding a synonym for String.}]
+type Customer = String
+
+data Order = Order {customer :: Customer}
+
+numberOfOrdersFor :: [Order] -> Customer -> Int
+numberOfOrdersFor orders name = length (filter (\ord -> name == (customer ord)) orders)
+
+printThankYou :: String -> Order -> IO ()
+printThankYou businessName order = do
+	putStrLn ("Thank you " ++ (customer order) ++ " for your order.")
+	putStrLn (businessName ++ " hopes to see you again soon!")
+\end{lstlisting}
+
+ This transformation might seem like too small of a step. Wouldn't it be preferable to introduce a more powerful abstraction such as an algebraic data type; isn't a type synonym too simple to represent a customer?
 
 \section{Generalisation: Refactoring Maybe to MonadPlus}
 
