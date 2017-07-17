@@ -646,9 +646,22 @@ printThankYou businessName order = do
 
  This transformation might seem like too small of a step. Wouldn't it be preferable to introduce a more powerful abstraction such as an algebraic data type? One of the principles of the Agile Manifesto is "simplicity" which is described as "maximizing the amount of work not done is essential"~\cite{agileManifesto}. The work not done in this case is the introduction of a more complex customer representation. This small step does clearly differentiate the strings that represent customers from other strings that represent other types of data.
  
-\section{Lists to Hughes Lists a Refactoring for Isomorphic Types}
+\section{Lists to Hughes Lists a Refactoring}
 
-The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. It's also quite possible that abstractions will become quite developed before it's understood that a change is required.
+The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. As the project develops more and more decisions must be made about how data is stored and processed. Mid-development it may become necessary to change what data structure the program is used.
+
+This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily to have a formal relationship from the compiler's point of view (e.g. both implement the same type class) but certain properties should hold. 
+
+\subsection{Isomorphic Types} 
+This refactoring takes the view that a type consists of some structure and a set of functions that operate on that structure. 
+
+Two types, \textit{A} and \textit{B} are considered isomorphic if there exists a projection function \textit{proj :: A -> B}, an abstraction function \textit{abs :: B -> A}, and a set of pairs where each pair consists of one function that operates over \textit{A} and the function that performs the same operation over \textit{B}. For example, if type \textit{A} had a function \textit{add} and \textit{B} has a function \textit{insert} that both add a new element to the respective collections these two functions should be paired. 
+
+\subsection{The simplest Isomorphic refactoring}
+
+\subsection{Hughes Lists}
+
+\sumsection{Refactoring lists to Hughes lists}
 
 \begin{itemize}
 \item Motivation: sometimes we decide on wrong abstraction and need to change mid development
