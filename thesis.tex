@@ -660,7 +660,9 @@ Two types, \textit{A} and \textit{B} are considered isomorphic if there exists a
 
 \subsection{Hughes Lists}
 
-\begin{lstlisting}[caption={The standard definition of concat}]
+Concatenating two lists into a single list is a basic and key operation. The standard implementation of concat is seen in listing~\ref{concat}. 
+
+\begin{lstlisting}[caption={The standard definition of concat},label=concat]
 concat :: [a] -> [a] -> [a]
 concat [] ys = ys
 concat (_:xs) ys = concat xs ys
