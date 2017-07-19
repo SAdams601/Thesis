@@ -657,9 +657,16 @@ This refactoring takes the view that a type consists of some structure and a set
 
 Two types, \textit{A} and \textit{B} are considered isomorphic if there exists a projection function \textit{proj :: A -> B}, an abstraction function \textit{abs :: B -> A}, and a set of pairs where each pair consists of one function that operates over \textit{A} and the function that performs the same operation over \textit{B}. For example, if type \textit{A} had a function \textit{add} and \textit{B} has a function \textit{insert} that both add a new element to the respective collections these two functions should be paired. 
 
-\subsection{The simplest Isomorphic refactoring}
 
 \subsection{Hughes Lists}
+
+Concatenating two lists into a single list is a basic and key operation. The standard implementation of concat is seen in listing~\ref{concat}. 
+
+\begin{lstlisting}[caption={The standard definition of concat},label=concat]
+concat :: [a] -> [a] -> [a]
+concat [] ys = ys
+concat (_:xs) ys = concat xs ys
+\end{lstlisting}
 
 \subsection{Refactoring lists to Hughes lists}
 
