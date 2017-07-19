@@ -86,6 +86,7 @@
 %\usepackage{verbatim}
 \usepackage{url}
 \usepackage{color}
+
 \usepackage{amsmath}
 \usepackage{relsize}
 \usepackage[final]{listings}
@@ -652,31 +653,85 @@ The previous section discussed a refactoring that is most useful in the early st
 
 This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily to have a formal relationship from the compiler's point of view (e.g. both implement the same type class) but certain properties should hold. 
 
-\subsection{Isomorphic Types} 
-This refactoring takes the view that a type consists of some structure and a set of functions that operate on that structure. 
-
-Two types, \textit{A} and \textit{B} are considered isomorphic if there exists a projection function \textit{proj :: A -> B}, an abstraction function \textit{abs :: B -> A}, and a set of pairs where each pair consists of one function that operates over \textit{A} and the function that performs the same operation over \textit{B}. For example, if type \textit{A} had a function \textit{add} and \textit{B} has a function \textit{insert} that both add a new element to the respective collections these two functions should be paired. 
-
-
 \subsection{Hughes Lists}
 
-Concatenating two lists into a single list is a basic and key operation. The standard implementation of concat is seen in listing~\ref{concat}. 
+Appending two lists into a single list is a basic and key operation. The standard implementation of append is seen in listing~\ref{concat}. 
 
 \begin{lstlisting}[caption={The standard definition of concat},label=concat]
-concat :: [a] -> [a] -> [a]
-concat [] ys = ys
-concat (_:xs) ys = concat xs ys
+(++) :: [a] -> [a] -> [a]
+[]  ++ ys = ys
+(x:xs) ++ ys = x:(xs ++ ys)
 \end{lstlisting}
+
+If the first argument to append is the empty list then append can just return the second argument. In the other case append traverses the first list popping off the head of the first list and recursively appending the tail of the first list and the second argument. The performance of append is proportional to the length of its first argument. This has the unfortunate side effect where if a program builds of a list by repeatedly appending  to the end of a list the program will spend significant amounts of time traversing the beginning of the list over and over. In total the performance of this function ends up being $O(n^2)$ where $n$ is the length of the final list.
+
+Fortunately there is an alternative representative of lists that allows $O(n)$ time appends. This alternative representation was first described by John Hughes in~\citep{hughesList} (hence their name), they are also known as difference lists~\citep{realWorldHaskell}; difference lists is the name that they are provided by in Hackage~\citep{dlist}. In Hughes lists elements are stored as partial applications of the append function, these partial applications are then composed together using function composition (the \texttt{(.)} operator in Haskell). 
+
+Difference lists store the values \texttt{[1,2,3]} as \texttt{([1,2,3] ++)} which is of type \texttt{Num a => [a] -> [a]}. Appending \texttt{[4,5,6]} to \texttt{([1,2,3] ++)} first involves converting it to a difference lists (\texttt{([4,5,6] ++)} in this case) then these two difference lists can be appended with function composition which results in \texttt{([1,2,3] ++) . ([4,5,6] ++)}. 
+
+\begin{lstlisting}[caption={Building and deconstructing difference lists.},label=ghciDList]
+> let lst = ([1,2,3] ++) . ([4,5,6] ++)
+> :t lst
+lst :: Num a => [a] -> [a]
+> lst []
+[1,2,3,4,5,6]
+\end{lstlisting}
+
+As seen in listing~\ref{ghciDList}, once it comes time to retrieve the normal list from a difference list applying an empty list to the difference list and the partial applications are evaluated from right to left. Internally difference lists are just a wrapper around a function from lists to lists. Listing~\ref{dlistDef} shows the definition of the \texttt{DList} new type which contains the partial application. The \texttt{unDL} function simply removes the \texttt{DL} constructor. 
+
+\begin{lstlisting}[caption={The definition of \texttt{DList} taken from~\citep{realWorldHaskell}}, label=dlistDef]
+
+newtype DList a = DL {
+   unDL :: [a] -> [a]
+}
+
+fromList :: [a] -> DList a
+fromList xs = DL (xs ++)
+
+toList :: DList a -> [a]
+toList (DL xs) = xs []
+
+append :: DList a -> DList a -> DList a
+append xs ys = DL (unDL xs . unDL ys)
+\end{lstlisting}
+
+While difference lists support fast appends there is no such thing as a free lunch, speed ups for certain functions are paid for by slowdowns in other places. Getting the head and tail of a normal list are both constant time operations but become linear time for difference lists because the difference lists will have to be converted back to normal lists. 
+
 
 \subsection{Refactoring lists to Hughes lists}
 
-\begin{itemize}
-\item Motivation: sometimes we decide on wrong abstraction and need to change mid development
-\item Informally isomorphic types, aka sets of functions that are equivalent
-\item Section: The simplest isomorphic refactoring Maps.Lazy to Maps.Strict
-\item Section: What are hughes lists
-\item Section: Lists to Hughes List refactoring
-\end{itemize}
+For functional programmers, lists are a very familiar and versatile data structure. However, if an application requires repeated appends as described at the start of this section their performance becomes an issue. Difference lists provide a similar interface to lists but without this troublesome behaviour. This section will describe a refactoring to convert programs written using normal lists to instead use difference lists. 
+
+\subsubsection{Isomorphic Types} 
+This refactoring takes the view that a type consists of some structure and a set of functions that operate on that structure. 
+
+Two types, \textit{A} and \textit{B} are considered isomorphic if there exists a projection function \textit{proj :: A -> B}, an abstraction function \textit{abs :: B -> A}, and a set of pairs where each pair consists of one function that operates over \textit{A} and the function that performs the same operation over \textit{B}. For example, if type \textit{A} had a function \textit{add} and \textit{B} has a function \textit{insert} that both add a new element to the respective collections these two functions should be paired. The refactoring modifies the target function(s) by replacing functions using the old type with the function they are paired with. If functions exist that are not in the set of pairs then the projection and/or abstraction functions are inserted to change the type of that particular branch of the abstract syntax tree.
+
+In the list to Hughes list case the projection function is \texttt{fromList} (because it projects lists into the new type \texttt{DList}) and the abstraction function is \texttt{toList}. What to define the set of pairs as is an interesting problem with multiple "correct" solutions. The \texttt{Data.DList} module exports the following functions~\citep{dlist}.
+
+\begin{center}
+\begin{tabular}{| c | c | c |}
+  \hline
+  \texttt{apply} & \texttt{empty} & \texttt{singleton}\\
+  \hline
+  \texttt{cons} & \textbf{\texttt{snoc}} & \texttt{append} \\
+  \hline
+  \texttt{concat} & \texttt{replicate} & \textbf{\texttt{list}}\\ 
+  \hline	
+  \texttt{head} & \texttt{tail} & \texttt{unfoldr}\\ 
+  \hline  
+  \texttt{foldr} & \texttt{map} \\
+  \hline
+\end{tabular}
+\end{center}
+
+From this list the two bolded functions\footnote{(\texttt{snoc :: DList a -> a -> DList a}) appends a single element to a list}\footnote{(\texttt{list :: b -> (a -> DList a -> b) -> Dlist a -> b}) is list elimination for dlists} are the only functions without normal list counterparts. The rest of the \texttt{DList} API could be paired with equivalent list functions. However, its not necessarily a good idea for every normal list function to be refactoring to its \texttt{DList} equivalent. As was mentioned certain \texttt{DList} functions are less efficient than the corresponding normal function, the primary purpose of this refactoring is defeated if the refactored code runs slower than the original source.
+
+Fortunately different versions of the refactoring can be made by defining separate sets depending on the behaviour that is desired. For example one set could only include the \texttt{DList} constant time operations (\texttt{append}, \texttt{empty}, and \texttt{cons}) and another set could include all possible pairings. 
+
+\subsubsection{Transforming functions}
+
+The refactoring breaks into three different cases depending on the type of the target function. 
 
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
