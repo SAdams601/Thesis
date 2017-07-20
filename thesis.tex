@@ -222,6 +222,14 @@ It is also not unusual for functional refactorings to be substantially different
 
 \comment{TODO}
 
+\section{Justification and limitations of tooling}
+
+A refactoring tool can only do so much the user needs to be "sufficiently smart" \comment{elaborate on this}
+
+For tools to be successful they just have to bridge the gap between the original code to a version of the code that the programmer is willing to modify to what they want. Without the tool the transformation would be too risky or monotonous for the user to attempt alone.
+
+  
+
 \section{Thesis Outline}
 
 \comment{TODO}
@@ -646,6 +654,30 @@ printThankYou businessName order = do
 \end{lstlisting}
 
  This transformation might seem like too small of a step. Wouldn't it be preferable to introduce a more powerful abstraction such as an algebraic data type? One of the principles of the Agile Manifesto is "simplicity" which is described as "maximizing the amount of work not done is essential"~\cite{agileManifesto}. The work not done in this case is the introduction of a more complex customer representation. This small step does clearly differentiate the strings that represent customers from other strings that represent other types of data.
+
+
+\section{Maybe to MonadPlus}
+ 
+A common data refactoring is generalisation. Generalisation is taking code written for a specific type and rewriting it to use a more general type. The newly generic code is applicable in more places and can help reduce code duplication.\underline{Refactoring} dedicates an entire chapter to generalisation cataloguing refactorings like "extract subclass" and "extract interface"~\citep[pg. 319]{fowler}. 
+
+Generalisations for object-oriented languages either move functionality up in a hierarchy (as in "push method up") or change the hierarchy by adding classes (e.g. "extract subclass"). Object-oriented languages have a single hierarchy since every object inherits from a root class typically just called \texttt{Object}. Functional languages don't have this single unified hierarchy, but smaller hierarchies do exist because type classes can inherit from one another. 
+
+This thesis will outline two generalisations, one makes code of a specific type work over a type class instead (this section), the other generalises code of one type class to use a class higher the hierarchy(covered in chapter~\ref{applicative}). This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use \texttt{MonadPlus m => m a}. 
+
+\begin{lstlisting}[caption={The \texttt{Maybe} data type definition and \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}]
+data Maybe a = Nothing
+                 | Just a
+                 
+instance MonadPlus Maybe where
+   mzero = Nothing
+   Nothing `mplus` r = r
+   l          `mplus` _ = l
+                 
+class Monad m => MonadPlus m where
+   mzero :: m a
+   mplus :: m a -> m a -> m a
+\end{lstlisting}
+ 
  
 \section{Lists to Hughes Lists a Refactoring}
 
@@ -733,24 +765,23 @@ Fortunately different versions of the refactoring can be made by defining separa
 
 The refactoring breaks into three different cases depending on the type of the target function. 
 
-In section~\ref{introSyn} there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about what the user's intent is or directly solicit information from them. This refactoring is no different, for any given function there multiple correct definitions. Take for example the function \texttt{sepComma} in listing~\ref{sepComma}.
+In section~\ref{introSyn} there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about what the user's intent is or directly solicit information from them. This refactoring is no different, for any given function there multiple correct definitions. Take for example the function \texttt{insComma} in listing~\ref{insComma}.
 
-\begin{lstlisting}[label=sepComma,caption={}]
-sepComma :: String -> String -> String
-sepComma s1 s2 = s1 ++ "," ++ s2
+\begin{lstlisting}[label=insComma,caption={}]
+insComma :: String -> String -> String
+insComma s1 s2 = s1 ++ "," ++ s2
 \end{lstlisting}  
 
-When refactoring both of the arguments to and the result type of \texttt{sepComma} to all become \texttt{DList Char} there are multiple ways to refactor this function. Listing~\ref{commaRef} shows two possibilities, which one should the refactoring produce and why?
+When refactoring both of the arguments to and the result type of \texttt{insComma} to all become \texttt{DList Char} there are multiple ways to refactor this function. Listing~\ref{commaRef} shows two possibilities, which one should the refactoring produce and why?
 
-In making this decision the refactoring infers 
+To make this decision, the refactoring must infer that because this function is being refactored to use the new type the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends whereas the second example converts the two arguments into lists appends everything together and then converts the result back into a \texttt{DList}
 
 \begin{lstlisting}[label=commaRef,caption={}]
-sepComma_1 :: DList Char -> DList Char -> DList Char
-sepComma_1 s1 s2 = s1 `append` fromList (",") `append` s2
+insComma_1 :: DList Char -> DList Char -> DList Char
+insComma_1 s1 s2 = s1 `append` fromList (",") `append` s2
 
-sepComma_2 :: DList Char -> DList Char -> DList Char
-sepComma_2 s1 s2 = fromList ((toList s1) ++ (",") ++ (toList s2))
-
+insComma_2 :: DList Char -> DList Char -> DList Char
+insComma_2 s1 s2 = fromList ((toList s1) ++ (",") ++ (toList s2))
 \end{lstlisting}
 
 \subsubsection{Example 1}
@@ -777,34 +808,6 @@ Since the result type is the only type of \texttt{enumerate} that is being affec
 
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
-\comment{Update this introduction. Work from previous chapter on generalisation in general}
-
-
-
-A common data refactoring is generalisation. Generalisation is taking code written for a specific type and rewriting it to use a more general type. The newly generic code is applicable in more places and can help reduce code duplication.\underline{Refactoring} dedicates an entire chapter to generalisation cataloguing refactorings like "extract subclass" and "extract interface"~\citep[pg. 319]{fowler}. 
-
-Generalisations for object-oriented languages either move functionality up in a hierarchy (as in "push method up") or change the hierarchy by adding classes (e.g. "extract subclass"). Object-oriented languages have a single hierarchy since every object inherits from a root class typically just called \texttt{Object}. Functional languages don't have this single unified hierarchy, but smaller hierarchies do exist because type classes can inherit from one another. 
-
-This thesis will outline two generalisations, one makes code of a specific type work over a type class instead (this section), the other generalises code of one type class to use a class higher the hierarchy(covered in chapter~\ref{applicative}). This section catalogues refactoring code of type \texttt{Maybe a} to become \texttt{MonadPlus m => m a}. 
-
-\begin{lstlisting}[caption={The \texttt{Maybe} data type definition and \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}]
-data Maybe a = Nothing
-                 | Just a
-                 
-instance MonadPlus Maybe where
-   mzero = Nothing
-   Nothing `mplus` r = r
-   l          `mplus` _ = l
-                 
-class Monad m => MonadPlus m where
-   mzero :: m a
-   mplus :: m a -> m a -> m a
-\end{lstlisting}
-
-The \texttt{Maybe} type is a simple way to represent a computation that could fail. If the computation failed then \texttt{Nothing} is returned. Otherwise the computed result is returned by the \texttt{Just} constructor. Computations fail all the time 
-
-
-\comment{Start of chapter}
 
 The previous chapter introduced the concept of a functional data refactoring and gave two examples, introducing a type synonym and generalising Maybe to MonadPlus. This chapter will cover another generalising refactoring in more depth, rewriting monadic functions to use applicative functors. 
 
