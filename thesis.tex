@@ -589,7 +589,7 @@ These two different approaches to type systems both have pros and cons which has
 	\item Refactorings for a language like Haskell need to take a different approach than those for object-oriented languages.
 \end{itemize} 
 
-\subsection{Introducing a Type Synonym}
+\subsection{Introducing a Type Synonym}\label{introSyn}
 
 Type synonyms in Haskell, as mentioned previously, are a way to name an existing type. A simple example can be seen in listing~\ref{fooSyn}. 
 
@@ -732,6 +732,48 @@ Fortunately different versions of the refactoring can be made by defining separa
 \subsubsection{Transforming functions}
 
 The refactoring breaks into three different cases depending on the type of the target function. 
+
+In section~\ref{introSyn} there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about what the user's intent is or directly solicit information from them. This refactoring is no different, for any given function there multiple correct definitions. Take for example the function \texttt{sepComma} in listing~\ref{sepComma}.
+
+\begin{lstlisting}[label=sepComma,caption={}]
+sepComma :: String -> String -> String
+sepComma s1 s2 = s1 ++ "," ++ s2
+\end{lstlisting}  
+
+When refactoring both of the arguments to and the result type of \texttt{sepComma} to all become \texttt{DList Char} there are multiple ways to refactor this function. Listing~\ref{commaRef} shows two possibilities, which one should the refactoring produce and why?
+
+In making this decision the refactoring infers 
+
+\begin{lstlisting}[label=commaRef,caption={}]
+sepComma_1 :: DList Char -> DList Char -> DList Char
+sepComma_1 s1 s2 = s1 `append` fromList (",") `append` s2
+
+sepComma_2 :: DList Char -> DList Char -> DList Char
+sepComma_2 s1 s2 = fromList ((toList s1) ++ (",") ++ (toList s2))
+
+\end{lstlisting}
+
+\subsubsection{Example 1}
+
+The first example covers the case where the result type of a function is refactored to use \texttt{DList} instead of list. Listing~\ref{enumBefore} contains the definition of a simple algebraic data type of a tree, a function (\texttt{enumerate}) that returns an in-order list of all the tree's elements, and a function that prints a tree's enumeration to standard output. 
+
+The refactoring will affect the result type of \texttt{enumerate} so that it returns a \texttt{DList a} instead of the standard list. For this refactoring the set of pairs only needs to contain the two pairs \texttt{((++), append)} and \text{([], empty)}.
+
+\begin{lstlisting}[caption={Definition of enumerate}, label=enumBefore]
+data Tree a = Leaf
+            | Node (Tree a) a (Tree a)
+
+enumerate :: Tree a -> [a]
+enumerate Leaf = []
+enumerate (Node left x right) = (enumerate left) ++ [x] ++ (enumerate right)
+
+printEnumTree :: (Show a) => Tree a -> IO ()
+printEnumTree tree = let lst = enumerate tree in
+  print lst
+\end{lstlisting}
+
+Since the result type is the only type of \texttt{enumerate} that is being affected the refactoring needs to modify the function definition so that the right hand side of its definition is of type \texttt{DList a} instead of \texttt{[a]}. It does this by traversing the abstract syntax tree in a top down manner. 
+
 
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
