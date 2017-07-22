@@ -664,7 +664,7 @@ Generalisations for object-oriented languages either move functionality up in a 
 
 This thesis will outline two generalisations, one makes code of a specific type work over a type class instead (this section), the other generalises code of one type class to use a class higher the hierarchy(covered in chapter~\ref{applicative}). This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use \texttt{MonadPlus m => m a}. 
 
-\begin{lstlisting}[caption={The \texttt{Maybe} data type definition and \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}]
+\begin{lstlisting}[caption={The \texttt{Maybe} data type definition and \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.},label=maybeMonadPlus]
 data Maybe a = Nothing
                  | Just a
                  
@@ -678,6 +678,8 @@ class Monad m => MonadPlus m where
    mplus :: m a -> m a -> m a
 \end{lstlisting}
  
+Listing~\ref{maybeMonadPlus} contains the \texttt{Maybe} instance of and the class declaration for \texttt{MonadPlus}. The \texttt{Maybe} type represents a computation (returned wrapped in the \texttt{Just} constructor) that can fail (represented by the \texttt{Nothing} constructor). 
+
  
 \section{Lists to Hughes Lists a Refactoring}
 
