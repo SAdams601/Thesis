@@ -678,7 +678,9 @@ class Monad m => MonadPlus m where
    mplus :: m a -> m a -> m a
 \end{lstlisting}
  
-Listing~\ref{maybeMonadPlus} contains the \texttt{Maybe} instance of and the class declaration for \texttt{MonadPlus}. The \texttt{Maybe} type represents a computation (returned wrapped in the \texttt{Just} constructor) that can fail (represented by the \texttt{Nothing} constructor). 
+Listing~\ref{maybeMonadPlus} contains the \texttt{Maybe} instance of and the class declaration for \texttt{MonadPlus}. The \texttt{Maybe} type represents a computation (returned wrapped in the \texttt{Just} constructor) that can fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a typeclass for monads that also have a monoidal structure~\footnote{A monoid is a semigroup who's associative binary operation has an identity element.}. 
+
+The \texttt{MonadPlus} class helps generalise monads that contain some concept of failure and choice. The \textttt{mzero} value represents a failed computation and \texttt{mplus} represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
 
  
 \section{Lists to Hughes Lists a Refactoring}
