@@ -680,8 +680,56 @@ class Monad m => MonadPlus m where
  
 Listing~\ref{maybeMonadPlus} contains the \texttt{Maybe} instance of and the class declaration for \texttt{MonadPlus}. The \texttt{Maybe} type represents a computation (returned wrapped in the \texttt{Just} constructor) that can fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a typeclass for monads that also have a monoidal structure~\footnote{A monoid is a semigroup who's associative binary operation has an identity element.}. 
 
-The \texttt{MonadPlus} class helps generalise monads that contain some concept of failure and choice. The \textttt{mzero} value represents a failed computation and \texttt{mplus} represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
+The \texttt{MonadPlus} class helps generalise monads that contain some concept of failure and choice. The \texttt{mzero} value represents a failed computation and \texttt{mplus} represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
 
+\begin{lstlisting}[caption={\texttt{Maybe}'s monad definition}, label=maybeMonad]
+class Applicative m => Monad m where
+	return :: a -> m a
+    (>>=)  :: forall a b. m a -> (a -> m b) -> m b
+    
+instance Monad Maybe where
+	return = Just
+	
+	(Just a) >>= f = f a
+	Nothing  >>= _ = Nothing
+\end{lstlisting}
+
+This refactoring replaces \texttt{Maybe} specific code with the more general \texttt{Monad} and \texttt{MonadPlus} operations. This is done by recognizing when \texttt{Maybe} specific code is also replaceable by a more general operation. Listing~\ref{mmp1} contains a simple example of this.  
+
+\begin{lstlisting}[caption={},label=mmp1]
+inc :: Maybe Int -> Maybe Int
+inc Nothing = Nothing
+inc (Just i) = (Just (i + 1))
+\end{lstlisting}
+
+The function \texttt{inc} can be rewritten to use bind (\texttt{>>=}) instead, this is because \texttt{inc}'s definition matches \texttt{Maybe}'s definiton of bind. When \texttt{inc} is called with \texttt{Nothing} it returns \texttt{Nothing}, otherwise it modifies the value inside of the \texttt{Maybe}. This matches the behaviour of bind so \texttt{f} can be rewritten as seen in listing~\ref{mmp1Ref}.
+
+\begin{lstlisting}[caption={},label=mmp1Ref]
+inc :: Maybe Int -> Maybe Int
+inc mi = mi >>= (\i -> (return (i+1)))
+\end{lstlisting}
+ 
+The first example could be rewritten using only functionality provided by the \texttt{Monad} type class. Obviously this isn't always the case as seen in listing~\ref{mmp2}.
+
+\begin{lstlisting}[caption={}, label=mmp2]
+showNat :: Int -> Maybe String
+showNat i =
+  if (i >= 0)
+    then (Just (show i))
+    else Nothing
+\end{lstlisting}
+
+The function \texttt{showNat}, instead of taking in a \texttt{Maybe} type, takes in a pure value and returns a \texttt{Maybe} based on that value. A general version of \texttt{showNat} needs to be able to express the idea of failure that \texttt{MonadPlus} provides.
+
+\begin{lstlisting}[caption={}, label=mmp2Ref]
+showNat :: (MonadPlus m) => Int -> m String
+showNat i =
+  if (i >= 0)
+    then (return (show i))
+    else mzero
+\end{lstlisting}
+ 
+ 
  
 \section{Lists to Hughes Lists a Refactoring}
 
