@@ -714,7 +714,7 @@ The first example could be rewritten using only functionality provided by the \t
 \begin{lstlisting}[caption={}, label=mmp2]
 showNat :: Int -> Maybe String
 showNat i =
-  if (i >= 0)
+  if (i <= 0)
     then (Just (show i))
     else Nothing
 \end{lstlisting}
@@ -724,12 +724,12 @@ The function \texttt{showNat}, instead of taking in a \texttt{Maybe} type, takes
 \begin{lstlisting}[caption={}, label=mmp2Ref]
 showNat :: (MonadPlus m) => Int -> m String
 showNat i =
-  if (i >= 0)
+  if (i <= 0)
     then (return (show i))
     else mzero
 \end{lstlisting}
  
- 
+Listing~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. 
  
 \section{Lists to Hughes Lists a Refactoring}
 
