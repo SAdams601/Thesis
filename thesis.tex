@@ -656,13 +656,13 @@ printThankYou businessName order = do
  This transformation might seem like too small of a step. Wouldn't it be preferable to introduce a more powerful abstraction such as an algebraic data type? One of the principles of the Agile Manifesto is "simplicity" which is described as "maximizing the amount of work not done is essential"~\cite{agileManifesto}. The work not done in this case is the introduction of a more complex customer representation. This small step does clearly differentiate the strings that represent customers from other strings that represent other types of data.
 
 
-\section{Maybe to MonadPlus}
+\section{Generalising Maybe}
  
 A common data refactoring is generalisation. Generalisation is taking code written for a specific type and rewriting it to use a more general type. The newly generic code is applicable in more places and can help reduce code duplication.\underline{Refactoring} dedicates an entire chapter to generalisation cataloguing refactorings like "extract subclass" and "extract interface"~\citep[pg. 319]{fowler}. 
 
 Generalisations for object-oriented languages either move functionality up in a hierarchy (as in "push method up") or change the hierarchy by adding classes (e.g. "extract subclass"). Object-oriented languages have a single hierarchy since every object inherits from a root class typically just called \texttt{Object}. Functional languages don't have this single unified hierarchy, but smaller hierarchies do exist because type classes can inherit from one another. 
 
-This thesis will outline two generalisations, one makes code of a specific type work over a type class instead (this section), the other generalises code of one type class to use a class higher the hierarchy(covered in chapter~\ref{applicative}). This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use \texttt{MonadPlus m => m a}. 
+This thesis will outline two generalisations, one makes code of a specific type work over a type class instead (this section), the other generalises code of one type class to use a class higher the hierarchy(covered in chapter~\ref{applicative}). This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} or, if possible, the \texttt{Monad} type classes. 
 
 \begin{lstlisting}[caption={The \texttt{Maybe} data type definition and \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.},label=maybeMonadPlus]
 data Maybe a = Nothing
@@ -694,24 +694,42 @@ instance Monad Maybe where
 	Nothing  >>= _ = Nothing
 \end{lstlisting}
 
-This refactoring replaces \texttt{Maybe} specific code with the more general \texttt{Monad} and \texttt{MonadPlus} operations. This is done by recognizing when \texttt{Maybe} specific code is also replaceable by a more general operation. Listing~\ref{mmp1} contains a simple example of this.  
+\subsubsection{Generalising Maybe to Monad}\label{genMonad}
 
-\begin{lstlisting}[caption={},label=mmp1]
+This refactoring replaces \texttt{Maybe} specific code with the more general \texttt{Monad} and \texttt{MonadPlus} operations. This is done by recognizing when \texttt{Maybe} specific code is structured like the more general operations. Listing~\ref{mmp1} contains a simple example of this.  
+
+\begin{lstlisting}[caption={\texttt{inc}},label=mmp1]
 inc :: Maybe Int -> Maybe Int
 inc Nothing = Nothing
 inc (Just i) = (Just (i + 1))
 \end{lstlisting}
 
-The function \texttt{inc} can be rewritten to use bind (\texttt{>>=}) instead, this is because \texttt{inc}'s definition matches \texttt{Maybe}'s definiton of bind. When \texttt{inc} is called with \texttt{Nothing} it returns \texttt{Nothing}, otherwise it modifies the value inside of the \texttt{Maybe}. This matches the behaviour of bind so \texttt{f} can be rewritten as seen in listing~\ref{mmp1Ref}.
+The function \texttt{inc} can be rewritten to use the monadic operations bind (\texttt{>>=}) and \texttt{return} instead, this is because \texttt{inc}'s definition matches \texttt{Maybe}'s definiton of bind. Listing~\ref{incRewrite} has another version \texttt{inc} of so that relationship is clearer. 
 
-\begin{lstlisting}[caption={},label=mmp1Ref]
-inc :: Maybe Int -> Maybe Int
+\begin{lstlisting}[caption={\texttt{inc} rewritten to look more like bind},label=incRewrite]
+
+inc :: Maybe Int -> (Int -> Maybe Int) -> Maybe Int
+Nothing `inc` _ = Nothing
+(Just i) `inc` f = f i
+
+f i = Just (i + 1)
+\end{lstlisting}
+
+The new version of \texttt{inc} has been written using infix notation, to more closely match \texttt{Maybe}'s definition of bind. Also like \texttt{Maybe}'s bind when \texttt{inc}'s first argument is \texttt{Nothing} it just returns \texttt{Nothing}. Finally the right hand side of \texttt{inc}'s second case was lifted into a separate function and is passed to the new \texttt{inc} as an argument, just like bind.
+
+In practice the refactoring will, by default, create an anonymous function from the right hand side of the \texttt{Just} case with calls to \texttt{Just} and \texttt{Nothing} replaced with \texttt{return} and \texttt{mzero} respectively. The final refactored version of \texttt{inc} is in listing~\ref{mmp1Ref} 
+
+\begin{lstlisting}[caption={Final output from generalising \texttt{inc}},label=mmp1Ref]
+inc :: (Monad m) => m Int -> m Int
 inc mi = mi >>= (\i -> (return (i+1)))
 \end{lstlisting}
  
-The first example could be rewritten using only functionality provided by the \texttt{Monad} type class. Obviously this isn't always the case as seen in listing~\ref{mmp2}.
+ 
+\subsubsection{Generalising Maybe to MonadPlus} 
 
-\begin{lstlisting}[caption={}, label=mmp2]
+The first example could be rewritten using functionality provided only by the \texttt{Monad} type class. Obviously this isn't always the case. An example of a function that cannot be completely generalised to \texttt{Monad} is in listing~\ref{mmp2}.
+
+\begin{lstlisting}[caption={\texttt{showNat}}, label=mmp2]
 showNat :: Int -> Maybe String
 showNat i =
   if (i <= 0)
@@ -719,9 +737,9 @@ showNat i =
     else Nothing
 \end{lstlisting}
 
-The function \texttt{showNat}, instead of taking in a \texttt{Maybe} type, takes in a pure value and returns a \texttt{Maybe} based on that value. A general version of \texttt{showNat} needs to be able to express the idea of failure that \texttt{MonadPlus} provides.
+The function \texttt{showNat} takes in a pure value and returns a \texttt{Maybe}, instead of taking in a \texttt{Maybe} and returning another \texttt{Maybe} as in the previous example. The more general version of \texttt{showNat} needs to be able to express the idea of failure that \texttt{MonadPlus} encodes with the \texttt{mzero} operation. 
 
-\begin{lstlisting}[caption={}, label=mmp2Ref]
+\begin{lstlisting}[caption={\texttt{showNat} refactored}, label=mmp2Ref]
 showNat :: (MonadPlus m) => Int -> m String
 showNat i =
   if (i <= 0)
@@ -729,13 +747,17 @@ showNat i =
     else mzero
 \end{lstlisting}
  
-Listing~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. This time the refactoring can only replace the \texttt{Maybe} constructor calls with the more generic \texttt{Monad} and \texttt{MonadPlus} values. 
+Listing~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. In this case the refactoring can simply replace the \texttt{Maybe} specific calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from listing~\ref{mmp1Ref} was constructed by changing calls to \texttt{Just} to \texttt{return} and calls to \texttt{Nothing} to \texttt{mzero}. 
+
+\comment{Use the example produced by: https://github.com/SAdams601/HaRe/blob/mmp-refactoring/test/testdata/MaybeToMonadPlus/MMP2.hs.expected2 
+to introduce projection functions and tease the next section on dlists
+}
  
 \section{Lists to Hughes Lists a Refactoring}
 
 The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. As the project develops more and more decisions must be made about how data is stored and processed. Mid-development it may become necessary to change what data structure the program is used.
 
-This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily to have a formal relationship from the compiler's point of view (e.g. both implement the same type class) but certain properties should hold. 
+This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily to have a formal relationship from the compiler's point of view (e.g. both implement the same type class) but instead have a similar "interface" for to interact with. 
 
 \subsection{Hughes Lists}
 
@@ -819,7 +841,7 @@ The refactoring breaks into three different cases depending on the type of the t
 
 In section~\ref{introSyn} there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about what the user's intent is or directly solicit information from them. This refactoring is no different, for any given function there multiple correct definitions. Take for example the function \texttt{insComma} in listing~\ref{insComma}.
 
-\begin{lstlisting}[label=insComma,caption={}]
+\begin{lstlisting}[label=insComma,caption={\texttt{insComma}}]
 insComma :: String -> String -> String
 insComma s1 s2 = s1 ++ "," ++ s2
 \end{lstlisting}  
@@ -828,7 +850,7 @@ When refactoring both of the arguments to and the result type of \texttt{insComm
 
 To make this decision, the refactoring must infer that because this function is being refactored to use the new type the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends whereas the second example converts the two arguments into lists appends everything together and then converts the result back into a \texttt{DList}
 
-\begin{lstlisting}[label=commaRef,caption={}]
+\begin{lstlisting}[label=commaRef,caption={Two possible refactorings for \texttt{insComma}}]
 insComma_1 :: DList Char -> DList Char -> DList Char
 insComma_1 s1 s2 = s1 `append` fromList (",") `append` s2
 
