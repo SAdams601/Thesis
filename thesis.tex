@@ -723,7 +723,8 @@ In practice the refactoring will, by default, create an anonymous function from 
 inc :: (Monad m) => m Int -> m Int
 inc mi = mi >>= (\i -> (return (i+1)))
 \end{lstlisting}
- 
+
+It is worth saying that if the right hand side of the \texttt{Just} case from the original implementation of \texttt{inc} contained calls to \texttt{Nothing} then this function could not be generalised to \texttt{Monad}. Instead, the anonymous function would replace the occurrences of \texttt{Nothing} with \texttt{mzero} instead.  
  
 \subsubsection{Generalising Maybe to MonadPlus} 
 
