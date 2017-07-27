@@ -750,11 +750,34 @@ showNat i =
  
 Listing~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. In this case the refactoring can simply replace the \texttt{Maybe} specific calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from listing~\ref{mmp1Ref} was constructed by changing calls to \texttt{Just} to \texttt{return} and calls to \texttt{Nothing} to \texttt{mzero}. 
 
-\comment{Use the example produced by: https://github.com/SAdams601/HaRe/blob/mmp-refactoring/test/testdata/MaybeToMonadPlus/MMP2.hs.expected2 
-to introduce projection functions and tease the next section on dlists
-}
+Due to \texttt{Monad} and \texttt{MonadPlus} both of \texttt{Maybe}'s constructors can be replaced with a more general operation. However if a function deconstructs a \texttt{Maybe} type through pattern matching it may not be generalisable. Consider the function \texttt{printResult} in listing~\ref{printRes}.
+
+\begin{lstlisting}[caption={\texttt{printResult}},label=printRes]
+printResult :: (Show a) => Maybe a -> IO ()
+printResult m =
+  case m of
+     Nothing -> putStrLn "Something went wrong"
+     (Just i) -> putStrLn $ "The result is: " ++ (show i)
+\end{lstlisting}
+
+\texttt{printResult} uses \texttt{Maybe}'s constructors for pattern matching rather than in expressions; there is no generic pattern match for \texttt{Just}. Refactoring \texttt{printResult} will require the programmer to provide a way to convert its argument to \texttt{Maybe}.
+
+\begin{lstlisting}[caption={Refactored \texttt{printResult}},label=printRef]
+printResult :: (Show a, MonadPlus m) => (m a -> Maybe a) -> m a -> IO ()
+printResult f = printResult_old . f
+   where
+	printResult_old :: Maybe a -> IO ()
+   	printResult_old m =
+   	  case m of
+  	  Nothing -> putStrLn "Something went wrong"
+  	  (Just i) -> putStrLn $ "The result is: " ++ (show i)
+\end{lstlisting}
  
-\section{Lists to Hughes Lists a Refactoring}
+Listing~\ref{printRef} show the finished refactoring of \texttt{printResult}. The original definition of \texttt{printResult} is renamed and moved into a local definition. The new \texttt{printResult} function now takes in an additional parameter, an "abstraction function." The abstraction function abstracts the new type \texttt{m a} back to the old \texttt{Maybe a}. The inverse of the abstraction function is the projection function\footnote{In this specific case the projection function is of type: \texttt{Maybe a -> m a}}. These types of functions are used more in the next section (\ref{listToDlist}).
+
+When passed the abstraction function \texttt{printResult} just converts the now genericly typed argument to \texttt{Maybe a} and then calls the original function definition.
+ 
+\section{Lists to Hughes Lists a Refactoring}\label{listToDlist}
 
 The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. As the project develops more and more decisions must be made about how data is stored and processed. Mid-development it may become necessary to change what data structure the program is used.
 
