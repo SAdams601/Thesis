@@ -901,7 +901,15 @@ printEnumTree tree = let lst = enumerate tree in
   print lst
 \end{lstlisting}
 
-Since the result type is the only type of \texttt{enumerate} that is being affected the refactoring needs to modify the function definition so that the right hand side of its definition is of type \texttt{DList a} instead of \texttt{[a]}. It does this by traversing the abstract syntax tree in a top down manner. 
+Since the result type is the only type of \texttt{enumerate} that is affected the refactoring needs to modify the function definition so that the right hand side of its definition is of type \texttt{DList a} instead of \texttt{[a]}. It does this by traversing the abstract syntax tree in a depth first manner starting with the left hand sub-tree. 
+
+\comment{MAke the first example be a case where the argument becomes DList as it is a bit simpler}
+
+\begin{itemize}
+\item print out the AST with the visualizer
+\item Go through the explode case when the first argument becomes DList
+\item Go through a case that is completely converted to DLists.
+\end{itemize}
 
 
 \chapter{Generalising Monads to Applicative}
