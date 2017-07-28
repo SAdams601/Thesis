@@ -872,7 +872,7 @@ insComma s1 s2 = s1 ++ "," ++ s2
 
 When refactoring both of the arguments to and the result type of \texttt{insComma} to all become \texttt{DList Char} there are multiple ways to refactor this function. Listing~\ref{commaRef} shows two possibilities, which one should the refactoring produce and why?
 
-To make this decision, the refactoring must infer that because this function is being refactored to use the new type the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends whereas the second example converts the two arguments into lists appends everything together and then converts the result back into a \texttt{DList}
+To make this decision, the refactoring must infer that because this function is being refactored to use the new type the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends whereas the second example converts the two arguments into lists appends everything together and then converts the result back into a \texttt{DList}. The refactoring prioritises minimising the amount of conversions introduced into the refactored program.
 
 \begin{lstlisting}[label=commaRef,caption={Two possible refactorings for \texttt{insComma}}]
 insComma_1 :: DList Char -> DList Char -> DList Char
@@ -884,9 +884,40 @@ insComma_2 s1 s2 = fromList ((toList s1) ++ (",") ++ (toList s2))
 
 \subsubsection{Example 1}
 
-The first example covers the case where the result type of a function is refactored to use \texttt{DList} instead of list. Listing~\ref{enumBefore} contains the definition of a simple algebraic data type of a tree, a function (\texttt{enumerate}) that returns an in-order list of all the tree's elements, and a function that prints a tree's enumeration to standard output. 
+The simplest case of this refactoring is modifying the type of a parameter. Consider the example in listing~\ref{median} that calculates the median of list of numbers. 
 
-The refactoring will affect the result type of \texttt{enumerate} so that it returns a \texttt{DList a} instead of the standard list. For this refactoring the set of pairs only needs to contain the two pairs \texttt{((++), append)} and \text{([], empty)}.
+\begin{lstlisting}[caption={Calculating a median}, label=median]
+
+median :: Fractional a => [a] -> a
+median lst = foldr (+) 0 lst / length lst
+
+\end{lstlisting} 
+
+Refactoring \texttt{median}'s first argument to become a Hughes list is fairly straight forward matter of wrapping the, now of type \texttt{DList}, parameter \texttt{lst} with the abstraction function \texttt{toList}. The refactored version of \texttt{median} is in listing~\ref{medianRef}. 
+
+\begin{lstlisting}[caption={\texttt{median} refactored}, label=medianRef]
+
+median :: Fractional a => DList a -> a
+median lst = foldr (+) 0 (toList lst) / length (toList lst)
+
+\end{lstlisting}    
+
+This example is one of the cases where there are multiple possible refactorings. Listing~\ref{medianRef2} shows a different version of a refactored median, because \texttt{foldr} is defined both for difference lists and normal lists the abstraction function could be added around that expression instead. Which version should the refactoring produce?
+
+\begin{lstlisting}[caption={\texttt{median} refactored another way.}, label=medianRef2]
+
+median :: Fractional a => DList a -> a
+median lst = toList (foldr (+) 0 lst) / length (toList lst)
+
+\end{lstlisting}    
+
+In this case where the refactoring targets a parameter and the function's result is a type other than a Hughes list the refactoring assumes that the programmer wants the Hughes list converted as soon as possible in the function. 
+
+\subsubsection{Example 2}
+
+The second example covers the case where the result type of a function is refactored to use \texttt{DList} instead of list. Listing~\ref{enumBefore} contains the definition of a simple algebraic data type of a tree, a function (\texttt{enumerate}) that returns an in-order list of all the tree's elements, and a function that prints a tree's enumeration to standard output. 
+
+This time the refactoring will affect the result type of the function. As opposed to the previous example where changes occurred at the leaves of the abstract syntax tree this case of the refactoring changes the type of the AST's root. 
 
 \begin{lstlisting}[caption={Definition of enumerate}, label=enumBefore]
 data Tree a = Leaf
@@ -901,9 +932,9 @@ printEnumTree tree = let lst = enumerate tree in
   print lst
 \end{lstlisting}
 
-Since the result type is the only type of \texttt{enumerate} that is affected the refactoring needs to modify the function definition so that the right hand side of its definition is of type \texttt{DList a} instead of \texttt{[a]}. It does this by traversing the abstract syntax tree in a depth first manner starting with the left hand sub-tree. 
+Changing the type of the AST's root requires the refactoring to traverse the tree top down from left to right. This is because the result type of any syntax tree is determined by the function (or value in the case of tree with only a single node) in the leftmost child. 
 
-\comment{MAke the first example be a case where the argument becomes DList as it is a bit simpler}
+
 
 \begin{itemize}
 \item print out the AST with the visualizer
