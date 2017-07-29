@@ -1,0 +1,20 @@
+digraph G {
+rApp;
+	subgraph right {
+		lst [label="ExplicitList: [x]"];
+		rApp [label="OpApp: ++"];
+		rApp -> lst;
+		rApp -> rPar;
+	}
+	
+	subgraph rPar {
+		rPar [label="HsPar"];
+		rEApp [label="HsApp"];
+		rEnum [label="HsVar: enumerate"];
+		right [label="HsVar: right"];
+		rPar -> rEApp;
+		rEApp -> rEnum;
+		rEApp -> right;
+	}
+
+}

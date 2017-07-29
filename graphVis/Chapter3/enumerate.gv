@@ -2,7 +2,7 @@ digraph G {
 //enumerate -> lApp;
 
 	subgraph left {
-		lApp [label="OpApp: (++)"];
+		lApp [label="OpApp: ++"];
 		lApp -> lPar;	
 		lApp -> rApp;
 	}
@@ -19,7 +19,7 @@ digraph G {
 
 	subgraph right {
 		lst [label="ExplicitList: [x]"];
-		rApp [label="OpApp: (++)"];
+		rApp [label="OpApp: ++"];
 		rApp -> lst;
 		rApp -> rPar;
 	}

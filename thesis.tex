@@ -949,6 +949,45 @@ The refactoring begins the traversal at the top of the syntax tree with the goal
 
 The refactoring then must recurse down both the left and right subtrees to change their types from \texttt{[a]} (the type of \texttt{(++)}'s arguments) to \texttt{DList a} (the type \texttt{append}'s arguments). 
 
+\begin{figure}[h]\label{enumLeft}
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/Chapter3/enumLeft.png}
+	\end{center}
+	\caption{The left subtree of \texttt{enumerate}'s second case.}
+\end{figure}
+
+The left subtree of the root node is shown in figure~\ref{enumLeft}. The refactoring can descend through the parenthesis (represented by the \texttt{HsPar} constructor); the refactoring continues down the left side of the function application (\texttt{HsApp}). When the refactoring encounters the call to \texttt{enumerate} it recognises that this is the recursive call and even though the type of \texttt{enumerate} stored in the syntax tree is \texttt{Tree a -> [a]} after the refactoring its type will be \texttt{Tree a -> DList a} which is the correct result type  for this subtree. The refactoring can now confirm that the left subtree is of type \texttt{DList a} without checking the right side of the application because the refactoring didn't change the type of \texttt{enumerate}'s arguments.
+
+\begin{figure}[h]\label{enumRight}
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/Chapter3/enumRight.png}
+	\end{center}
+	\caption{The right subtree of \texttt{enumerate}'s second case.}
+\end{figure}
+
+After refactoring the left subtree the right subtree needs to be modified to be of type \texttt{DList a} as well. Shown in figure~\ref{enumRight}, the right subtree's root is the second call to \texttt{(++)}. Once again the refactoring replaces \texttt{++} with \texttt{append} because \texttt{append}'s result type is also \texttt{DList a}. Doing this replacement sets off additional traversals that need to ensure that the two arguments to the root node become typed \texttt{DList a} as well. The right argument to the root of this subtree is the \texttt{(enumerate right)} expression which is handled in the same way the \texttt{(enumerate left)} call was handled. The left subtree of figure~\ref{enumRight}  is the list literal \texttt{[x]}. This can be replaced with a call to \texttt{(singleton :: a -> DList a)} the equivalent difference list function. At this point the refactoring is finished modifying \texttt{enumerate} and the result can be seen in listing~\ref{enumRef}.
+
+\begin{lstlisting}[caption={The refactored definition of \texttt{enumerate}}, label=enumRef]
+enumerate :: Tree a -> DList a
+enumerate Leaf = empty
+enumerate (Node left x right) = (enumerate left) `append` (singleton x) `append` (enumerate right)
+\end{lstlisting}
+
+The refactoring isn't finished yet, however. The original definition contained in listing~\ref{enumBefore} had another function \texttt{printEnumTree} that depended on \texttt{enumerate}. The final modification that needs to happen to this example is to wrap all calls to \texttt{enumerate} in \textit{non-refactored} function definitions with the abstraction function to convert the result back to a list. The final product of the refactoring can be seen in listing~\ref{enumFinal}.
+
+\begin{lstlisting}[caption={The final product of the refactoring}, label=enumFinal]
+data Tree a = Leaf
+            | Node (Tree a) a (Tree a)
+
+enumerate :: Tree a -> DList a
+enumerate Leaf = empty
+enumerate (Node left x right) = (enumerate left) `append` (singleton x) `append` (enumerate right)
+
+printEnumTree :: (Show a) => Tree a -> IO ()
+printEnumTree tree = let lst = toList (enumerate tree) in
+  print lst
+\end{lstlisting}
+
 \subsubsection{Example 3}
 
 \begin{lstlisting}
