@@ -1,0 +1,61 @@
+digraph G {
+
+concat[label="HsVar: concat"];
+concApp[label="HsApp"];
+
+map[label="HsVar: map"];
+
+mapPar[label="HsPar"];
+
+mapLamApp[label="HsApp"];
+
+mapLamApp -> map;
+mapLamApp -> lamPar;
+
+mapLstApp[label="HsApp"];
+lst[label="HsVar: lst"];
+mapPar -> mapLstApp;
+
+mapLstApp -> lst;
+mapLstApp -> mapLamApp;
+
+concApp -> concat;
+concApp -> mapPar;
+
+subgraph lam {
+	lamPar[label="HsPar"];
+	pat[label="VarPat: x"];
+	
+	lamPar -> lam;
+	
+	lam -> pat;
+	lam -> lamApp1;
+}
+
+subgraph lamRhs {
+	replicate[label="HsVar: replicate"];
+	n[label="HsVar: n"];
+	lamApp2[label="HsApp"];
+	x[label="HsVar: x"];
+	lam[label="HsLam"];
+	lamApp1[label="HsApp"];
+	
+
+	lamApp2 -> replicate;
+	lamApp2 -> n;
+	
+	lamApp1 -> lamApp2;
+	lamApp1 -> x;
+	
+	
+}
+
+}
+
+/* 
+
+explode :: Int -> [a] -> [a]
+explode n lst = concat (map (\x -> replicate n x) lst)
+
+
+*/
