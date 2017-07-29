@@ -934,13 +934,25 @@ printEnumTree tree = let lst = enumerate tree in
 
 Changing the type of the AST's root requires the refactoring to traverse the tree top down from left to right. This is because the result type of any syntax tree is determined by the function (or value in the case of tree with only a single node) in the leftmost child. 
 
+\texttt{enumerate}'s first case is simple enough to refactor. There is only a single value in the tree the empty list literal. This node's current type is \texttt{[a]} and it needs to become \texttt{DList a}. When the refactoring reaches the \texttt{[]} value it searches to see if it is paired with some difference list operation in the set of pairs. The empty list literal is paired with the difference list operation \texttt{empty}, the refactoring sees this and replaces the empty list with \texttt{empty}.
 
+After the replacement of \texttt{[]} \texttt{enumerate}'s first case is successfully refactored. The second case of \texttt{enumerate} is more complex than the first. Figure~\ref{enumAST} shows a syntax tree for \texttt{enumerate}'s second case. 
+
+\begin{figure}[h]\label{enumAST}
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/enumerate.png}
+	\end{center}
+	\caption{A simplified syntax tree of \texttt{enumerate}'s second case.}
+\end{figure}
+
+\comment{Rewrite the ast to remove the ops to properly show off the left most child concept}
 
 \begin{itemize}
 \item print out the AST with the visualizer
 \item Go through the explode case when the first argument becomes DList
 \item Go through a case that is completely converted to DLists.
 \end{itemize}
+
 
 
 \chapter{Generalising Monads to Applicative}
