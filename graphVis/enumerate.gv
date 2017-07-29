@@ -1,32 +1,47 @@
 digraph G {
-enumerate;
-lApp [label="OpApp: (++)"];
-rApp [label="OpApp: (++)"];
-lEApp [label="HsApp"];
-lPar [label="HsPar"];
-lEnum [label="HsVar: enumerate"];
-left [label="HsVar: left"];
+enumerate -> rApp1;
 
-lst [label="ExplicitList: [x]"];
+	subgraph left {
+		opAppL [label="HsApp"];
+		lApp [label="HsVar: (++)"];
+		opAppL -> lApp;
+		opAppL -> lPar;	
+	}
 
-rPar [label="HsPar"];
-rEApp [label="HsApp"];
-rEnum [label="HsVar: enumerate"];
-right [label="HsVar: right"];
+	subgraph lPar {
+		lPar [label="HsPar"];
+		lEnum [label="HsVar: enumerate"];
+		left [label="HsVar: left"];
+		pApp1 [label="HsApp"];
+		lPar -> pApp1;
+		pApp1 -> lEnum;
+		pApp1 -> left;
+	}
 
-enumerate -> rApp;
-rApp -> lApp;
+	subgraph right {
+		lst [label="ExplicitList: [x]"];
+		rApp [label="HsVar: (++)"];
+		rApp1 [label="HsApp"];
+		rApp2 [label="HsApp"];
+		rApp3 [label="HsApp"];
+		rApp1 -> opAppL;
+		rApp1 -> rApp2;
+		rApp2 -> lst;
+		rApp2 -> rApp3
+		rApp3 -> rApp;
+		rApp3 -> rPar;
+	}
+	
+	subgraph rPar {
+		rPar [label="HsPar"];
+		rEApp [label="HsApp"];
+		rEnum [label="HsVar: enumerate"];
+		right [label="HsVar: right"];
+		rPar -> rEApp;
+		rEApp -> rEnum;
+		rEApp -> right;
+	}
 
-lApp -> lPar;
-lPar -> lEApp;
-lEApp -> lEnum;
-lEApp -> left;
-lApp -> lst;
-
-rApp -> rPar;
-rPar -> rEApp;
-rEApp -> rEnum;
-rEApp -> right;
 }
 
 
