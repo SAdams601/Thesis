@@ -1,11 +1,10 @@
 digraph G {
-enumerate -> rApp1;
+//enumerate -> lApp;
 
 	subgraph left {
-		opAppL [label="HsApp"];
-		lApp [label="HsVar: (++)"];
-		opAppL -> lApp;
-		opAppL -> lPar;	
+		lApp [label="OpApp: (++)"];
+		lApp -> lPar;	
+		lApp -> rApp;
 	}
 
 	subgraph lPar {
@@ -20,16 +19,9 @@ enumerate -> rApp1;
 
 	subgraph right {
 		lst [label="ExplicitList: [x]"];
-		rApp [label="HsVar: (++)"];
-		rApp1 [label="HsApp"];
-		rApp2 [label="HsApp"];
-		rApp3 [label="HsApp"];
-		rApp1 -> opAppL;
-		rApp1 -> rApp2;
-		rApp2 -> lst;
-		rApp2 -> rApp3
-		rApp3 -> rApp;
-		rApp3 -> rPar;
+		rApp [label="OpApp: (++)"];
+		rApp -> lst;
+		rApp -> rPar;
 	}
 	
 	subgraph rPar {
