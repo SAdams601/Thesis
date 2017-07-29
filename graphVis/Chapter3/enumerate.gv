@@ -36,7 +36,6 @@ digraph G {
 
 }
 
-
 //enumerate (Node left x right) = (enumerate left) ++ [x] ++ (enumerate right)
 
 /*

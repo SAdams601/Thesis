@@ -940,12 +940,14 @@ After the replacement of \texttt{[]} \texttt{enumerate}'s first case is successf
 
 \begin{figure}[h]\label{enumAST}
 	\begin{center}
-		\includegraphics[scale=.5]{graphVis/enumerate.png}
+		\includegraphics[scale=.5]{graphVis/Chapter3/enumerate.png}
 	\end{center}
 	\caption{A simplified syntax tree of \texttt{enumerate}'s second case.}
 \end{figure}
 
 The refactoring begins the traversal at the top of the syntax tree with the goal of modifying the entire tree to have a result type of \texttt{DList a}. The root node of the tree is the operator application of the left append operation. This append's result type is the type that determines the whole tree's result type. The standard append operation is paired with the difference list \texttt{append} operation. The refactoring checks to ensure that the difference list append has the correct result type and because it does makes the replacement.\footnote{The refactoring will automatically make \texttt{append} infix by surrounding the call with backtick characters since this replacement is modifying an operator application.} After replacing \texttt{++} with \texttt{append} the result type is correct but the function will no longer type check because \texttt{++} and \texttt{append}'s arguments are not the same types. 
+
+The refactoring then must recurse down both the left and right subtrees to change their types from \texttt{[a]} (the type of \texttt{(++)}'s arguments) to \texttt{DList a} (the type \texttt{append}'s arguments). 
 
 \subsubsection{Example 3}
 

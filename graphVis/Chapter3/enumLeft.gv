@@ -1,0 +1,14 @@
+digraph G {
+//enumerate -> lApp;
+lPar;
+
+	subgraph lPar {
+		lPar [label="HsPar"];
+		lEnum [label="HsVar: enumerate"];
+		left [label="HsVar: left"];
+		pApp1 [label="HsApp"];
+		lPar -> pApp1;
+		pApp1 -> lEnum;
+		pApp1 -> left;
+	}
+}
