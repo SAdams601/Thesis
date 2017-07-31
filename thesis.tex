@@ -311,7 +311,7 @@ As was mentioned in Section~\ref{prog&Strafunski}, HaRe's dependencies have chan
 
 \subsection{The GHC API}
 
-Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is composed of several smaller components that each correspond to a separate compiler stage. The GHC executable consists of a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
+Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is composed of several smaller components that each correspond to a separate compiler stage. GHC's executable consists of a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
 
 \subsubsection{Compiler stages of GHC}\label{ghcStages}
 
@@ -324,33 +324,20 @@ Some of the major components and the order that GHC uses them are shown in figur
 	\caption{GHC Compiler stages. Adapted from \citep{ghcDesign}}
 \end{wrapfigure}
 
-The top level datatype for all of the GHC abstract syntax is \texttt{HsSyn}~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
+The top level datatype for all of the GHC abstract syntax is \texttt{HsSyn} ~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier type; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
 
 \subsubsection{GHC's Name Types}
 
 There are five name types that GHC uses, they are:
 
 \begin{itemize}
-	\item \texttt{OccName}
-	\item \texttt{RdrName}
-	\item \texttt{Name}
-	\item \texttt{Id}
-	\item \texttt{Var}
+	\item \texttt{OccName} is the simplest type of name. It is just a wrapper around a \texttt{FastString} and an optional \texttt{NameSpace}. An \texttt{OccName} is contained in each of the other four identifier types.
+	\item \texttt{RdrName} names are produced by GHC's parser. \texttt{RdrName}s aren't much more that an \texttt{OccName} with optional module information if the source name has been qualified. 
+	\item \texttt{Name}s are produced by the renamer. A \texttt{Name} contains an \texttt{OccName} and a \texttt{Unique} that differentiates \texttt{Name}s that have the \texttt{OccName}. They have also had their scoping and binding resolved.
+	\item \texttt{Id} \& \texttt{Var} are the identifiers produced by the typechecker.\footnote{\texttt{Id} is just a synonym for \texttt{Var}.} These identifiers both contain a \texttt{Name}, a \texttt{Unique}, and a \texttt{Type} or \texttt{Kind}. An \texttt{Id} has a definite type whereas a \texttt{Var} may contain type variables that only have a kind.   
 \end{itemize}
 
-\texttt{OccName} is the simplest type of name it is really just a wrapper around a \texttt{FastString} and an optional \texttt{NameSpace}. It isn't produced by any the other four name types, rather an \texttt{OccName} is contained in each of the other names. An \texttt{RdrName} is the type that parameterises the parsed abstract  syntax. \texttt{RdrName}s aren't much more than an \texttt{OccName} and possibly a module name that indicates what module the name is defined in.
-
-The renamer produces an AST that uses \texttt{Name}s. \texttt{Name}s form the basis for the rest of the GHC's identifiers. A \texttt{Name} wraps \texttt{OccName} along with what type of name it is (user-defined or system-defined), where that \texttt{Name} is defined, and a unique integer so that names with the same \texttt{OccName} can be differentiated. 
-
-The other two name types, \texttt{Id} and \texttt{Var}, are actually synonyms.
-
-\begin{lstlisting}[frame=single,caption={Id's definition from Var.hs in~\cite{ghcHackage}}]
-type Id = Var
-\end{lstlisting}
-
-These types are essentially just typed \texttt{Name}s. The difference between \texttt{Id}s and \texttt{Var}s is that instead of a type \texttt{Vars} have a kind, and \texttt{Id}s contain more information about what sort of syntax element the \texttt{Id} refers to. 
-
-All these different types of names change throughout the compilation process but these names only parameterises the syntax tree, the shape~\comment{shape? form?} of the tree itself stays the same through compilation. 
+These identifier types change throughout the compilation process but these names only parameterise the syntax tree, the shape of the tree itself stays the same through compilation. 
 
 \subsubsection{GHC's syntax tree}
 GHC's abstract syntax is currently made up of over 90 data types. 
@@ -989,17 +976,66 @@ printEnumTree tree = let lst = toList (enumerate tree) in
 \end{lstlisting}
 
 \subsubsection{Example 3}
-Should use explode here
-\begin{lstlisting}
 
+The final case of this refactoring involves modifying both the result type and one (or more) of the parameters of the target function. This example will use the \texttt{explode} function from listing~\ref{explode} to refactor both its argument and result type to become \texttt{DList a}.
+
+\begin{lstlisting}[caption={The initial definition of \texttt{explode}},label=explode]
+explode :: [a] -> [a]
+explode lst = concat (map (\x -> replicate (length lst) x) lst)
 \end{lstlisting}
 
-\begin{itemize}
-\item print out the AST with the visualizer
-\item Go through the explode case when the first argument becomes DList
-\item Go through a case that is completely converted to DLists.
-\end{itemize}
+The abstract syntax tree of explode is in figure~\ref{explode}.
 
+\begin{figure}[!h]\label{explode}
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/Chapter3/explode.png}
+	\end{center}
+	\caption{\texttt{explodes}'s syntax tree}
+\end{figure}
+
+Much like the previous case where just the result type was modified the refactoring will start working on the syntax tree in a top down manner modifying the function definition to have the correct result type. The refactoring starts on the left subtree with the call to \texttt{concat :: Foldable t => t [a] -> [a]}. The equivalent difference list function is \texttt{concat :: Foldable t => t (DList a) -> DList a} since the result type of this version of \texttt{concat} is \texttt{DList a} the refactoring performs the switch. 
+
+After the change on the left subtree the refactoring needs to modify the right subtree so that is is of type \texttt{Foldable t => t DList a} rather than its current type of \texttt{Foldable t => t [a]}. The left most child of the right subtree is the call to \texttt{map :: (a -> b) -> [a] -> [b]}. The difference list equivalent map is appropriately typed \texttt{map :: (a -> b) -> DList a -> DList b}. Should the refactoring change this node to the difference list version? And if so what changes will be need to made to other subtrees?
+
+The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (the type of \texttt{concat}'s parameter) can be the same type as \texttt{DList b} (\texttt{map}'s result type); since \texttt{DList} is a member of the \texttt{Foldable} type class the swap can happen as long as the \texttt{b} type variable in \texttt{map}'s type is equal to \texttt{DList a}. This node's type after the swap and filling in the known type variables is: \texttt{map :: (a -> DList b) -> DList a -> DList (DList b)} this new type's arguments' types are both different from the original types so the refactoring will need to check both of these subtrees as well. 
+
+\begin{figure}[h]\label{explodeLam}
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/Chapter3/explodeLam.png}
+	\end{center}
+	\caption{The syntax tree of the lambda expression in \texttt{explode}.}
+\end{figure}
+
+Starting with the lambda expression (the syntax tree in figure~\ref{explodeLam}) the refactoring needs to modify it's type to become \texttt{a -> DList b}\footnote{\texttt{a} and \texttt{b} could be the same type.}. The current type of the lambda expression is \texttt{a -> [a]} so the refactoring only needs to modify its result type. The refactoring can then proceed to the left-most child of this expression, the call to \texttt{replicate :: Int -> a -> [a]}. The refactoring swaps this call for the difference list version of \texttt{replicate :: Int -> a -> DList a}. 
+
+If this refactoring were only modifying the result type of \texttt{explode} the refactoring would be done modifying the lambda expression because the type change affects the syntax tree in a top down manner. In this case, however, because  the type of \texttt{explode}'s argument was also changed so leaves of the syntax tree can also have changed type. This means that every subtree needs to be checked to ensure that it still type checks.
+
+The untouched sections of this expression's syntax tree are \texttt{replicate}'s arguments. The second argument is just the variable \texttt{x} which hasn't changed type. The first argument on the other hand is the expression \texttt{(length lst)} and \texttt{lst} is the argument of \texttt{explode} that is now a difference list rather than a normal list. Ideally the refactoring would rewrite this expression by replacing the normal list functions (\texttt{length} in this case) with difference list equivalents. Unfortunately there is no difference list version of \texttt{length} so the refactoring will have to introduce the abstraction function to convert back to a normal list to calculate its length. 
+
+The lambda expression has now been successfully refactored. The rewritten lambda expression is in listing~\ref{lamRef}.\footnote{To help clarify which functions are for lists and which are the difference list versions, all difference list functions have been qualified with the \texttt{DList} identifier.}
+
+\begin{lstlisting}[caption={The refactored lambda expression.},label=lamRef]
+(\x -> DList.replicate (length (DList.toList lst)) x)
+\end{lstlisting}
+
+Once refactoring the lambda expression is finished there is only a single node of \texttt{explode} that the refactoring hasn't touched yet, the use of \texttt{lst} as the second argument of \texttt{map}. When the refactoring swapped \texttt{map} for its difference list version it was able to determine the new type of both its arguments, \texttt{(a -> DList b)} for the first argument (the lambda expression) and \texttt{DList a} (\texttt{lst}). Fortunately because \texttt{lst} is a target of the refactoring its new type is \texttt{DList a} so this node can remain unchanged.
+
+
+\begin{lstlisting}[caption={The final refactored result of \texttt{explode}.},label=explodeFinal]
+import qualified Data.DList as DList
+import Data.DList (DList)
+
+explode :: DList a -> DList a
+explode lst = DList.concat (DList.map (\x -> DList.replicate (length (DList.toList lst)) x) lst)
+\end{lstlisting} 
+
+The final result of this case of the Hughes list refactoring is in listing~\ref{explodeFinal}.
+
+\section{Summary}
+
+This chapter has introduced the concept of data-driven refactorings for the object-oriented programming paradigm and described three of the data-driven refactorings developed for this thesis. The first, introducing a type signature, creates additional abstraction to better describe what types are representing. Generalising maybe takes code written for a specific type and generalises it so that it is applicable to more types. Finally the list to Hughes list refactoring replaces one type with another equivalent type. This refactoring allows a project to be retyped mid-development because it's not always clear from the beginning of a project what the correct data representation should be.
+
+The following chapters will expand on some of these ideas. The next chapter will describe another form of generalisation that rewrites monadic code into its equivalent applicative functor code. The applicative code can be much cleaner and descriptive in certain cases. It can also allow programmers to take advantage of a different way of executing their programs. Chapter~\ref{chap:monadification} discusses introducing effectful abstractions into pure code. This process helps a code base add additional features, such as shared state, mid-development.
 
 
 \chapter{Generalising Monads to Applicative}
@@ -1347,7 +1383,7 @@ parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
 \end{lstlisting}
 
 
-\chapter{Introducing Effectful Abstractions}
+\chapter{Introducing Effectful Abstractions}\label{chap:monadification}
 Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus on introducing monads and applicatives into pure code.
 
 The \texttt{Identity} monad is the monad the does not embody any computation strategy~\citep{identityMonad}. This means that any pure Haskell function could be refactored to be within the Identity monad. This refactoring can take in a set of functions and produce a corresponding set of functions with a monadic type. Take for example this definition of the Fibonacci numbers.

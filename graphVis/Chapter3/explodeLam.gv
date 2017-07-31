@@ -1,28 +1,4 @@
-digraph G {
-
-concat[label="HsVar: concat"];
-concApp[label="HsApp"];
-
-map[label="HsVar: map"];
-
-mapPar[label="HsPar"];
-
-mapLamApp[label="HsApp"];
-
-mapLamApp -> map;
-mapLamApp -> lamPar;
-
-mapLstApp[label="HsApp"];
-lst[label="HsVar: lst"];
-mapPar -> mapLstApp;
-
-mapLstApp -> lst;
-mapLstApp -> mapLamApp;
-
-concApp -> concat;
-concApp -> mapPar;
-
-subgraph lam {
+digraph lam {
 	lamPar[label="HsPar"];
 	pat[label="VarPat: x"];
 	
@@ -30,7 +6,7 @@ subgraph lam {
 	
 	lam -> pat;
 	lam -> lamApp1;
-}
+
 
 subgraph lamRhs {
 	replicate[label="HsVar: replicate"];
@@ -55,13 +31,4 @@ subgraph lamRhs {
 	
 	
 }
-
 }
-
-/* 
-
-explode :: Int -> [a] -> [a]
-explode n lst = concat (map (\x -> replicate n x) lst)
-
-
-*/
