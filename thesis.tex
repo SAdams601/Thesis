@@ -307,26 +307,26 @@ The overall goal of the HaRe API is to help ensure the correctness of new refact
  
 \section{Underlying technologies}
 
-As was mentioned in Section~\ref{prog&Strafunski}, HaRe's dependencies have changed somewhat in its current implementation. HaRe originally used Programatica as its front end, now the language front end is composed of several projects now, the GHC API, ghc-mod, and ghc-exactprint~\citep{ghcApi}, \citep{ghcMod}, and \citep{exactprint}. This section will describe these dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
+As was mentioned in Section~\ref{prog&Strafunski}, HaRe's dependencies have changed somewhat in its current implementation. HaRe originally used Programatica as its front end, now the language front end is composed of several projects now, the GHC API, ghc-mod, and ghc-exactprint~\citep{ghcApi}, \citep{ghcMod}, and \citep{exactprint}. The following sections will describe these dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
 
-\subsection{The GHC API}
+\section{The GHC API}
 
 Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is composed of several smaller components that each correspond to a separate compiler stage. GHC's executable consists of a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
 
-\subsubsection{Compiler stages of GHC}\label{ghcStages}
+\subsection{Compiler stages of GHC}\label{ghcStages}
 
-Some of the major components and the order that GHC uses them are shown in figure~\ref{compilerStages}. This figure is not a complete list of all the components GHC uses just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
-
-\begin{wrapfigure}{L}{0.5\textwidth}\label{compilerStages}
+\begin{figure}[h]\label{compilerStages}
 	\begin{center}
-		\includegraphics[scale=.3]{images/compilerStages.png}
+		\includegraphics[scale=.4]{graphVis/Chapter2/compilerStgs.png}
 	\end{center}
-	\caption{GHC Compiler stages. Adapted from \citep{ghcDesign}}
-\end{wrapfigure}
+	\caption{GHC Compiler stages.}
+\end{figure}
+
+Some of the major components and the order that GHC uses them are shown in figure~\ref{compilerStages} which has been adapted from~\citep{ghcDesign}. This figure is not a complete list of all the components GHC uses just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
 
 The top level datatype for all of the GHC abstract syntax is \texttt{HsSyn} ~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier type; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
 
-\subsubsection{GHC's Name Types}
+\subsection{GHC's Name Types}\label{ghcNames}
 
 There are five name types that GHC uses, they are:
 
@@ -339,22 +339,60 @@ There are five name types that GHC uses, they are:
 
 These identifier types change throughout the compilation process but these names only parameterise the syntax tree, the shape of the tree itself stays the same through compilation. 
 
-\subsubsection{GHC's syntax tree}
-GHC's abstract syntax is currently made up of over 90 data types. 
+\subsection{GHC's syntax tree}
+GHC's abstract syntax is currently made up of over 90 data types. Many of those types has multiple constructors, the expression data type \texttt{HsExpr} for example has over 40 constructors. This section will briefly introduce the structure of GHC's abstract syntax tree.
 
-\comment{How do I describe the AST? Do I want to go into much detail? It seems like this could help motivate the need for generic programming if done correctly.}
+\subsubsection{Common syntax types}
+
+The most common type in any given piece of GHC abstract syntax would be a \texttt{Located} as seen in listing~\ref{located}.
+
+\begin{lstlisting}[caption={The \texttt{located} type.},label=located]
+
+type Located e = GenLocated SrcSpan e
+
+\end{lstlisting}
+
+\texttt{Located} is used to tag syntax elements with their original position in a source file. The \texttt{SrcSpan} contains the filename that the span comes from and then the start and end columns and start and end lines that the span covers.\footnote{GHC has small optimisation where if a span exists entirely on a single line it only stores the single line number and the start and end column, instead of storing the same line number twice.} 
+
+There are located versions of many of the AST types. For example, \texttt{HsExpr} is the type that represents expressions there is a related type \texttt{LHsExpr} that represents a located expression.
+
+\begin{lstlisting}[caption={The located expression}]
+type LHsExpr id = Located (HsExpr id)
+\end{lstlisting}
+
+The \texttt{HsExpr} type represents much of the Haskell language such as function application, lambdas, if and case statements. Pattern matching is handled by a \texttt{MatchGroup} type. Each \texttt{MatchGroup} contains a list of \texttt{Match}es and some typing information. Consider the following case statement
+
+\begin{lstlisting}[caption={A case statement}, label=caseStmt]
+case (x, y) of
+	(Just i, Just j) -> Just (i+j)	
+	(Just _, Nothing) -> x
+	(Nothing, Just _) -> y
+	(Nothing, Nothing) -> Nothing
+\end{lstlisting}
+
+This would be parsed into the \texttt{HsCase} constructor of \texttt{HsExpr}. This constructor is seen in listing~\ref{hscase}, the first constructor argument represents the expression that the patterns are matched against, (the tuple \texttt{(x,y)} in this case). The second argument to \texttt{HsCase} represents all four of the matches in the case statement. \texttt{MatchGroup}s are used to represent any code that associates some patterns with a right hand side expression. Function bindings, lambda expression, and case statements all use \texttt{MatchGroup}s. 
+
+\begin{lstlisting}[caption={The \texttt{HsCase} constructor}, label=hscase]
+HsCase (LHsExpr id) (MatchGroup id (LHsExpr id))	
+\end{lstlisting}
+
+In the case expression from listing~\ref{caseStmt} each of the four pattern matches is a \texttt{Match} in the expressions \texttt{MatchGroup}. Each \texttt{Match} associates a left hand side pattern with the appropriate right hand side expression.
+
+\subsubsection{The syntax tree}
+
+GHC expressions are contained in some binding, represented by the \texttt{HsBind} type.  
 
 \section{Generic programming}\label{genProg}
 The need for a generic programming library, as previously discussed in section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}.
 \subsection{Generic Traversals}
-The Stratego/XT library was one of first transformation systems~\citep{stratego}. Stratego developed the idea of a transformation strategy. A transformation strategy is the combination of a term rewriting function and how that rewriting will be applied to the tree of terms. Stratego provides combinators from which term rewriting functions can be constructed and tree traversal functions\citep{stratego}.
+The Stratego/XT library was one of first systems for programming tree transformations in a systematic way~\citep{stratego}. Stratego developed the idea of a transformation strategy. A strategy is the combination of a term rewriting function and a traversal function that describes how that rewriting function should be applied to a tree of terms. Stratego provides combinators that help construct term rewriting functions and tree traversal functions \citep{stratego}.
 
 Stratego is an untyped transformation system and so was unsuitable for working with the statically typed Haskell.  
 \subsection{Scrap Your Boilerplate}\label{syb}
 
 	Suppose there was a simple expression language that contained integers, integer addition, assignment, and variables. This language is represented by the type defined below.
 	
-	\begin{verbatim}
+	\begin{lstlisting}[caption={A simple expression type.},label=expression]
 type Name = String
 
 data Expr =
@@ -363,11 +401,11 @@ data Expr =
    | Add Expr Expr
    | Assign Name Expr
       deriving(Data,Typeable)
-	\end{verbatim}
+	\end{lstlisting}
 	
-	If you wanted to define a function that renamed the variable called "x" to be called "a" it would look something like this:
+	A function to rename a variable "x" to "a" is defined below:
 	
-	\begin{verbatim}
+	\begin{lstlisting}
 renameXVar :: Expr -> Expr
 renameXVar (Var "x") = Var "a"
 renameXVar (Assign c e) = 
@@ -375,9 +413,9 @@ renameXVar (Assign c e) =
 	| otherwise = Assign c (renameXVar e)
 renameXVar (Add e1 e2) = Add (renameXVar e1) (renameXVar e2)
 renameXVar v = v
-	\end{verbatim}
+	\end{lstlisting}
 	
-	This is fairly straight forward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what's known as "boilerplate" code~\citep{syb}. Boilerplate code is highly repetitive, verbose, and difficult to .  In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} become much more time-consuming and a nightmare to maintain. 
+	This is fairly straightforward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what is known as "boilerplate" code~\citep{syb}. Boilerplate code is highly repetitive, verbose, and difficult to debug and maintain.  In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} become much more time-consuming and a nightmare to maintain. 
 	
 	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as:
 	
@@ -398,7 +436,7 @@ renameXVar = everywhere (mkT rename)
 		\item The function that performs the "interesting" part of the traversal
 		\item A type extension for that function
 		\item A generic traversal combinator
-		\item The data type to be traversed must be an instance of the Typeable and Data classes
+		\item The data type to be traversed must be an instance of the \texttt{Typeable} and \texttt{Data} classes (as explained below)
 	\end{itemize}
 	
 	From the example mentioned previously the "interesting" part of this traversal is the rename function because this function contains the code that actually changes the name "x" to the name "a." The \texttt{mkT} function extends the type of the \texttt{rename} function to \texttt{Typeable~a = > a~ -> a}. 
@@ -409,19 +447,56 @@ renameXVar = everywhere (mkT rename)
 	
 \subsubsection{Types of Generic Algorithms}
 
-SYB defines three types of generic algorithms, transformations, queries, and monadic transformations. The \texttt{rename} example from the previous section is an example of a transformation. Transformations preserve the type of the structure that is traversed. Queries, on the other hand, are type unifying algorithms. Queries are good for summarizing information contained in a data structure. You would use a query, for example, to traverse an expression and collect all of it's the bound variables.
+SYB defines three types of generic algorithms, transformations, queries, and monadic transformations. The \texttt{rename} example from the previous section is an example of a transformation. Transformations preserve the type of the structure that is traversed. Queries, on the other hand, are "type unifying" algorithms. Queries are good for summarizing information contained in a data structure. You would use a query, for example, to traverse an expression and collect all of it's the bound variables. Using the same expression type (listing~\ref{expression}) from the previous section the following function extracts all bound variables from a given expression.
 
-It is also useful a lot of the time to do transformations from within some monadic context. This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by a \texttt{GhcMonad}.  
+\begin{lstlisting}[caption={A generic function that collects all bound variables from an expression.}]
+bVars :: Expr -> [Name]
+bVars e = everything (++) ([] `mkQ` f) e
+	where f (Assign nm _) = [nm]
+          f _             = []
+\end{lstlisting}
+
+\texttt{everything}, as seen in the \texttt{bVars} function from the previous listing, is the generic query combinator that summarises all nodes, top down from left to right~\citep{sybDocs}. The first argument to \texttt{everything} is the function it uses to combine separate results from the query. In this case all the lists of names will be appended together. The "interesting" function \texttt{f} that actually returns a \texttt{Name} when one is being bound is extended via the \texttt{mkQ} function. \texttt{mkQ} will apply \texttt{f} when possible otherwise it will just return the empty list.
+
+It is also useful a lot of the time to do transformations from within some monadic context. A simple example of this would be to rewrite the finding bound variables example from previously but instead the list of found results is stored as a piece of state.
+
+\begin{lstlisting}[caption={Finding bound variables using the state monad}]
+type TransformState = State [Name]
+
+bVars :: Expr -> [Name]
+bVars e = execState findVars []
+  where findVars = everywhereM (mkM f) e
+        f :: Expr -> TransformState Expr
+        f e@(Assign n _ ) = do
+          modify (\lst -> n:lst)
+          return e
+        f e = return e
+\end{lstlisting}
+
+A big advantage of monadic traversals is that both querying and transformations can happen in a single pass. The example in listing~\ref{renameVars} renames every \texttt{Name} in an expression by add \texttt{"\_old"} as a suffix and stores the original names in a list. 
+
+\begin{lstlisting}[caption={Changing every found name and storing the old names in a list.},label=renameVars]
+renameVars :: Expr -> TransformState Expr
+renameVars e = everywhereM (mkM f) e
+  where f :: Expr -> TransformState Expr
+          f (Assign n e) = do
+            modify (\lst -> n:lst)
+            return (Assign (n++"_old") e)
+          f (Var n) = return (Var (n++"_old"))
+          f e = return e
+\end{lstlisting}
+ 
+This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by a \texttt{GhcMonad} all while modifying the abstract syntax.   
 	 
 \section{ghc-exactprint}
 
 After using generic programming to transform the parsed abstract syntax, HaRe needs to be able to print the modified code. A challenging part of building a refactoring tool is that a user wont want non refactored parts of their code to change at all. HaRe needs to preserve the user's comments and spacing from the source file.
 
-Prior to GHC version 7.10.1 the location of certain keywords and punctuation (such as \texttt{do} and \texttt{let}) and user comments were lost after parsing. This made parsing and then printing an exact copy of a GHC Haskell file impossible. GHC's 7.10.1 release added annotations of the lost syntax elements that had previously not been represented in the parsed abstract syntax~\citep{apiAnns}. 
+Prior to GHC version 7.10.1 the location of certain keywords and punctuation (such as \texttt{do} and \texttt{let}) and user comments were lost after parsing. This made parsing and then printing an exact copy of a GHC Haskell file impossible. GHC's 7.10.1 release added annotations for the "lost" syntax elements that had previously not been represented in the parsed abstract syntax~\citep{apiAnns}. 
 
 The parser produces a map that associates the keyword and the source span that the keyword can be found in with that keywords exact location. This approach was taken to avoid littering the existing AST with functionally meaningless keyword data~\citep{apiAnns}. 
 
-Even with every syntax element's position being recorded, printing a module after the AST has been modified is not easy. Many AST elements are "located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
+Even with the position of every syntax element being recorded, printing a module after the AST has been modified is not easy. Many AST elements are "located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
 
 Ghc-exactprint simplifies this immensely by allowing us to position elements relative to their neighbours rather than absolutely~\citep{exactprint}. After parsing a source file HaRe takes the annotations GHC returns with the parsed abstract syntax and relativise them using ghc-exactprint. For each syntax element ghc-exactprint creates a new data type called an "\texttt{Annotation}" which contains an offset that indicates where this element should be positioned compared to the previous element. Take for example the following definition.
 
@@ -431,11 +506,22 @@ f a = (a+ 1 )
 
 The absolute position of the plus sign is row one column nine (GHC's locations are one-based) but using ghc-exactprint we instead can think of the position of the plus sign using the offset \texttt{(0,0)} because there is no space between it and the previous element (the variable \texttt{a}). Using this system the number literal following the plus sign has an offset of (0,1) because of the single column of space before it. 
 
-The \texttt{Annotation}s are stored in a map that is keyed based on the parsed location of a syntax element and the string representation of the AST constructor. In the previous example the right hand side of the definition is located at the source span (1,7)-(1,13) which stands for row one columns seven through thirteen and GHC represents this expression with the \texttt{HsPar} which is a constructor for the \texttt{HsExpr} type. The source span and the constructor together can be combined to retrieve the annotation data associated with this bit of the AST. This syntax tree has two elements associated with it, the opening and closing parenthesis. Each of these keywords is given its own offset, which in this case is (0,0) for the opening parenthesis\footnote{The offset in this case is (0,0) and not (0,1) as you might expect because the space between the equals sign and the opening parenthesis is represented in the offset for the entire right hand side expression.} and (0,1) for the closing parenthesis. We could obviously infer from the use of the \texttt{HsPar} constructor that this tree is wrapped in parenthesis however the users specific spacing would be lost without the annotations.  
+The \texttt{Annotation}s are stored in a map that is keyed based on the parsed location of a syntax element and the string representation of the AST constructor. In the previous example the right hand side of the definition is located at the source span (1,7)-(1,13) which stands for row one columns seven through thirteen and GHC represents this expression with the \texttt{HsPar} which is a constructor for the \texttt{HsExpr} type. The source span and the constructor together can be combined to retrieve the annotation data associated with this bit of the AST. This syntax tree has two elements associated with it, the opening and closing parenthesis. Each of these keywords is given its own offset, which in this case is (0,0) for the opening parenthesis\footnote{The offset in this case is (0,0) and not (0,1) as you might expect because the space between the equals sign and the opening parenthesis is represented in the offset for the entire right hand side expression.} and (0,1) for the closing parenthesis. We could obviously infer from the use of the \texttt{HsPar} constructor that this tree is wrapped in parenthesis however the users specific spacing would be lost without the annotations.
+
+Comments are another element of a source file that prior to GHC 7.10.1 were "lost" after parsing. Using ghc-exactprint comments are stored in the annotations associated with the next piece of syntax. In the following code snippet the comment on line three is added to the annotations associated with the declaration of the function \texttt{f} along with a delta position that indicates the comment is a single line before this declaration starts.
+
+\begin{lstlisting}
+type Name = String
+
+--a comment
+f i = i + 1
+\end{lstlisting}
+
+
 
 \section{The current implementation of HaRe}
 
-This section has previously discussed the major dependencies that HaRe uses. The ghc-api give us access to the internal representation of Haskell, the generic programming libraries Scrap Your Boilerplate and Strafunski-StrategyLib allows HaRe to more easily work with that internal representation, and ghc-exactprint is how HaRe preserves the source files spacing when writing the output file. From this foundation we can make HaRe much more focused on refactoring rather than solving these more generic problems. This section will discuss how HaRe is implemented, what its API provides, and some general conventions that it's refactorings use.
+We have just discussed the major components that HaRe depends on. The ghc-api give us access to the internal representation of Haskell, the generic programming libraries Scrap Your Boilerplate and Strafunski-StrategyLib allows HaRe to more easily work with that internal representation, and ghc-exactprint is how HaRe preserves the source files spacing when writing the output file. From this foundation we can make HaRe focused on refactoring rather than solving these more generic problems. This section will discuss how HaRe is implemented, what its API provides, and some general conventions that it's refactorings use.
 
 \subsection{HaRe's inner workings}\label{hareInners}
 
@@ -446,9 +532,9 @@ newtype RefactGhc a = RefactGhc
     { unRefactGhc :: GM.GhcModT (StateT RefactState IO) a}
 \end{lstlisting}
 
-Listing~\ref{refactghc} shows the definition of HaRe's monad that each refactoring runs in. \texttt{RefactState} is an ADT that keeps track of all the settings, abstract syntax, and filepath for refactoring a single file. When refactoring client modules you can just set the filepath in the \texttt{RefactState} to target another module and HaRe will parse and typecheck that module's information into the state.
+Listing~\ref{refactghc} shows the definition of HaRe's monad that each refactoring runs in. \texttt{RefactState} is an ADT that keeps track of all the settings, abstract syntax, and filepath for refactoring a single file. It is possible to refactor client modules by setting the filepath in the \texttt{RefactState} to target another module. HaRe will then parse and typecheck that module's information into the state for transformation.
 
-Even though there are three types of the AST the annotations are part of the parsed AST so ghc-exactprint works with the parsed AST only. Once a refactoring has finished it is expected that the parsed source and annotations will reflect all the changes that the refactoring made. HaRe's state still contains all three of the syntax trees because the renamed and typed source are useful for the additional information they contain about the source file. 
+Even though there are three types of the AST, the annotations are part of the parsed AST ghc-exactprint works with the parsed AST only. Once a refactoring has finished it is expected that the parsed source and annotations will reflect all the changes that the refactoring has made. HaRe's state still contains all three of the syntax trees because the renamed and typed source are useful for the additional information they contain about the source file. 
 
 \subsection{HaRe's API}
 
@@ -458,7 +544,7 @@ HaRe also defines a large collection of program analysis and transformation func
 
 Additionally there are several transformations that don't affect the abstract syntax as much as they change the annotations that format ghc-exactprint's output. Adding new lines before a syntax element doesn't change the meaning of a program but is important for a refactoring's output to be well formatted and easy to read. 
 
-HaRe's dependencies help abstract away the low level\footnote{Low level from the perspective of a refactoring at least.} details of a language back-end, build tools, and pretty printing. HaRe's API tries to close the gap still left between the dependencies and the refactorings themselves. In the next section we will take a look at how HaRe's refactorings are implemented.
+HaRe's dependencies help abstract away the low-level\footnote{Low level from the perspective of a refactoring at least.} details of a language back-end, build tools, and pretty printing. HaRe's API tries to close the gap still left between the dependencies and the refactorings themselves. In the next section we will take a look at how HaRe's refactorings are implemented.
 
 \subsection{Implementing Refactorings in HaRe}
 
@@ -466,6 +552,8 @@ HaRe actually requires very few things from a refactoring implementation. As was
 
 
 Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that checking \textit{pre}conditions would be the first thing the implementation of that refactoring computes. A more efficient implementation checks preconditions throughout computation alongside the AST transformation. Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times, for example, the renaming refactoring checks for name conflicts while it descends the AST replacing the old name with the new one. Obviously this strategy only works for certain preconditions the only precondition for deleting a definition is that the target definition isn't used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not. 
+
+\section{The Project Management of HaRe}
 
 \chapter{Data-driven refactorings}
 
