@@ -1,0 +1,14 @@
+digraph G {
+rankdir=LR;
+parse[label="Parser",shape="box"];
+rename[label="Renamer",shape="box"];
+typecheck[label="Typechecker",shape="box"];
+desugar[label="Desugarer",shape="box"];
+core[label="Rest of compilation...",shape="box"];
+
+parse-> rename  [label="HsSyn\nRdrName",fontname="Courier"];
+rename -> typecheck [label="HsSyn\nName",fontname="Courier"];
+typecheck -> desugar [label="HsSyn\nId",fontname="Courier"];
+desugar -> core [label="CoreExpr",fontname="Courier"];
+
+}
