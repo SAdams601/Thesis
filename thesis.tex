@@ -379,8 +379,21 @@ HsCase (LHsExpr id) (MatchGroup id (LHsExpr id))
 In the case expression from listing~\ref{caseStmt} each of the four pattern matches is a \texttt{Match} in the expressions \texttt{MatchGroup}. Each \texttt{Match} associates a left hand side pattern with the appropriate right hand side expression.
 
 \subsubsection{The syntax tree}
+The previous section gave a brief overview of GHC's identifiers and its representation of expressions. This section describes the broader picture, the representation of whole Haskell programs.  
 
-GHC expressions are contained in some binding, represented by the \texttt{HsBind} type.  
+According to the GHC a Haskell program is simply a list of modules.\footnote{This is a very simple view and additional tools are needed to properly represent "projects" which is the context that most Haskell programs exist inside of. This is discussed further in section~\ref{hareInners}.} Inside of GHC each module is represented by an \texttt{HsModule}. This top level structure keeps track of everything that module imports, exports, and a list of all the declarations that the module defines. Declarations (of type \texttt{HsDecl}) are what represent everything that can be defined in Haskell. 
+
+The \texttt{HsDecl} type is only used as a wrapper around other types. Bindings (of functions and/or values), instance, and type class declaration are differentiated by \texttt{HsDecl}'s constructors. 
+
+\begin{lstlisting}[caption={A subset of \texttt{HsDecl constructors}}]
+data HsDecl id =
+	   TyClD (TyClDecl id)
+	| InstD (InstDecl id)
+	| ValD  (HsBind id)
+\end{lstlisting}
+
+\texttt{HsDecl} is only provides a single type that describes what sort of declaration it is. There is very little information stored at this level, the inner type is the "payload" of the declaration (e.g. \texttt{HsBind} or \texttt{TyClDecl}). These payload types are what store the type and expression level abstract syntax of Haskell that was described in the previous section.
+
 
 \section{Generic programming}\label{genProg}
 The need for a generic programming library, as previously discussed in section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}.
@@ -552,8 +565,6 @@ HaRe actually requires very few things from a refactoring implementation. As was
 
 
 Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that checking \textit{pre}conditions would be the first thing the implementation of that refactoring computes. A more efficient implementation checks preconditions throughout computation alongside the AST transformation. Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times, for example, the renaming refactoring checks for name conflicts while it descends the AST replacing the old name with the new one. Obviously this strategy only works for certain preconditions the only precondition for deleting a definition is that the target definition isn't used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not. 
-
-\section{The Project Management of HaRe}
 
 \chapter{Data-driven refactorings}
 
