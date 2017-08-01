@@ -1616,32 +1616,94 @@ The above example's definition of \texttt{mergesort} is very similar to the prev
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
 
-This chapter reviews current work in both the refactoring and other areas of the literature. The chapter is divided into three sections. The first section~\label{funcTools} will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section, \ref{otherTools}, will discuss refactoring for non-functional programming languages such as the tools packed into most modern IDEs . Finally section~\ref{typeTrans} covers work done on program transformation, with a focus on type changing transformations.
-
-There are several bodies of literature that are related to my thesis work. Other functional refactoring tools such as Wrangler~\citep{wrangler} are of obvious interest. There is also the code smell tool for Haskell HLint~\citep{hlint}.
-
-Another interesting project is the Type-and-Transform system developed at the University of Utrecht~\citep{typeAndTransform}. Which is a system for performing semantics preserving type changing transformations for the simply typed lambda calculus, and the polymorphic lambda calculus.
-
-In general this chapter will briefly discuss the research done in two primary areas:
-
-\begin{enumerate}
-\item Refactoring and code smell tools for functional programming languages
-\item Type changing program transformations 
-\end{enumerate}
+This chapter reviews current work in both the refactoring and other areas of the literature. The chapter is divided into three sections. The first section~\label{funcTools} will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section, \ref{otherTools}, will discuss non-functional language refactoring such as the tools included with many modern IDEs. Refactoring is also being applied to new domains such as databases and spreadsheets. Finally section~\ref{typeTrans} covers work done on program transformation, with a focus on type changing transformations. This section will discuss the work of Erwig and Ran on monadification~\citep{monadification} and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
 
 \section{Tooling for functional languages}\label{funcTools}
-
-\begin{enumerate}
-\item HLint
-\item Wrangler
-\item Other refactoring tools from Budapest
-\item (From above) http://haskelltools.org/
-\item The budapest people also did a refactoring tool for wrangler
-\item OCaml refactorer - ROTOR from this years OCaml symposium.
-\end{enumerate}
+A reason that is often given to explain why functional languages are in widespread use in industry is the lack of a robust tooling ecosystem~\citep{wadlerTools}. In recent years this has started to change. 
 
 
-\section{Refactoring other langauges}\label{otherTools}
+This section will cover some notable refactoring and code smell tools for functional programming languages.
+
+\subsection{HLint}
+
+HLint is a code smell tool for Haskell. It can suggest changes to a code base such as alternative functions to use, how to simplify code, and redundancies~\citep{hlint}.
+
+Code smell and refactoring tools are very closely related. Simplistically a code smell tool detects problems in a code base and a refactoring tool fixes them. If a tool can detect a problem why can't the same program fix them? HLint has a \texttt{-refactor} flag that will automatically apply the suggestions. However a single piece of code could have multiple smells, how would HLint choose which one to apply? Also once a transformation was applied other hints may no longer be applicable.
+
+One of the powerful features of HLint is its customizability. An HLint (called \texttt{hlint.yaml}) configuration file added to the root of a project   will be detected by HLint and it will suggest both the default hints as well as the custom hints from that file. Hints are very simple to write.
+
+\begin{lstlisting}[caption={A simple hint from~\citep{hlint}}, label=lstHint]
+- hint: {lhs: x !! 0, rhs: head x}
+\end{lstlisting}
+
+Listing~\ref{lstHint} contains the definition of a hint that detects the list index operator is being used to look up the 0th element of a list and suggests using \texttt{head} instead. The \texttt{lhs} tag is the code HLint will search for. If code matching \texttt{lhs} is found  HLint will suggest the code be replaced with the \texttt{rhs} code. HLint assumes any single character variable is a substitution parameter. Given the hint from listing~\ref{lstHint} and the following code:
+
+\begin{lstlisting}
+f list = list !! 0
+\end{lstlisting}
+
+HLint produces the following output.
+
+\begin{lstlisting}
+ Suggestion: Use head
+Found:
+  list !! 0
+Why not:
+  head list
+
+1 hint
+\end{lstlisting}
+
+\subsection{Haskell Tools Refact}
+
+HaRe isn't the only refactoring tool for Haskell. In late 2016 Haskell Tools Refact was announced and is currently at version 0.7~\citep{haskellTools}. The Haskell Tools project is a GHC based developer tool kit~\citep{haskellToolsGit}. There are six refactorings currently supported.
+
+\begin{itemize}
+\item Rename
+\item Generate type signature
+\item Generate exports
+\item Extract binding
+\item Inline binding
+\item Organize imports
+\end{itemize}
+
+The haskell-tools refactorer is currently integrated into the Atom editor with Sublime text support planned for the near future~\citep{haskellTools}
+
+\subsection{Wrangler}
+
+Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\cite{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\cite{erlangHistory}. Erlang's core design tenets include lightweight process, that communicate through message passing. Erlang also boasts a ``let it fail" error handling strategy, where processes either succeed or fail and other specialised processes handle the error~\cite{armstrongThesis}.
+
+Wrangler has been integrated into both Emacs and Eclipse and currently supports a large library of refactorings, code smells, and other program analysis tools such as clone detection and automatic api migration~\citep{wrangler}. Additionally Wrangler supports a template based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
+
+The template-based API of Wrangler allows users to define program analysis and transformations using concrete Erlang syntax. Wrangler templates consist of Erlang syntax that may contain meta-variables or meta-atoms that can stand in for any language element. Meta-variables/atoms are variables or atoms that end with the "\texttt{@}" character, this meta-variable/atom will then stand for the next language element. Meta-variables/atoms that end with "\texttt{@@}" are list meta-variables/atoms that match a sequence of language elements as long as they are of same sort~\citep{letsUser}.\footnote{Things like the arguments to a function or a sequence of expressions in a function body are the same "sort."}
+
+\begin{lstlisting}[caption={Some Wrangler templates},language=erlang,label=templates]
+?T("erlang:spawn(Arg@)")
+
+?T("erlang:spawn(Arg@@)")
+\end{lstlisting}
+
+The first template in listing~\ref{templates} matches applications of \texttt{erlang:spawn} when it is called with one argument whereas the second template will match the same function but with any number of arguments.
+
+Composite refactorings are refactorings that are made up of multiple refactorings run, in sequence, one after the other. It can be challenging to develop composite refactorings if they are not well supported. What should the refactorer do if the second refactoring in a chain of four fails? 
+
+The Wrangler DSL supports the creation of composite refactoring through a variety of features. First, Wrangler extends every primitive refactoring with a \textit{refactoring command generator}. A command generator allows the refactoring to accept not just concrete values but also structures that specify how the parameter should be generated; each parameter of a command generator accepts either a concrete value, a condition that checks if a value is satisfactory, or a generator for creating the parameter based on the previous parameters. A refactoring for renaming functions named with the format \texttt{camelCase} to \texttt{camel\_case} would accept three arguments the target filename, the name of the target function, and the desired new name. This command generator's first parameter is a condition that always returns true because any file is a valid target for renaming. The second parameter is another condition that checks if the function name matches is in camel case format (e.g. "\texttt{aFunName}"). The final parameter is generated by taking the second parameter and modifying it so that the name is in the corresponding "snake case" format (e.g. "\texttt{a\_fun\_name}"). 
+
+The DSL also allows decision making to occur during the execution of a composite refactoring. Composite refactorings can be either atomic or non-atomic. Atomic composite refactorings require each component refactoring to be successfully applied before continuing onto the next refactoring. If a single refactoring fails inside of an atomic composite refactoring the entire refactoring fails and the program remains unchanged. When a single refactoring fails inside of a non-atomic composite refactoring, correspondingly, the entire refactoring will continue by trying the next refactoring in the sequence. The Wrangler DSL allows for refactorings to be composed with a mixture of atomic and non-atomic sections.  
+
+\subsection{ROTOR}
+
+Another newcomer to the refactoring tools for functional language space is ROTOR\footnote{\textbf{R}eliable \textbf{O}Caml-base \textbf{T}ool for \textbf{O}Caml \textbf{R}efactoring} the first refactoring tool to target OCaml~\citep{rotor}. Language features of OCaml provide some unique challenges for a refactoring tool. In OCaml one module may be included in another, when renaming the function \texttt{f} in module \texttt{A} but \texttt{A} is included in module \texttt{B} the both \texttt{A.f} and \texttt{B.f} will need to be renamed. 
+
+A unique opportunity of the ROTOR project is that it has an partner in industry, Jane Street Capital. ROTOR is using the core library\footnote{\url{https://github.com/janestreet/core}} an "industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
+ 
+\section{Other types of Refactoring}\label{otherTools}
+
+Refactoring is a critical software development process independent of language. This section will discuss some notable examples of refactorings outside of the functional programming paradigm. 
+
+
+\subsection{Modern IDEs}
+Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, Intellij\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general and object-oriented specific refactorings such as, renaming, method extraction, and pushing/pulling methods up/down the object hierarchy.  
 
 \begin{enumerate}
 \item Refactoring spreadsheets
@@ -1676,28 +1738,6 @@ Erwig and Ran have proposed just such a system in~\citep{monadification}. Their 
 \subsubsection{Issues with Erwig and Ran's solution}
 
 There are a few issue with the monadification solution proposed by~\citep{monadification}. There several different styles of monadification and this algorithm only supports one of them~\citep{clausMonadResponse}. Five different styles of monadification have been outlined in~\citep{monadSurvey}, and before implementing an automatic monadification solution it should be determined which style of monadification would be the most helpful to the Haskell community.
-
-\subsection{Functional language refactoring tools}
-
-Refactoring is a subtopic of standard program transformation in that the goal of refactoring is to leave program behavior unchanged~\citep{fowler}. There are quite a few functional language refactoring tools that already exist for Haskell and other functional languages. 
-
-\subsubsection{Erlang}
-
-Erlang is another functional programming language that puts a heavy emphasis on fault tolerance, scalability, and concurrency. In contrast to Haskell, Erlang is not statically typed.
- 
-Several projects exist to improve the quality of Erlang code. RefactErl is a source code analysis tool that also supports a few refactorings~\citep{refactErlWiki}. Tidier is an automated Erlang refactorer. Unlike many of the tools discussed in this paper Tidier runs without user input, cleaning up Erlang source code automatically~\citep{erlangTidier}.
-
-Wrangler is another refactoring tool for Erlang made by Huiqing Li and Simon Thompson here at the University of Kent~\citep{refacTools}. In addition to refactorings Wrangler also provides "decision support tools" that detect code smells and highlight other issues within an Erlang project. Wrangler is also user extensible, it supports a domain-specific language allowing users to script their own complex refactorings~\citep{refacTools}. Wrangler has been integrated into the Emacs and Eclipse IDEs.
-
-\subsubsection{Haskell}
-
-Improving the quality of Haskell code is the focus of several projects. HLint for example provides suggestions for how Haskell code could be improved but does not do any actual transformations~\citep{hlint}.
-
-Another Haskell program transformation project is HERMIT. Instead of performing transformations on Haskell source code HERMIT targets the Core language~\citep{hermit}. Core is the intermediate language that Haskell source code is transformed to after desugaring~\citep{ghcDesign}. HERMIT uses GHC plugins to perform program transformations as compiler optimisation passes. 
-
-Finally there is the Haskell Refactorer (HaRe). Since HaRe is where I will be implementing my research I have dedicated an entire chapter (chapter ~\ref{hareChapter}) to describing its implementation. 
-
-\comment{\textbf{Add section about ML languages.}}
 
 \chapter{Conclusion}
 Summarise my contribution here. The main contributions of my thesis are the development of type changing refactorings for GHC. With a particular emphasis on changing the abstractions that programs use.
