@@ -1611,8 +1611,12 @@ mergesort xs = do
 The above example's definition of \texttt{mergesort} is very similar to the previous definition. The only difference is that previously the call to \texttt{merge} was a pure value so it needed to be lifted into the monad by \texttt{return}, in this version since merge was also refactored into the monad it can just sit at the end of mergesort.
 
 \fi 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
+
+This chapter reviews current work in both the refactoring and other areas of the literature. The chapter is divided into three sections. The first section~\label{funcTools} will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section, \ref{otherTools}, will discuss refactoring for non-functional programming languages such as the tools packed into most modern IDEs . Finally section~\ref{typeTrans} covers work done on program transformation, with a focus on type changing transformations.
 
 There are several bodies of literature that are related to my thesis work. Other functional refactoring tools such as Wrangler~\citep{wrangler} are of obvious interest. There is also the code smell tool for Haskell HLint~\citep{hlint}.
 
@@ -1625,7 +1629,7 @@ In general this chapter will briefly discuss the research done in two primary ar
 \item Type changing program transformations 
 \end{enumerate}
 
-\section{Tooling for functional languages}
+\section{Tooling for functional languages}\label{funcTools}
 
 \begin{enumerate}
 \item HLint
@@ -1633,11 +1637,19 @@ In general this chapter will briefly discuss the research done in two primary ar
 \item Other refactoring tools from Budapest
 \item (From above) http://haskelltools.org/
 \item The budapest people also did a refactoring tool for wrangler
-\item OCaml refactorer?
+\item OCaml refactorer - ROTOR from this years OCaml symposium.
 \end{enumerate}
 
 
-\section{Type changing program transformations}
+\section{Refactoring other langauges}\label{otherTools}
+
+\begin{enumerate}
+\item Refactoring spreadsheets
+\item intellij, visual studio?
+\item 
+\end{enumerate}
+
+\section{Type changing program transformations}\label{typeTrans}
 
 \begin{enumerate}
 \item Type and transform
@@ -1647,7 +1659,7 @@ In general this chapter will briefly discuss the research done in two primary ar
 
 \comment{Move applicative do stuff here?}
 
-\section{Program transformation and Refactoring}
+\section{Program transformation and Refactoring}\label{progTran}
 
 This section covers some of the relevant previous work done in the fields of refactoring and program transformation. It should be said that there is much more work done in program transformation than is discussed here. More general discussion about the field of program transformaton in general can be found in~\citep{visserSurvey,transformationIntro}.
 
