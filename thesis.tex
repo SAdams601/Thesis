@@ -1705,6 +1705,31 @@ Refactoring is a critical software development process independent of language. 
 \subsection{Modern IDEs}
 Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, Intellij\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general and object-oriented specific refactorings such as, renaming, method extraction, and pushing/pulling methods up/down the object hierarchy.  
 
+\subsection{Refactoring in new domains}
+Though automated refactoring was originally developed for the object-oriented language Smalltalk~\citep{refactoringBrowser} there has been recent work on building tools that refactor things that are not traditional programming languages. This section with briefly talk about two novel applications of refactoring, spreadsheets and wikis.
+
+\subsubsection{Spreadsheet refactoring}
+Spreadsheets are a widely used tool in industry, with 13 million end users that are estimated to be "do programming" with spreadsheets or databases in 2012 this dwarfs 3 million professional programmers at that time~\citep{endUsers}. Spreadsheets also exhibit "smells" much like the code smells described by Fowler. End-users are also able to detect "spreadsheet smells" and agree that these patterns should be avoided~\citep{spreadsheetSmells}. This indicates that even though it isn't a traditional form of programming spreadsheets are a valid target for refactoring.
+
+BumbleBee is a refactoring tool who's grammar is built from the grammer for Excel formulas~\citep{bumblebee}. Many spreadsheet users have no formal programming training so creating a language that would be familiar to them is important. The grammar of BumbleBee consists of two Excel formulas associated by a "$\leftrightarrow$" operator that indicates the two formula can be transformed into each other.
+
+$$ A1+A2+A3 \leftrightarrow SUM(A1:A3) $$
+
+The previous example means that adding together the cells A1, A2, and A3 could be replaced by a call to the $SUM$ function. BumbleBee also has metavariables that stand in for certain constructs from the Excel language. A "$C$" represents a cell, "$R$" a range, and "$P$" a constant. The following example transforms a sum over any range divided by the length of that range into a call to the average function over the same range.
+
+$$ SUB(R)/COUNT(R) \leftrightarrow AVERAGE(R) $$
+
+Finally BumbleBee allows for cells to be referenced in the form ${i,j}$ and in connected groups with "$...$." This enables the following transformation rule that replaces a chain of sums to be replaced with a single call to $SUM$.
+
+$$ \{i,j\} + ... + \{m,n\} \leftrightarrow SUM(\{i,j\}:\{m,n\}) $$
+
+The goal of this syntax is to allow user familiar with Excel but not another programming language to be able to create their own translations. BumbleBee is implemented as an add on for Excel so users can work with it in a familiar environment.
+
+\subsubsection{Wiki refactoring}
+
+
+\subsection{Refactoring to introduce parallelism}
+
 \begin{enumerate}
 \item Refactoring spreadsheets
 \item intellij, visual studio?
