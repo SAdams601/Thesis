@@ -1725,7 +1725,7 @@ The previous example means that adding together the cells A1, A2, and A3 could b
 
 $$ SUB(R)/COUNT(R) \leftrightarrow AVERAGE(R) $$
 
-Finally BumbleBee allows for cells to be referenced in the form ${i,j}$ and in connected groups with "$...$." This enables the following transformation rule that replaces a chain of sums to be replaced with a single call to $SUM$.
+Finally BumbleBee allows for cells to be referenced in the form ${i,j}$ and cells can be connected into groups with the "$...$" operator. This enables the following transformation rule that replaces a chain of sums to be replaced with a single call to $SUM$.
 
 $$ \{i,j\} + ... + \{m,n\} \leftrightarrow SUM(\{i,j\}:\{m,n\}) $$
 
@@ -1733,6 +1733,16 @@ The goal of this syntax is to allow user familiar with Excel but not another pro
 
 \subsubsection{Wiki refactoring}
 
+Another increasingly popular type of end user programming is writing Wikis. A wiki is essentially just a user-editable graph of articles and categories. Articles store written information and categories are just keywords that characterize articles. As a community adds content to a wiki the articles that make up the wiki require refactoring. This may involve splitting an article into multiple articles, or moving an article from one category to another. Currently wiki engines (e.g. MediaWiki the engine for Wikipedia) are entirely focused on content creation and offer little to no support for refactoring. 
+
+WikiWhirl is a visual DSL for refactoring wikis~\citep{wikiMaps}. WikiWhirl is built on top of FreeMind an open source mind mapping tool.\footnote{\url{http://freemind.sourceforge.net/wiki/index.php/Main_Page}}
+
+\begin{figure}[h]\label{wikiwhirl}
+	\begin{center}
+		\includegraphics[scale=.4]{images/wikiwhirl_mindmap.png}
+	\end{center}
+	\caption{A screen shot of WikiWhirl taken from \url{http://www.onekin.org/portal/wikiwhirl}}
+\end{figure}
 
 \subsection{Refactoring to introduce parallelism}
 
