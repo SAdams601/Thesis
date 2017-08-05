@@ -1622,13 +1622,15 @@ The above example's definition of \texttt{mergesort} is very similar to the prev
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
 
-This chapter reviews current work in both the refactoring and other areas of the literature. The chapter is divided into three sections. The first section~\label{funcTools} will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section, \ref{otherTools}, will discuss non-functional language refactoring such as the tools included with many modern IDEs. Refactoring is also being applied to new domains such as databases and spreadsheets. Finally section~\ref{typeTrans} covers work done on program transformation, with a focus on type changing transformations. This section will discuss the work of Erwig and Ran on monadification~\citep{monadification} and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
+This chapter reviews current work in both the refactoring and other areas of the literature. The chapter is divided into several sections. The first section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section (\ref{otherTools}) will discuss novel, non-programming language refactoring of wikis and spreadsheets. Finally section~\ref{typeTrans} covers work done on type changing program transformations. This section will discuss the work of Erwig and Ran on monadification~\citep{monadification} and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
+
+\if(FALSE)
+\subsection{Modern IDEs}
+Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, Intellij\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy).  
+\fi
 
 \section{Tooling for functional languages}\label{funcTools}
-A reason that is often given to explain why functional languages are in widespread use in industry is the lack of a robust tooling ecosystem~\citep{wadlerTools}. In recent years this has started to change. 
-
-
-This section will cover some notable refactoring and code smell tools for functional programming languages.
+A reason that is often given to explain why functional languages are in widespread use in industry is the lack of a robust tooling ecosystem~\citep{wadlerTools}. This is no longer the case as functional language ecosystems have undergone a great deal of development in recent years. This section will cover some notable refactoring and code smell tools for functional programming languages.
 
 \subsection{HLint}
 
@@ -1703,13 +1705,9 @@ Another newcomer to the refactoring tools for functional language space is ROTOR
 
 A unique opportunity of the ROTOR project is that it has an partner in industry, Jane Street Capital. ROTOR is using the core library\footnote{\url{https://github.com/janestreet/core}} an "industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
  
-\section{Other types of Refactoring}\label{otherTools}
+\section{Novel applications of Refactoring}\label{otherTools}
 
-Refactoring is a critical software development process independent of language. This section will discuss some notable examples of refactorings outside of the functional programming paradigm. 
-
-
-\subsection{Modern IDEs}
-Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, Intellij\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general and object-oriented specific refactorings such as, renaming, method extraction, and pushing/pulling methods up/down the object hierarchy.  
+Refactoring is a critical software development process independent of language. This section will discuss some notable examples of refactorings outside 
 
 \subsection{Refactoring in new domains}
 Though automated refactoring was originally developed for the object-oriented language Smalltalk~\citep{refactoringBrowser} there has been recent work on building tools that refactor things that are not traditional programming languages. This section with briefly talk about two novel applications of refactoring, spreadsheets and wikis.
@@ -1754,7 +1752,7 @@ WikiWhirl is a visual DSL for refactoring wikis~\citep{wikiMaps}. WikiWhirl is b
 
 WikiWhirl currently supports eight refactorings. They are:
 
-\begin{enumerate}
+\begin{itemize}
 	\item Create an article/category
 	\item Categorize an article
 	\item Uncategorize an article
@@ -1763,15 +1761,14 @@ WikiWhirl currently supports eight refactorings. They are:
 	\item Merge two articles/categories
 	\item Split an article/category
 	\item Move a section from one article to another
-\end{enumerate}
+\end{itemize}
 
-\subsection{Refactoring to introduce parallelism}
+Both wikis and spreadsheets are common data formats that deal with the same "smell" and quality issues that software projects experience. The difference between software development and these applications is that the users of the latter will not necessarily be technology professionals. Refactoring tools for wikis and spreadsheets have to be usable by laypeople not just software engineers. 
 
-\begin{enumerate}
-\item Refactoring spreadsheets
-\item intellij, visual studio?
-\item 
-\end{enumerate}
+\section{Refactoring to introduce parallelism}\label{refacParallel}
+
+
+
 
 \section{Type changing program transformations}\label{typeTrans}
 
