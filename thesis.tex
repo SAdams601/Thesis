@@ -1733,16 +1733,37 @@ The goal of this syntax is to allow user familiar with Excel but not another pro
 
 \subsubsection{Wiki refactoring}
 
-Another increasingly popular type of end user programming is writing Wikis. A wiki is essentially just a user-editable graph of articles and categories. Articles store written information and categories are just keywords that characterize articles. As a community adds content to a wiki the articles that make up the wiki require refactoring. This may involve splitting an article into multiple articles, or moving an article from one category to another. Currently wiki engines (e.g. MediaWiki the engine for Wikipedia) are entirely focused on content creation and offer little to no support for refactoring. 
+Another increasingly popular type of end user programming is writing Wikis. A wiki is essentially just a user-editable graph of articles and categories. Articles store written information and categories are just keywords that characterize articles. As a community adds content to a wiki the articles that make up the wiki require refactoring. This may involve splitting an article into multiple articles, or moving an article from one category to another. Currently wiki engines (e.g. MediaWiki the engine for Wikipedia) are entirely focused on content creation and offer little to no support for refactoring.
 
-WikiWhirl is a visual DSL for refactoring wikis~\citep{wikiMaps}. WikiWhirl is built on top of FreeMind an open source mind mapping tool.\footnote{\url{http://freemind.sourceforge.net/wiki/index.php/Main_Page}}
+Refactoring a wiki is a surprisingly difficult task. Beyond just the content of an article there is also the history of changes to that article and the "talk" page where users can discuss about the content of an article. A refactoring needs to preserve two key properties of the wiki, authorship independence and readership independence. Authorship independence means that a refactoring will preserve the attribution of content to the original author(s). Readership independence implies that a refactoring will not alter the content of the wiki, a refactoring will only change how content is distributed throughout the wiki.
 
-\begin{figure}[h]\label{wikiwhirl}
+Splitting an article into two is a common refactoring that needs to take place, common enough that Wikipedia documents the process.\footnote{\url{http://en.wikipedia.org/wiki/Wikipedia:Splitting}} Article splitting occurs when an article describes multiple things that would be better served by having two dedicated articles. The new article that is created takes all of its content from the source article. The split refactoring maintains authorship independence by adding a note in the talk and recent changes pages of the new article indicating that the new article was originally a section of the source article. Additionally similar changes need to be added to the talk and recent changes pages of the source article as well. These changes allow for authorship to be tracked both through the source and new articles.
+
+
+\begin{figure}[t]\label{wikiwhirl}
 	\begin{center}
 		\includegraphics[scale=.4]{images/wikiwhirl_mindmap.png}
 	\end{center}
 	\caption{A screen shot of WikiWhirl taken from \url{http://www.onekin.org/portal/wikiwhirl}}
 \end{figure}
+
+Readership independence is maintained during an article split by adding a summary section where the content that was added to the new article was originally. This allows people reading the source article to still understand what the split of section contained. This process is tedious and poorly supported by the wiki engine which makes it an ideal target for automated refactoring.
+
+WikiWhirl is a visual DSL for refactoring wikis~\citep{wikiMaps}. WikiWhirl is built on top of FreeMind an open source mind mapping tool.\footnote{\url{http://freemind.sourceforge.net/wiki/index.php/Main_Page}} Mind mapping is a method of visualizing the relationships between pieces of  hierarchical information. WikiWhirl represents a wiki as a mind map and users can then refactor the wiki using this view (see figure~\ref{wikiwhirl}). 
+
+
+WikiWhirl currently supports eight refactorings. They are:
+
+\begin{enumerate}
+	\item Create an article/category
+	\item Categorize an article
+	\item Uncategorize an article
+	\item Rename an article/category
+	\item Delete an article/category
+	\item Merge two articles/categories
+	\item Split an article/category
+	\item Move a section from one article to another
+\end{enumerate}
 
 \subsection{Refactoring to introduce parallelism}
 
