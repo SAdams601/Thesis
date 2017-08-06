@@ -1767,6 +1767,91 @@ Both wikis and spreadsheets are common data formats that deal with the same "sme
 
 \section{Refactoring to introduce parallelism}\label{refacParallel}
 
+The reasons to refactor source code have also expanded beyond code quality. This section will describe two different projects that have developed refactorings to change the execution of a program from single to multi-threaded. Functional programming languages are well suited to parallel execution due to immutability by default and in some languages (such as Erlang) first class concurrency features. This section will first describe ParaForming which uses refactoring to introduce parallel abstractions into Haskell code, then it will describe work done to refactor Erlang code to introduce algorithmic skeletons.
+
+\subsection{ParaForming}  
+ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\citep{paraforming}. The ParaForming work targets Glasgow parallel Haskell (GpH) an extension to Haskell and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see figure~\ref{strategy}). 
+
+\begin{figure}[t]\label{strategy}
+\begin{lstlisting}
+type Strategy a = a -> Eval a
+\end{lstlisting}
+\caption{The strategy type}
+\end{figure}   
+
+A strategy takes its argument and determines how it will be evaluated inside of the \texttt{Eval} monad. The \texttt{rpar} strategy introduces parallelism by "sparking" its argument. A spark allows for something to be evaluated in parallel. However, a spark will only be evaluated in a separate thread if a processor is available, this means that many sparks can be created without adding an unnecessary amount of overhead that actually reduces the programs performance.
+
+The simplest parallel refactoring is introducing data parallelism. This refactoring is applied to an expression that is of type list and evaluates each member of that list in a spark. A sequential function that sums the Euler totient function is in figure~\ref{eulerSeq} and the refactored program is in figure~\ref{eulerPar1}
+
+\begin{figure}[t]\label{eulerSeq}
+\begin{lstlisting}
+sumEulerSeq :: Int -> Int
+sumEulerSeq n = sum (map euler (mkList n))
+\end{lstlisting}
+\caption{A sequential calculation that sums the Euler totient function}
+\end{figure} 
+
+
+\begin{figure}[t]\label{eulerPar1}
+\begin{lstlisting}
+sumEulerPar1 :: Int -> Int
+sumEulerPar1 n = sum (map euler (mkList n) `using` parList rdeepseq)
+\end{lstlisting}
+\caption{A refactored version of the function from figure~\ref{eulerSeq}}
+\end{figure} 
+  
+This refactoring evaluates the calculation of \texttt{map euler (mkList n)} using\footnote{The (\texttt{using :: a -> Strategy a -> a}) function just evaluates some value with the given strategy.} the \texttt{parList rdeepseq} strategy. The (\texttt{parlist :: Strategy a -> Strategy [a]}) function evaluates each element of a list in parallel according to a given strategy and \texttt{rdeepseq} is the strategy the fully evaluates its argument. 
+  
+The refactored program in figure~\ref{eulerPar1} is highly parallel but not very efficient because the parallelism is very fine grained. Another refactoring can help in this case instead of sparking every element of a list another strategy can be introduced, one that separates the list into "chunks" and each of the chunks of the list is executed in parallel. This refactoring adds an additional argument to the function that determines how many chunks the list will be split into, as seen in figure~\ref{eulerChunk}.
+  
+\begin{figure}[t]\label{eulerChunk}
+\begin{lstlisting}
+sumEulerChunk :: Int -> Int -> Int
+sumEulerChunk c n = sum (map euler (mkList n) `using` parListChunk c rdeepseq)
+\end{lstlisting}
+\caption{A "chunked" version of the function from figure~\ref{eulerSeq}}
+\end{figure}  
+
+These two refactorings are both a way of introducing data parallelism with varying degrees of granularity. The other form of parallelism is known as task parallelism. Task parallelism distributes the calculation of a program across multiple processors, compare this to the data parallelism in figures~\ref{eulerPar1} and \ref{eulerChunk} where the data from the list is distributed across processors instead. 
+
+A divide and conquer version of the \texttt{sumEuler} function is defined in figure~\ref{dncEuler}. The refactoring works by executing the recursive calls on the left and right hand sides of the list in parallel. 
+
+\begin{figure}[t]\label{dncEuler}
+\begin{lstlisting}
+sumEulerDnc :: [Int] -> Int
+sumEulerDnc [] = 0
+sumEulerDnc [x] = euler x
+sumEulerDnc xd = s1+s2
+	where (left, right) = splitAt (length xs `div` 2) xs
+				s1 = sumEulerDnc left
+				s2 = sumEulerDnc right
+\end{lstlisting}
+\caption{A divide and conquer version of \texttt{sumEuler}}
+\end{figure}
+
+The refactoring targets the \texttt{s1} task from figure~\ref{dncEuler}. An \texttt{Eval} monad is added inside of a let binding in the right hand side of the function definition. Inside this monad the target task is executed in parallel and the calculated value is returned and bound using the let. All occurrences of the task in the original right hand side are then replaced with the let variable. The final result of this refactoring is in figure~\ref{dncPar}. The refactoring leaves the base cases unmodified and so they have been left out of this figure.
+
+\begin{figure}[t]\label{dncPar}
+\begin{lstlisting}
+sumEulerDnc :: [Int] -> Int
+...
+sumEulerDnc xd = 
+	let s1_2 = runEval $ do
+		s1_2 <- rpar s1
+		return (s1_2)
+	in s1_2 + s2
+	where (left, right) = splitAt (length xs `div` 2) xs
+				s1 = sumEulerDnc left
+				s2 = sumEulerDnc right
+\end{lstlisting}
+\caption{A task parallel version of the divide and conquer \texttt{sumEuler}.}
+\end{figure}
+
+Much like the first version of the data parallel program, the function in figure~\ref{dncPar} has a very fine grained parallelism strategy. The work in~\citep{paraforming} provides a similar refactoring that limits the number of sparks produced.
+
+The goal of this work is to assist programmers in introducing parallelism into their programs and then tuning the level of parallelism to be appropriate to that program.  
+
+\subsection{Cost-Directed Parallel Refactoring}
 
 
 
