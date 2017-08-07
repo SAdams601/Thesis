@@ -1853,7 +1853,16 @@ The goal of this work is to assist programmers in introducing parallelism into t
 
 \subsection{Cost-Directed Parallel Refactoring}
 
+The previous section touched one of the big challenges of parallel programming, determining the correct level of parallelism to achieve maximum performance. \citep{parallelErl} describes a methodology to introduce algorithmic skeletons into Erlang programs using the Erlang refactoring tool Wrangler. In addition to introducing a skeleton this work provides cost models that estimate the performance of the program after adding each skeleton. This estimate helps a programmer make an informed decision about what parallelisation strategy is the best for a particular program. 
 
+An algorithmic skeleton is a common parallel pattern. A skeleton is implemented as a higher order function that takes in a sequential function and any parameters that the skeleton requires. \citep{parallelErl} discusses the four most common and useful skeletons.
+
+\begin{itemize}
+\item \texttt{seq} is the base case skeleton. This skeleton does not introduce any parallelism to the program. 
+\item \texttt{pipe} models a pipeline of functions where each functions input is the previous functions output. Parallelisation is gained from executing multiple inputs to the pipeline simultaneously. While one input is passed to a function further down the pipeline the function that just finished can start executing another input.
+\item \texttt{farm} applies a single function to a sequence of independent inputs in parallel.
+\item \texttt{map} is similar to \texttt{farm}. Each of the inputs to \texttt{map} can be partitioned into a sequence and a worker function can be applied in parallel to each sequence. Finally the results from the worker processes are combined into a single result for each input.   
+\end{itemize} 
 
 \section{Type changing program transformations}\label{typeTrans}
 
