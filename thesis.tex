@@ -1679,7 +1679,7 @@ The haskell-tools refactorer is currently integrated into the Atom editor with S
 
 \subsection{Wrangler}
 
-Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\cite{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\cite{erlangHistory}. Erlang's core design tenets include lightweight process, that communicate through message passing. Erlang also boasts a ``let it fail" error handling strategy, where processes either succeed or fail and other specialised processes handle the error~\cite{armstrongThesis}.
+Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\citep{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\citep{erlangHistory}. Erlang's core design tenets include lightweight process, that communicate through message passing. Erlang also boasts a ``let it fail" error handling strategy, where processes either succeed or fail and other specialised processes handle the error~\citep{armstrongThesis}.
 
 Wrangler has been integrated into both Emacs and Eclipse and currently supports a large library of refactorings, code smells, and other program analysis tools such as clone detection and automatic api migration~\citep{wrangler}. Additionally Wrangler supports a template based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
 
@@ -1707,12 +1707,9 @@ A unique opportunity of the ROTOR project is that it has an partner in industry,
  
 \section{Novel applications of Refactoring}\label{otherTools}
 
-Refactoring is a critical software development process independent of language. This section will discuss some notable examples of refactorings outside 
-
-\subsection{Refactoring in new domains}
 Though automated refactoring was originally developed for the object-oriented language Smalltalk~\citep{refactoringBrowser} there has been recent work on building tools that refactor things that are not traditional programming languages. This section with briefly talk about two novel applications of refactoring, spreadsheets and wikis.
 
-\subsubsection{Spreadsheet refactoring}
+\subsection{Spreadsheet refactoring}
 Spreadsheets are a widely used tool in industry, with 13 million end users that are estimated to be "do programming" with spreadsheets or databases in 2012 this dwarfs 3 million professional programmers at that time~\citep{endUsers}. Spreadsheets also exhibit "smells" much like the code smells described by Fowler. End-users are also able to detect "spreadsheet smells" and agree that these patterns should be avoided~\citep{spreadsheetSmells}. This indicates that even though it isn't a traditional form of programming spreadsheets are a valid target for refactoring.
 
 BumbleBee is a refactoring tool who's grammar is built from the grammer for Excel formulas~\citep{bumblebee}. Many spreadsheet users have no formal programming training so creating a language that would be familiar to them is important. The grammar of BumbleBee consists of two Excel formulas associated by a "$\leftrightarrow$" operator that indicates the two formula can be transformed into each other.
@@ -1729,7 +1726,7 @@ $$ \{i,j\} + ... + \{m,n\} \leftrightarrow SUM(\{i,j\}:\{m,n\}) $$
 
 The goal of this syntax is to allow user familiar with Excel but not another programming language to be able to create their own translations. BumbleBee is implemented as an add on for Excel so users can work with it in a familiar environment.
 
-\subsubsection{Wiki refactoring}
+\subsection{Wiki refactoring}
 
 Another increasingly popular type of end user programming is writing Wikis. A wiki is essentially just a user-editable graph of articles and categories. Articles store written information and categories are just keywords that characterize articles. As a community adds content to a wiki the articles that make up the wiki require refactoring. This may involve splitting an article into multiple articles, or moving an article from one category to another. Currently wiki engines (e.g. MediaWiki the engine for Wikipedia) are entirely focused on content creation and offer little to no support for refactoring.
 
@@ -1862,31 +1859,121 @@ An algorithmic skeleton is a common parallel pattern. A skeleton is implemented 
 \item \texttt{pipe} models a pipeline of functions where each functions input is the previous functions output. Parallelisation is gained from executing multiple inputs to the pipeline simultaneously. While one input is passed to a function further down the pipeline the function that just finished can start executing another input.
 \item \texttt{farm} applies a single function to a sequence of independent inputs in parallel.
 \item \texttt{map} is similar to \texttt{farm}. Each of the inputs to \texttt{map} can be partitioned into a sequence and a worker function can be applied in parallel to each sequence. Finally the results from the worker processes are combined into a single result for each input.   
-\end{itemize} 
+\end{itemize}
 
-\section{Type changing program transformations}\label{typeTrans}
+Skeletons are simple to understand in theory but it can be difficult to know which to apply in practice. This is when the cost models of each skeleton become useful to help make an informed decision about which skeleton should cause the greatest speed up. One of the examples presented in~\citep{parallelErl} is that of an image processing system that denoises images. This system is composed of two steps, first geo-referencing information for each image is consolidated then the image is filtered which performs the actual denoising. A simple sequential pipeline of the denoising is defined in figure~\ref{seqDenoise}.
 
-\begin{enumerate}
-\item Type and transform
-\item Erwig and Ran monadification
-\item Claus Reinke monadification
-\end{enumerate}
+\begin{figure}[t]\label{seqDenoise}
+\begin{lstlisting}
+denoise(Ims) -> [filter(geoRef(Im)) || Im <- Ims].
+\end{lstlisting}
+\caption{A sequential denoiser}
+\end{figure}    
 
-\comment{Move applicative do stuff here?}
+Obviously cost estimates aren't very helpful without a baseline to compare it to. The timings done in~\citep{parallelErl} show that the geo-referencing stage takes 171 ms and the filter takes 466 ms to process a single image. The complete denoiser computation is just the composition of these two stages so the total cost of processing a single image is the sum of these two costs (637 ms), and the entire system runs over $n$ images in $637*n$ ms. With this baseline established we can compare this to the cost model of refactoring the denoiser parallel pipeline instead. The cost of a pipeline is the the runtime of the costliest step, in this case $(Max(171,466)*n$ which is an improvement over the sequential version of the denoiser. The authors of~\citep{parallelErl} provide a skeleton library in Erlang called \texttt{skel}. The refactorer can be used to transform the denoiser into parallel pipeline as seen in figure~\ref{pipeDenoise}
 
-\section{Program transformation and Refactoring}\label{progTran}
+\begin{figure}[t]\label{pipeDenoise}
+\begin{lstlisting}
+denoise(Ims) -> skel:run([{pipe, 
+	[{seq, fun ?MODULE:geoRef/1}, 
+	 {seq, fun ?MODULE:filter/1}]}], Ims).
+\end{lstlisting}
+\caption{The denoiser as a parallel pipeline}
+\end{figure}
 
-This section covers some of the relevant previous work done in the fields of refactoring and program transformation. It should be said that there is much more work done in program transformation than is discussed here. More general discussion about the field of program transformaton in general can be found in~\citep{visserSurvey,transformationIntro}.
+Each of the pure functions from the original denoiser are wrapped with the \texttt{seq} skeleton so that they can become steps of the parallel pipeline. The parallelisation of this program doesn't need to stop here. Each of the steps in the pipeline can undergo further refactoring. The filter step for example can be improved using a parallel map. The \texttt{filter} function currently works over the entire image but the filter could be rewritten so that the image was broken up into pieces, those pieces can be filtered in parallel and then another function combines these pieces back together again. The geo-referencing function can't be partitioned in the way that the filter function can but a \texttt{farm} could be introduced so that multiple images can have their geo-references consolidated simultaneously. The final refactored denoise function from~\citep{parallelErl} is defined in figure~\ref{denoiseFinal}.\footnote{The \texttt{Nw} variable passed to the \texttt{farm} determines how many instances of the \texttt{geoRef} function will be sparked.}
+
+
+\begin{figure}[t]\label{denoiseFinal}
+\begin{lstlisting}
+denoise(Ims) -> skel:run([{pipe, 
+	[{farm, [{seq, fun ?MODULE:geoRef/1}], Nw}, 
+	 {parmap, [{seq, fun ?MODULE:filter/1}],
+		fun ?MODULE:partition/1,
+		fun ?MODULE:combine/1	 
+	 }]}], Ims).
+\end{lstlisting}
+\caption{The denoiser as a pipeline of a farm and a parallel map.}
+\end{figure}
+
+Parallelisation can be tedious and difficult to do which makes it a good candidate for tool assistance. The refactoring tool can guide a programmer though the process of parallelisation. Much like the how data-driven refactorings have multiple small changes are required before the entire process can be considered "finished" changing a program to run in parallel is also a sequence of many smaller changes.
+
+\section{ApplicativeDo}
+
+\comment{This is just taken from the IFL paper directly}
+
+The under-utilisation of applicatives in Haskell has not gone un-noticed; \citep{applicativeDo}, reimplement the way Haskell desugars do notation so that applicatives will be supported by do notation as well. 
+
+\begin{lstlisting}
+f = do
+	x1 <- A
+	x2 <- B x1
+	x3 <- C
+	return (x2,x3)
+\end{lstlisting}
+
+The function \texttt{f} would normally desugar into the following:
+
+\begin{lstlisting}
+f = A >>=
+	(\x1 -> B x1 >>=
+		(\x2 -> C >>=
+			(\x3 -> return (x2,x3))))
+\end{lstlisting}
+
+With applicative do activated \texttt{f} would now desugar to:
+
+\begin{lstlisting}
+f = (\x2 x3 -> (x2, x3))
+        <$> (A >>= (\x1 -> B x1))
+        <*> C                
+\end{lstlisting}
+
+The \texttt{ApplicativeDo} algorithm will attempt to insert as many applies into the expression as possible. When the implementation of the \texttt{Applicative} instance evaluates the two arguments of apply in parallel, better performance can be achieved by adding more applies. 
+
+There could be multiple ways to desugar a particular function. The \textit{applicativeDo} algorithm first assumes that every expression have an identical time cost, from this assumption the algorithm heuristically determines the desugaring with the shortest execution time.
+
+
+\section{Program transformations}\label{typeTrans}
+
+Refactoring is a type of program transformation but it does not constitute the whole field. A major difference between refactoring and other types of program transformations is the interactivity that a refactoring must support. A refactoring needs to be well understandable by programmers because must choose to apply a refactoring manually and using the refactoring tool needs to be easier than performing the transformation manually. Additionally the target program of a refactoring needs to be readable, maintainable, and keep proper layout and user comments. Other types of program transformation don't typically have these concerns. This section will describe some of the program transformation work most relevant to this thesis. First it will describe the type and transform system developed by~\citep{typeAndTransformSemantics}. Next there will be a discussion of the previous methods of monadification found in the literature. 
 
 \subsection{Type and transform systems}
 
-Work on a theoretical type changing program transformation system is being done currently at Utrecht University. They have proposed a type changing program transformation system known as a "type-and-transform" system~\citep{typeAndTransform}. This type-and-transform system can transform standard Haskell lists to Hughes' lists and perform stream fusion~\citep{typeAndTransform}. The type-and-transform system was expanded in~\citep{typeAndTransformPatterns} to properly transform Haskel lists to the $Seq~a$ type found in the \textit{Data.Sequence} module. At this point the type-and-transform system only works on a subset of the Haskell language~\citep{typeAndTransform}
+The type-and-transform system described in~\citep{typeAndTransformSemantics} is a system for a semantics preserving and type changing program transformations over the typed lambda calculus with let polymorphism. The type-and-transform system is limited to isomorphic types, there must be a way to convert between the two types and back again as described in figure~\ref{transformIso}.
+
+\begin{figure}[t]\label{transformIso}
+\begin{lstlisting}
+rep :: A -> R
+abs :: R -> A
+
+rep . abs = id
+abs . rep = id
+\end{lstlisting}
+\caption{The properties that must hold for the type-and-transform system to work over types \texttt{A} and \texttt{R}}
+\end{figure} 
+
+The type-and-transform system supports type-changing rewrites through typed rewrite rules 
+\comment{I'm really at a loss for how this system works and how to describe it.}
 
 \subsection{Automatic Monadification}\label{erwigMonad}
 
-Another type of program transformation that many people are interested in involves the "monadification" of code. Monads are necessary for Haskell code to perform any operation that would typically cause side-effects (I/O, state, etc.). This means that a system that can transform code without monads to code with monads, would be highly desirable to the Haskell community.
+Monadification is not a new problem and various solutions have been presented in the literature. In~\citep{lammelReuse} monadification is performed in two steps. First the program is transformed into A-normal form\footnote{This is also known as sequencing}, which flattens applications into let expressions. The first line of figure~\ref{anormal} shows a normal expression and line 3 of the same figure shows that expression in A-normal form.
 
-Erwig and Ran have proposed just such a system in~\citep{monadification}. Their system can be broken down into three steps. \textit{Navigating} involves finding the expression that will be returned by the function. Next \textit{binding} identifies recursive calls and replace the with variable binding. Finally the return is applied to the expression \textit{navigating} identified in the \textit{wrapping} step.
+\begin{figure}[t]\label{anormal}
+\begin{lstlisting}
+f (g x) (h y)
+
+let x1 = g x in
+	let x2 = h y in
+		f x1 x2
+\end{lstlisting}
+\caption{A-normal form converstion}
+\end{figure}
+
+Once the program has been converted into A-normal a let expression of the form $ let x = t1 in t2 $ is transformed into $ t1 >>= \lambda x. t2 $. If the right hand side of the lambda isn't already a monadic type then \texttt{return} will be introduced, e.g. $ t1 >>= \lambda x. return~~t2 $. The full transformation is given by inference rules in~\citep{lammelReuse}.
+
+Monadification is developed further by~\citep{monadification}. This work provides an algorithm for monadification as opposed to the semantics style inference rules defined in~\citep{lammelReuse}. \citep{monadification} also 
 
 \subsubsection{Issues with Erwig and Ran's solution}
 
