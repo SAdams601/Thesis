@@ -1142,6 +1142,9 @@ This chapter has introduced the concept of data-driven refactorings for the obje
 
 The following chapters will expand on some of these ideas. The next chapter will describe another form of generalisation that rewrites monadic code into its equivalent applicative functor code. The applicative code can be much cleaner and descriptive in certain cases. It can also allow programmers to take advantage of a different way of executing their programs. Chapter~\ref{chap:monadification} discusses introducing effectful abstractions into pure code. This process helps a code base add additional features, such as shared state, mid-development.
 
+\chapter{Implementing Data-Driven refactorings}
+
+Implementing Data-Driven refactorings have unique challenges. This chapter will discuss the implementation of the refactoring from the previous chapter.
 
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
@@ -1488,135 +1491,243 @@ parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
 \end{lstlisting}
 
 
-\chapter{Introducing Effectful Abstractions}\label{chap:monadification}
-Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus on introducing monads and applicatives into pure code.
+\chapter{Introducing Monads}\label{chap:monadification}
+Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus monadification, the process of adding monads to pure code. 
 
-The \texttt{Identity} monad is the monad the does not embody any computation strategy~\citep{identityMonad}. This means that any pure Haskell function could be refactored to be within the Identity monad. This refactoring can take in a set of functions and produce a corresponding set of functions with a monadic type. Take for example this definition of the Fibonacci numbers.
+Monadification of a Haskell program is a common transformation that must be performed if a problem becomes more complicated than is easily expressed without them\footnote{I've had a colleague remark to me: "I can't 
+count the number of times I've been in the middle of something and realized I needed some state."}. The Haskell communities guidelines also advise that monadic and pure code should be separated if possible so Haskell programs should be written as pure code until it is certain that monads are required~\citep{guidelines}. This makes the process of monadification a common transformation that Haskell programs undergo, making it a compelling refactoring target.
 
-\begin{lstlisting}[frame=tblr]
-fib :: Int -> [Int]
-fib 0 = 0
-fib 1 = 1
-fib n = fib (n-1) + fib (n-2)
-\end{lstlisting} 
+This chapter will describe a monadification refactoring. First will be a very brief definition of the \texttt{Monad} type class from GHC. There are multiple styles of monadification as described in~\citep{monadSurvey} and this chapter will describe these styles and discuss their relative merits and usefulness to the Haskell community. Finally the chapter will describe the implementation of monadification within the HaRe project.
+ 
+\section{The Monad Typeclass}
 
-This can be refactored to the Identity monad like so:\pagebreak
+The monad typeclass as it exists in GHC is defined in figure~\ref{monadDef}. The two canonical monad functions are \texttt{return} and bind (\texttt{(>>=)}). \texttt{return} is the function that brings some pure value into the monadic context the default definition is the function \texttt{pure} from the applicative instance of the type. Bind allows for computation to occur within the monadic context.
 
-\begin{lstlisting}[frame=tblr]
-fib :: Int -> Identity [Int]
-fib 0 = return 0
-fib 1 = return 1
-fib n = do
-	x <- fib (n-1)
-	y <- fib (n-2)
-	return (x + y)
+\begin{figure}[t]
+\begin{lstlisting}
+class Applicative m => Monad m where
+	(>>=) :: m a -> (a -> m b) -> m b
+
+	(>>) :: m a -> m b -> m b
+	m >> k = m >>= \_ -> k
+	
+	return :: a -> m a
+	return = pure
+	
+	fail :: String -> m a
+	fail s = errorWithoutStackTrace s
 \end{lstlisting}
+\caption{The monad typeclass}
+\label{monadDef}
+\end{figure}
 
-The new code could then be rewritten very easily (just by changing the type signature) to be within another monad. This allows for a developer to quickly create programs that can take advantage of monadic features such as IO or state. The monadic code could also be generalised to use applicatives with the refactoring detailed in chapter~\ref{applicative} but I also hope to develop a more straightforward way to introduce applicatives for this chapter.
+The other two functions are provided by the GHC implementation of the type class. The \texttt{(>>)} operator allows for composing together functions where the second operation is not dependent on the outcome of the first. \texttt{fail} is called when a pattern match failure occurs inside of a \texttt{do} statement. In figure~\ref{failCall} \texttt{fail} would be called if the function \texttt{f} returns a \texttt{Nothing} rather than a \texttt{Just}.
 
-Finally another abstraction that would seem to have quite a bit of potential for automatic introduction is the \texttt{Arrow} typeclass. Arrows were originally introduced as a more general abstraction to monads in~\citep{genMonadsArrows}. The full relationship between arrows, monads, and applicative functors was more fully described in~\citep{arrowsAndIdioms}. Given the relationship between these three typeclasses I believe it will be worth exploring introducing arrows as well. A possible outline of this chapter would be:
-
-\begin{enumerate}
-\item Introducing the Applicative style
-\item Automated Monadification
-\item Introduction to Arrows
-\item Discussion of Arrows, Applicative, and Monads
-\item Refactoring to Arrows
-\end{enumerate} 
-
-\if(FALSE)
-This chapter will cover the refactoring of pure code to become monadic. This chapter will be structured much like chapter~\ref{applicative} with sections covering the motivation behind the refactoring, examples of the refactoring, the preconditions that must hold before applying the refactoring, and variations and related refactorings. 
-
-The \texttt{Identity} monad is the monad the does not embody any computation strategy~\citep{identityMonad}. This means that any pure Haskell function could be refactored to be within the Identity monad. This refactoring can take in a set of functions and produce a corresponding set of functions with a monadic type. Take for example this definition of the Fibonacci numbers.
-
-\begin{lstlisting}[frame=tblr]
-fib :: Int -> [Int]
-fib 0 = 0
-fib 1 = 1
-fib n = fib (n-1) + fib (n-2)
-\end{lstlisting} 
-
-This can be refactored to the Identity monad like so:
-
-\begin{lstlisting}[frame=tblr]
-fib :: Int -> Identity [Int]
-fib 0 = return 0
-fib 1 = return 1
-fib n = do
-	x <- fib (n-1)
-	y <- fib (n-2)
-	return (x + y)
+\begin{figure}[t]
+\begin{lstlisting}
+do{
+(Just n) <- f;
+return (n+1)
+}
 \end{lstlisting}
+\caption{A \texttt{do} statement with a possible call to \texttt{fail} on line 2.}
+\label{failCall}
+\end{figure}
 
-The new code could then be rewritten very easily (just by changing the type signature) to be within another monad. This allows for a developer to quickly create programs that can take advantage of monadic features such as IO or state.
+\section{Styles of Monadification}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Up to this point this thesis has been fairly vague about what monadification is beyond the process of introducing monads into a previously pure type. Monadifying a single type changes it from type \texttt{a} to type \texttt{Monad m => m a}. Monadifying a function on the other hand changes the result type of the function because there is no way to extract values out of any given monadic context. Monadification can also affect any combination of parameters. Which parameters are affected depends on the \textit{style} of monadification.
+
+The different styles of monadification can change how a function is evaluated. In~\citep{monadSurvey} five different styles of monadification are described as part of a survey on the Haskell community's use of monads. The monadification styles are:
+
+\begin{itemize}
+\item Full Call-by-Value
+\item Full Call-by-Name
+\item Restricted Call-by-Name
+\item Data-Directed
+\item Restricted Call-by Value
+\end{itemize}
 
 
-This chapter will cover the refactoring pure code to be monadic instead. Take for example the following standard definition of mergesort.
+\subsection{Full Call-by-Value Monadification}
 
-\begin{lstlisting}[frame=tblr]
+A call-by-value monadification will ensure that all arguments are evaluated before being passed to a function and a function will also be evaluated before having arguments passed to it. Consider the definition of mergesort in figure~\ref{mergesrt}.
+
+\begin{figure}[t]
+\begin{lstlisting}
 mergesort :: (Ord a) => [a] -> [a]
-mergesort [] = []
-mergesort [x] = [x]
-mergesort xs = merge (mergesort fst) (mergesort snd)
-  where fst = take (length xs `div` 2) xs
-        snd = drop (length xs `div` 2) xs
-
+mergesort lst = let (l,r) = splitAt ((length lst) `div` 2) lst in
+	merge (mergesort l) (mergesort r)
+	
 merge :: (Ord a) => [a] -> [a] -> [a]
-merge xs [] = xs
-merge [] ys = ys
-merge (x:xs) (y:ys)
-   | (x <= y) = x:(merge xs (y:ys))
-   | otherwise = y:(merge (x:xs) ys)
+merge [] r = r
+merge l [] = l
+merge (x:xs) (y:ys) = 
+	case (x < y) of
+	True  -> x:(merge xs (y:ys))
+	False -> y:(merge (x:xs) ys)						
 \end{lstlisting}
+\caption{Mergesort}
+\label{mergesrt}
+\end{figure}
 
-Say that one wanted to refactor this code to become monadic. There are two different ways this could be interpreted, either both \texttt{mergesort} and \texttt{merge} are rewritten to be monadic, or just \texttt{mergesort} could be refactored. \texttt{Merge} cannot be refactored to be monadic without also changing \texttt{mergesort} because \texttt{mergesort} is dependent on the result of calls to \texttt{merge}. If \texttt{merge}'s result is monadic any client functions will also have to be monadic because there is no way to remove the value from a monad. 
+The full call-by-value monadification when applied to \texttt{mergesort} is defined in figure~\ref{fcbv}
 
-Refactoring \texttt{mergesort} to be monadic without refactoring \texttt{merge} produces the following code.
+\begin{figure}[t]
+\begin{lstlisting}
 
-\begin{lstlisting}[frame=tblr]
-mergesort :: (Ord a) => [a] -> Identity [a]
-mergesort [] = return []
-mergesort [x] = return [x]
-mergesort xs = do
-  x <- mergesort fst
-  y <- mergesort snd
-  return $ merge x y
-    where fst = take (length xs `div` 2) xs
-             snd = drop (length xs `div` 2) xs
-\end{lstlisting}  
-
-Any program can be refactored into the \texttt{Identity} monad as this monad does not express any computational strategy~\citep{identityMonad}. Here we can see that in cases where pure values would have been returned from \texttt{mergesort} pre-refactoring have now been prepended with \texttt{return}, this lifts these values into the \texttt{Identity} monad. The recursive calls to \texttt{mergesort} now need to be bound to variables in the do block which allow the pure results to be passed to calls to the still pure \texttt{merge}.
-
-Instead of refactoring just \texttt{mergesort} refactoring \texttt{merge} as well would produce slightly different code.
-
-\begin{lstlisting}[frame = tblr]
-merge :: (Ord a) => [a] -> [a] -> Identity [a]
-merge xs [] = return xs
-merge [] ys = return ys
-merge (x:xs) (y:ys)
-   | (x <= y) = do
-       ls <- merge xs (y:ys)
-       return (x:ls)
-   | otherwise = do
-       ls <- merge (x:xs) ys
-       return (y:ls)
-
-mergesort :: (Ord a) => [a] -> Identity [a]
-mergesort [] = return []
-mergesort [x] = return [x]
-mergesort xs = do
-  x <- mergesort fst
-  y <- mergesort snd
-  merge x y
-    where fst = take (length xs `div` 2) xs
-            snd = drop (length xs `div` 2) xs
+mergesort :: (Ord a, Monad m) => m ([a] -> m [a])
+mergesort = return (\ lst -> case lst of
+                 [] -> return []
+                 [x] -> return [x]
+                 _ -> do
+                   let (l,r) = splitAt ((length lst) `div` 2) lst
+                   mm1 <- mergesort
+                   v1 <- mm1 l
+                   mm2 <- mergesort
+                   v2 <- mm2 r
+                   return (merge v1 v2))					
 \end{lstlisting}
+\caption{Full call-by-value monadification of mergesort}
+\label{fcbv}
+\end{figure}
 
-The above example's definition of \texttt{mergesort} is very similar to the previous definition. The only difference is that previously the call to \texttt{merge} was a pure value so it needed to be lifted into the monad by \texttt{return}, in this version since merge was also refactored into the monad it can just sit at the end of mergesort.
+\subsection{Full Call-by-Name Monadification}
 
-\fi 
+The full call-by-name monadification ensures arguments are unevaluated when they are passed to the function. The full call-by-name version of \texttt{mergesort} is defined in figure~\ref{fcbn}.
+
+
+\begin{figure}[t]
+\begin{lstlisting}
+mergesort :: (Ord a, Monad m) => m (m [a] -> m [a])
+mergesort = return (\ mlst -> do
+		lst <- mlst			
+		res <- case lst of
+                   [] -> return []
+                   [x] -> return [x]
+                   _ -> do
+                     let (l,r) = splitAt ((length lst) `div` 2) lst
+                     mm1 <- mergesort
+                     v1 <- mm1 (return l)
+                     mm2 <- mergesort
+                     v2 <- mm2 (return r)
+                     return (merge v1 v2)
+		return res)					
+\end{lstlisting}
+\caption{Full call-by-name monadification of mergesort}
+\label{fcbn}
+\end{figure}
+
+The two "full" monadification styles monadify both the arguments to a function as well as the function itself. The remaining styles are restrictions of these full modifications where only some of the arguments are modified not the functions. 
+
+\subsection{Restricted Call-by-Name Monadification}
+This style of monadification is where every argument is contained within the monad. Using the mergesort example again, figure~\ref{resCBN} shows the restricted call-by-name monadification.
+
+\begin{figure}[t]
+\begin{lstlisting}
+mergesort :: (Ord a, Monad m) => m [a] -> m [a]
+mergesort ml = do
+	lst <- ml
+	res <- case lst of
+		[] -> return []
+		[x] -> return [x]
+		_ -> do 
+			let (l,r) = splitAt ((length lst) `div` 2) lst
+			v1 <- mergesort (return l)
+			v2 <- mergesort (return r)
+			return (merge v1 v2)
+	return res	
+\end{lstlisting}
+\label{resCBN}
+\end{figure}
+
+All of the arguments to \texttt{mergesort} in figure~\ref{resCBN} are within the monad so the arguments will be evaluated hence the call-by-name "flavour" as~\citep{monadSurvey} describes it.
+
+\subsection{Data-Directed Monadification}
+This style refactors a certain type to be replaced by a monadic computation over that type. The example given in~\citep{monadSurvey} is a simple arithmetic expression interpreter as seen in figure~\ref{fig:interpreter}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+data Expr = Lit Int
+	| Bin Op Op Expr Expr
+
+data Op = Add | Div
+
+eval :: Expr -> Int
+eval (Lit n) = n
+eval (BinOp op e1 e2)
+	= evalOp op (eval e1) (eval e2)
+	
+evalOp :: Op -> Int -> Int -> Int
+evalOp Add v1 v2 = v1 + v2
+evalOp Div v1 v2 = v1 `div` v2
+\end{lstlisting}
+\caption{The pure interpreter implementation}
+\label{fig:interpreter}
+\end{figure}
+
+With this particular example the programmer wants the expressions to be evaluated within a monad to add effects. Since \texttt{Int} represents the result of an expression in this program this type is monadified as seen in figure~\ref{fig:monInterp}. Importantly this refactoring makes the type of \texttt{evalOp} change to \texttt{Monad m => Op -> m Int -> m Int -> m Int} in addition to monadifying the result type of \texttt{eval}. 
+
+\begin{figure}[t]
+\begin{lstlisting}
+eval :: Monad m => Expr -> m Int
+eval (Lit n) = return n
+eval (BinOp op e1 e2)
+	= evalOp op (eval e1) (eval e2)
+	
+evalOp :: Monad m => Op -> m Int -> m Int -> m Int
+evalOp Add v1 v2 = do 
+	l <- v1
+	r <- v2	
+	return (l + r)
+evalOp Div v1 v2 = do
+	l <- v1
+	r <- v2
+	return (l `div` r)
+\end{lstlisting}
+\caption{A data-directed monadification of the interpreter.}
+\label{fig:monInterp}
+\end{figure}
+
+Data-directed monadification is useful if a particular type can always represent the result of a computation that should be effectful. In the interpreter case, \texttt{Int} is always the result of an evaluation. Even in the only call to \texttt{evalOp} the second and third arguments are computed from recursive calls to \texttt{eval} so those \texttt{Int} types also represent expression evaluation.
+
+This style of monadification would pair well with the introduce a type synonym refactoring to differentiate types that should be monadified. In the interpreter example if it was anticipated that another \texttt{Int} type that didn't represent the result of an evaluation needed to be added to the program.
+
+\subsection{Restricted Call-by-Value Monadification}
+
+The final monadification style simply monadifies the result type of the target function(s). This is the style of monadification that is produced by the algorithm described in~\citep{monadification} and that is implemented in HaRe as part of this thesis work.
+
+Returning to the mergesort example from earlier in the section the restricted call-by-value monadification implementation of this can be seen in figure~\ref{rCBV}.
+
+This style of monadification meshes nicely with the bind operator which expects functions whose arguments are pure values and returns a monadic type. This style of monadification has been implemented in HaRe and the next section will go into greater detail about the implementation of this refactoring.
+
+\begin{figure}[t]
+\begin{lstlisting}
+mergesort :: (Ord a, Monad m) => [a] -> m [a]
+mergesort lst = do
+	let (l,r) = splitAt ((length lst) `div` 2) lst
+	v1 <- mergesort l
+	v2 <- mergesort r
+	merge v1 v2
+	
+merge :: (Ord a, Monad m) => [a] -> [a] -> m [a]
+merge [] r = return r
+merge l [] = return l
+merge (x:xs) (y:ys) = 
+	case (x < y) of
+	True -> do 
+		rst <- (merge xs (y:ys)) 
+		return (x:rst)
+	False -> do
+		rst <- (merge (x:xs) ys)	
+	 	return (y:rst)
+\end{lstlisting}
+\caption{Restricted call-by-value monadification}
+\label{rCBV}
+\end{figure}
+\clearpage
+\section{The Monadification Refactoring}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
