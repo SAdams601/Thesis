@@ -1,0 +1,36 @@
+digraph G {
+app1 [label ="HsApp"];
+app2 [label="HsApp"];
+f [label="HsVar: f"];
+
+subgraph cluster_hTop{
+	 graph[style=solid];
+	 label="";
+	 hPar [label="HsPar"];
+	 hApp [label="HsApp"];
+	 h [label="HsVar: h"];
+	 x [label="HsVar: x"];
+
+	 hPar -> hApp;
+	 hApp -> h;
+	 hApp -> x;
+	 }
+
+subgraph gTop {
+	 label="Call to g";
+	 gPar [label="HsPar",fillcolor="lightgrey",style=filled];
+	 gApp [label="HsApp",fillcolor="lightgrey",style=filled];
+	 g [label="HsVar: g",fillcolor="lightgrey",style=filled];
+	 y [label="HsVar: y",fillcolor="lightgrey",style=filled];
+
+	 gPar -> gApp;
+	 gApp -> g;
+	 gApp -> y;
+	 
+}
+app1 -> app2;
+app1 -> gPar;
+
+app2 -> f;
+app2 -> hPar;
+}

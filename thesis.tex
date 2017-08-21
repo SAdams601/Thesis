@@ -315,7 +315,7 @@ Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is
 
 \subsection{Compiler stages of GHC}\label{ghcStages}
 
-\begin{figure}[h]\label{compilerStages}
+\begin{figure}[t]\label{compilerStages}
 	\begin{center}
 		\includegraphics[scale=.4]{graphVis/Chapter2/compilerStgs.png}
 	\end{center}
@@ -942,7 +942,7 @@ In the list to Hughes list case the projection function is \texttt{fromList} (be
   \hline	
   \texttt{head} & \texttt{tail} & \texttt{unfoldr}\\ 
   \hline  
-  \texttt{foldr} & \texttt{map} \\
+  \texttt{foldr} & \texttt{map} & \\
   \hline
 \end{tabular}
 \end{center}
@@ -1725,10 +1725,258 @@ merge (x:xs) (y:ys) =
 \caption{Restricted call-by-value monadification}
 \label{rCBV}
 \end{figure}
-\clearpage
-\section{The Monadification Refactoring}
+
+\section{Implementation of the Monadification Refactoring}
+
+The implementation of Monadification in HaRe is a fairly strait forward top down transformation. The monadification refactoring takes in a list of positions as input. Those positions define where the functions that should be monadified are defined. 
+
+The monadification refactoring works over sets of functions at once. Figure~\ref{fgMon} defines two functions \texttt{f} and \texttt{g} and the two possible monadifications (\texttt{*\_m1} and \texttt{*\_m2}). The \texttt{f\_m1} function is how \texttt{f} would be rewritten if it was the sole target of the refactoring, since the right hand side of \texttt{f} is composed from pure values and non-monadic functions \texttt{f\_m1} is defined by applying \texttt{return} to the original definition of \texttt{f}.
+
+When the refactoring targets both \texttt{f} and \texttt{g} these functions will be rewritten to their "\texttt{*\_m2}" equivalents. In this case \texttt{g} is handled in the same way \texttt{f\_m1} was defined, because it is defined entirely with non-monadic values the new right hand side is just the old one composed with \texttt{return}. The definition of \texttt{f\_m2} is slightly more interesting, however, due to the call to the monadified function \texttt{g\_m2}. The refactored version of \texttt{g} in this scenario produces a monadic value of type \texttt{Monad m => m Int} so a call to this function can no longer be passed to \texttt{(+)}. Instead that whole sub-expression is replaced with a new variable "\texttt{v1}." The result of the, now monadic, computation (\texttt{g\_m2 x}) is bound to this new variable via the bind (\texttt{>>=}) operator and lambda expression. 
+
+ 
+
+\begin{figure}[t]
+\begin{lstlisting}
+f :: Int -> Int
+f x = (g x) + 1
+
+g :: Int -> Int
+g y = y * 2
+
+f_m1 :: (Monad m) => Int -> m Int
+f_m1 x = return ((g x) + 1)
+
+f_m2 :: (Monad m) => Int -> m Int
+f_m2 x = g_m2 x >>= (\v1 -> return (v1 + 1))
+
+g_m2 :: (Monad m) => Int -> m Int
+g_m2 y = return (y * 2)
+\end{lstlisting}
+\caption{Possible monadification refactorings for the \texttt{f} and \texttt{g} functions.}
+\label{fgMon}
+\end{figure} 
+
+\subsection{Preconditions}
+
+There are two preconditions that must be met before this refactoring can be applied. First the target functions must be fully applied at all call points. This allows the refactoring to assume that that the type of a subtree who's leftmost child is a monadified functions is a monadic value and not something of type \texttt{Monad m => a -> m a}. 
+
+\begin{figure}[t]
+\begin{lstlisting}
+f :: Int -> String -> String
+f n str = (take n str, drop n str)
 
 
+stringHandler :: Maybe Int -> String -> (String, String)
+stringHandler mi s = 
+	let g = case mi of
+		Nothing -> f ((length s) `div` 2)
+		(Just i) -> f i
+	in g s
+\end{lstlisting}
+\caption{The \texttt{stringHandler} function will be rejected by the monadification refactoring.}
+\label{strHan}
+\end{figure}
+
+Like the many of the preconditions for the generalise monads to applicative refactoring other refactorings can help transform programs to pass the preconditions. The \texttt{stringHandler} in figure~\ref{strHan} has calls to \texttt{f} that are not fully saturated. Fortunately $\eta$-expansion can be used to fully saturate the calls to \texttt{f} (see figure~\ref{etaHan}) allowing \texttt{stringHandler} and \texttt{f} to be monadified.\footnote{The original definition of \texttt{stringHandler} could be monadified alone.}
+
+\begin{figure}[t]
+\begin{lstlisting}
+stringHandler :: Maybe Int -> String -> (String, String)
+stringHandler mi s = 
+	let g = case mi of
+		Nothing -> (\x -> f ((length s) `div` 2) x)
+		(Just i) -> (\x -> f i x)
+	in g s
+\end{lstlisting}
+\caption{The new version of \texttt{stringHandler} can be monadified.}
+\label{etaHan}
+\end{figure}
+
+The second precondition that needs to hold before monadification can take place is that none of the target functions can be called by non-monadic functions. This is due to the fact that a target functions result type will change from some pure value \texttt{a} to a monadic computation over \texttt{a} there is no function that retrieves values out of any given monad so the target function, once it is refactored, will be unusable by non-monadic functions. 
+
+This precondition can't really be avoided for the refactoring to happen the set of target functions will have to be changed. Either all functions that reference a target function become target functions as well or the dependent function is dropped from the refactoring.
+
+\subsection{The Transformation}
+
+Very generally monadifying a function works in four steps.
+
+\begin{enumerate}
+\item Replace a monadic sub-expression with a new variable
+\item Wrap the modified expression with a lambda that takes in the new variable as an argument
+\item Bind the original monadic sub-expression to the lambda
+\item Repeat until all monadic expressions are removed from the original definition
+\end{enumerate}
+
+The refactoring works over the right hand side of a target function and extracts all monadic sub-expressions first. This is done recursively because monadic calls can be at multiple levels of the syntax tree. Take the function \texttt{f} defined in figure~\ref{simpleMon}. It is the target of monadification along with the functions \texttt{g} and \texttt{h}. 
+
+\begin{figure}[t]
+\begin{lstlisting}
+f x y = f (h x) (g y)
+\end{lstlisting}
+\caption{A simple target function for monadification}
+\label{simpleMon}
+\end{figure}  
+
+\begin{figure}[t]
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/Chapter6/simpF.png}
+	\end{center}
+	\caption{The syntax tree of \texttt{f} from figure~\ref{simpleMon}}
+	\label{simpF}
+\end{figure}
+
+The syntax tree of the right hand side of \texttt{f} is shown in figure~\ref{simpF}. The transformation starts by top down checking the right subtrees for monadic computations. It will first check the call to \texttt{g} (shaded with grey in figure~\ref{simpF}) then it will check the call to \texttt{h} (the corresponding nodes are inside the box). Both of these subtrees are monadic calls so they will be replaced in the tree with unique generated variables. The refactoring implementation contains a queue where the monadic expressions are paired with the variables that replace them and then stored. After this step the expression is \texttt{f v2 v1} and the queue contains two elements \texttt{[(v1,"(g y)"),(v2,"(h x)")]}. The final step checks if the left most child of the current expression is a call to a monadic function. In this case it is because \texttt{f} is a target of the refactoring but if it wasn't then the expression would be composed with \texttt{return}.
+
+At this point the expression is ready to be part of the right hand side of a lambda expression. First element is popped from the queue (in this case it's \texttt{(v1,"g y")}) the variable name that's stored in the element is the argument name in the lambda expression the expression from the queue is composed with the bind operator. In this manner the refactoring keeps popping elements off of the queue wrapping the previous expression in a lambda with the variable name as its argument and composing this lambda with the expression from the queue using bind until the queue is empty.
+
+The final result of refactoring \texttt{f} is shown in figure~\ref{simpF_ref}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+f x y = (g x) >>= (\ v2 -> (g y) >>= (\v1 -> f v2 v1))
+\end{lstlisting}
+\caption{The final refactored version of \texttt{f}}
+\label{simpF_ref}
+\end{figure}
+
+\section{Let Expressions}
+
+The previous section details how the refactoring works over simple function applications. This section will describe how a function with a let expression is refactored. This section will use the expression evaluator in figure~\ref{evalExpr} as a motivating example.
+
+\begin{figure}[t]
+\begin{lstlisting}
+data Expr = Var Char
+          | N Int
+          | Add Expr Expr
+          | Sub Expr Expr
+          | Assign Char Expr
+          deriving Show
+
+type Env = [(Char,Int)]
+
+eval :: Expr -> Env -> (Int,Env)
+
+eval (Var v) env = (head [val | (x,val) <- env, x==v], env)
+
+eval (N n) env = (n,env)
+
+eval (Add e1 e2) env = let (v1,env1) = eval e1 env
+                                    (v2,env2) = eval e2 env1 
+                           in (v1+v2,env2)
+eval (Sub e1 e2) env = let (v1,env1) = eval e1 env
+                                    (v2,env2) = eval e2 env1 
+                           in (v1-v2,env2)
+eval (Assign x e) env = let (v,env1) = eval e env 
+	in (v, (x,v):env1)
+\end{lstlisting}
+\caption{An expression evaluator.}
+\label{evalExpr}
+\end{figure}
+
+The idea is that at this point in the project the explicit passing of the state is unwanted so refactoring \texttt{eval} to become monadic so that the \texttt{Env} can be passed around using the \texttt{State} monad instead. The first two cases that handle the \texttt{Var} and \texttt{N} constructors can simply be wrapped with \texttt{return} because no recursive calls to \texttt{eval} happen in those cases. The three other cases contain let bindings that all call (the now monadic) \texttt{eval}. 
+
+In those cases the local bindings can be used as the variables inside of a lambda expression. This seems simple enough but what order should the bindings be processed in? Consider the let binding in figure~\ref{intLet}, assuming that the \texttt{f} and \texttt{x} variables are in scope, due to lazy evaluation this is a valid Haskell let binding despite \texttt{v1} being referenced on line one before it's defined on line two. However if the let bindings are processed in the obvious way from top to bottom\footnote{In this case: \texttt{g v1 >>= ($\backslash$v2 -> f x >>= ($\backslash$v1 -> ...))}} \texttt{v1} wont be in scope when it's passed to \texttt{g}.  
+
+\begin{figure}[t]
+\begin{lstlisting}
+let v2 = g v1
+     v1 = f x
+    in ...
+\end{lstlisting}
+\caption{An interesting let binding}
+\label{intLet}
+\end{figure}
+
+Fortunately GHC offers a solution, the renamer does dependency analysis on local bindings and orders them so that later bindings may depend on earlier ones but not vise versa~\citep{ghcApi}. This renamed ordering is used to lookup the parsed bindings in dependency analysed order.
+
+Returning to the evaluator example the monadified version is shown in figure~\ref{monEval}.\footnote{Line breaks have been added to aid readability in this setting but the refactoring would not actually do this.} The let bindings in \texttt{eval} can be processed from top to bottom. In the \texttt{Add} case this means that the expression bound on line 16 in figure~\ref{evalExpr} makes up the outermost call to bind and the pattern it was originally bound to becomes the pattern that matches the argument passed to the first lambda expression. 
+\begin{figure}[t]
+\begin{lstlisting}
+eval :: Monad m => Expr -> Env -> m (Int,Env)
+
+eval (Var v) env = return (head [val | (x,val) <- env, x==v], env)
+
+eval (N n) env = return (n,env)
+
+eval (Add e1 e2) env = eval e1 env >>= 
+	(\(v1,env1) -> eval e2 env1 >>= 
+		(\(v2,env2) -> return (v1+v2,env2)))
+
+eval (Sub e1 e2) env = eval e1 env >>= 
+	(\(v1,env1) -> eval e2 env1 >>= 
+		(\(v2,env2) -> return (v1-v2,env2)))
+
+eval (Assign x e) env = eval e env >>= 
+	(\(v,env1) -> return (v, (x,v):env1)))
+\end{lstlisting}
+\caption{The monadified expression evaluator.}
+\label{monEval}
+\end{figure}
+
+If there were pure expressions on the right hand side of the let binding those bindings will remain in a let expression. For example the function starting on line one in figure~\ref{mixLet} contains two let bindings \texttt{pureF} is a pure function and so it remains inside of a let expression whereas \texttt{monF} is a target of the refactoring and it is lifted from the let and passed to bind. 
+
+\begin{figure}[t]
+\begin{lstlisting}
+f x = let y = pureF x
+             z = monF y
+		     in z+x
+
+f_m x = let y = pureF x in
+		monF y >>= (\z -> return z+x)
+\end{lstlisting}
+\caption{A function with a mixture of pure and monadic function calls in a let expression.}
+\label{mixLet}
+\end{figure}
+
+\section{Sugaring}
+
+The refactored program from figure~\ref{monEval} is rewritten in a restricted call-by-value monadification style. However, idiomatic monadic Haskell is not often written in this style. Haskell also supports a piece of syntactic sugar called \texttt{do} notation. This notation allows for a series of bind computations to be written in a more compact and easier to read style. Figure~\ref{doEx} shows how the bind expression on line one can be sugared into the do statement on lines four through six.
+
+\begin{figure}[t]
+\begin{lstlisting}
+m_expr >>= (\x -> return (f x))
+--Sugars to
+
+do
+	x <- m_expr
+	return (f x)
+\end{lstlisting}
+\caption{An example of how binds can sugar to \texttt{do} notation.}
+\label{doEx}
+\end{figure}
+
+\textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are (see \cite{realWorldHaskell} and \cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
+
+The sugaring of bind syntax into \texttt{do} syntax is a separate refactoring in HaRe. This allows for the programmer to choose exactly which functions should be written with \texttt{do} syntax and when functions are clearer remaining as binds. The refactoring takes in a single parameter, the position where the target function is declared. The sugared version of \texttt{eval} from figure~\ref{monEval} is shown in figure~\ref{finEval}. The first two cases weren't bind expressions so they remain just calls to return. The three other cases have been refactored into the equivalent \texttt{do} statements.
+
+\begin{figure}[t]
+\begin{lstlisting}
+eval :: Monad m => Expr -> Env -> m (Int,Env)
+
+eval (Var v) env = return (head [val | (x,val) <- env, x==v], env)
+
+eval (N n) env = return (n,env)
+
+eval (Add e1 e2) env = do
+	(v1,env1) <- eval e1 env
+	(v2,env2) <- eval e2 env1
+	return (v1+v2,env2)
+
+eval (Sub e1 e2) env = do
+	(v1,env1) <- eval e1 env 
+	(v2,env2) <- eval e2 env1
+	return (v1-v2,env2)
+
+eval (Assign x e) env = do
+	(v,env1) <- eval e env
+	return (v, (x,v):env1))
+\end{lstlisting}
+\caption{The sugared evaluator.}
+\label{finEval}
+\end{figure}
+
+Monads are a challenging and fairly unique feature of Haskell and, anecdotally, infamous amongst those trying to learn the language. Monadification is an important and common transformation that Haskell code undergoes. This chapter has described two refactorings that automate this transformation. The monadification refactoring transforms a set of functions into restricted call-by-value monad style where only the result type of a function is made monadic. The second refactoring sugars the binds produced by the monadification into \texttt{do} notation a common structure for monadic Haskell functions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
