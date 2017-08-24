@@ -2171,19 +2171,17 @@ Monads are a challenging and fairly unique feature of Haskell and, anecdotally, 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
 
-This chapter reviews current work in both the refactoring and other areas of the literature. The chapter is divided into several sections. The first section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section (\ref{otherTools}) will discuss novel, non-programming language refactoring of wikis and spreadsheets. Finally section~\ref{typeTrans} covers work done on type changing program transformations. This section will discuss the work of Erwig and Ran on monadification~\citep{monadification} and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
+This chapter reviews current work in refactoring and other areas of the literature. The chapter is divided into several sections. This chapter will begin with a brief description of refactoring tools in general. The second section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section (\ref{otherTools}) will discuss novel, non-programming language refactoring of wikis and spreadsheets. Section~\ref{refacParallel} discusses automated refactoring tools that introduce parallelism into their target programs. Then Section~\ref{applicativeDo} will describe another approach to using applicative functors in Haskell.  Finally section~\ref{typeTrans} covers work done on type changing program transformations, including the work of Erwig and Ran on monadification~\citep{monadification} and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
 
-\if(FALSE)
-\subsection{Modern IDEs}
-Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, Intellij\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy).  
-\fi
+\section{Refactoring Tools in Modern IDEs}
+Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, Intellij\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy). 
 
-\section{Tooling for functional languages}\label{funcTools}
-A reason that is often given to explain why functional languages are in widespread use in industry is the lack of a robust tooling ecosystem~\citep{wadlerTools}. This is no longer the case as functional language ecosystems have undergone a great deal of development in recent years. This section will cover some notable refactoring and code smell tools for functional programming languages.
+\section{Refactoring Tools for functional languages}\label{funcTools}
+A reason that often used to be given to explain why functional languages are in widespread use in industry is the lack of a robust tooling ecosystem~\citep{wadlerTools}. This is no longer the case as functional language ecosystems have undergone a great deal of development in recent years and, maybe coincidently, use in industry has gone up substantially in the last five years. This section will cover some notable refactoring and code smell tools for functional programming languages.
 
 \subsection{HLint}
 
-HLint is a code smell tool for Haskell. It can suggest changes to a code base such as alternative functions to use, how to simplify code, and redundancies~\citep{hlint}.
+HLint is a ``code smell'' tool for Haskell. Poorly designed code often produces ``smells,'' apparently superficial problems that indicate deeper design issues~\citep{fowler}. The most common of these smells is duplicated code. A code smell tool  suggests changes to a code base such as alternative functions to use, how to simplify code, and redundancies~\citep{hlint}.
 
 Code smell and refactoring tools are very closely related. Simplistically a code smell tool detects problems in a code base and a refactoring tool fixes them. If a tool can detect a problem why can't the same program fix them? HLint has a \texttt{-refactor} flag that will automatically apply the suggestions. However a single piece of code could have multiple smells, how would HLint choose which one to apply? Also once a transformation was applied other hints may no longer be applicable.
 
@@ -2224,7 +2222,7 @@ HaRe isn't the only refactoring tool for Haskell. In late 2016 Haskell Tools Ref
 \item Organize imports
 \end{itemize}
 
-The haskell-tools refactorer is currently integrated into the Atom editor with Sublime text support planned for the near future~\citep{haskellTools}
+The haskell-tools refactorer is currently integrated into the Atom editor\footnote{\url{https://atom.io/}} with Sublime Text\footnote{\url{https://www.sublimetext.com}} support planned for the near future~\citep{haskellTools}
 
 \subsection{Wrangler}
 
@@ -2447,7 +2445,7 @@ denoise(Ims) -> skel:run([{pipe,
 
 Parallelisation can be tedious and difficult to do which makes it a good candidate for tool assistance. The refactoring tool can guide a programmer though the process of parallelisation. Much like the how data-driven refactorings have multiple small changes are required before the entire process can be considered "finished" changing a program to run in parallel is also a sequence of many smaller changes.
 
-\section{ApplicativeDo}
+\section{ApplicativeDo}\label{applicativeDo}
 
 \comment{This is just taken from the IFL paper directly}
 
