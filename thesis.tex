@@ -315,7 +315,7 @@ Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is
 
 \subsection{Compiler stages of GHC}\label{ghcStages}
 
-\begin{figure}[h]\label{compilerStages}
+\begin{figure}[t]\label{compilerStages}
 	\begin{center}
 		\includegraphics[scale=.4]{graphVis/Chapter2/compilerStgs.png}
 	\end{center}
@@ -568,39 +568,32 @@ Beyond those two features refactorings are free to be implemented however the pr
 
 \chapter{Data-driven refactorings}
 
-\comment{Is this too introductory? Should I move this to the first chapter?
-}
+Some refactorings focus on rewriting the structure of a program (e.g. refactoring an \texttt{if} to \texttt{case} statement) a data-driven refactoring focuses on the types that a program works over and \textit{how} that program manipulates those types. Any changes that a data-driven refactoring makes to the structure of the program are \textit{driven} by the data types of that program rather than being the main motivation of performing the refactoring.
 
-\begin{itemize}
-\item Talk about how the functional way of doing things focuses on transforming data 
-\item This makes code less about how something happens and more about what is happening
-\end{itemize}
+This chapter will begins in section~\ref{ooRefs} with a discussion of data-driven refactorings for imperative object-oriented languages. Imperative programs are written as a sequence of steps that modify an object to the desired output state. Types in an object-oriented also exist in a strict hierarchy. These two factors mean that object-oriented data-driven refactorings modify the hierarchy while leaving the structure of the code mostly intact. The rest of this chapter will describe data-driven refactorings for functional programs.
 
-On the first day of the first programming course of my Bachelors degree my professor tasked us with defining what a "program" is. In the end the classes conclusion was that a program is a process that computes a result from some input. The input and output are the "data" that a program operates over. Through my education I've found that understanding the relationship between input and output is key to writing a program.
+In comparison to the imperative way of constructing programs, functional programs tend to describe the relationship between the input and output data. Functional programming languages also tend to offer a much richer type system than object-oriented languages where data types are typically either objects or a set of non-user expandable primitive types. These two facts mean that the structure of a functional program can be determined by the types it works over to a much greater degree than in imperative languages. 
 
-The data a program works over highly influences its structure and definition. However one major challenge that programmers face is that there are still multiple correct solutions for many problems though many of those solutions may be suboptimal. On top of this challenge a programmers understanding of the problem could change or the requirements could evolve as the project develops. All of this means that the first implementation of a program is rarely optimal and if it is, it rarely remains optimal as time goes on. 
-
-Data-driven or data-oriented refactorings for functional languages have been discussed in the literature for some time. Notable examples include work on monadification(\cite{monadification},\cite{monadSurvey}) and transforming datatypes~(\cite{datatypeTransformation}, \cite{brownThesis}).  The goal of this thesis is to refine this class of refactorings.
-
-This chapter will introduce what I mean by "data-driven" refactorings. The chapter begins with discussion of how these object-oriented refactorings translate (or don't) to a functional language. From there the chapter will give several examples of data-driven refactorings for Haskell.
+Section~\ref{introSyn} describes the introduce type synonym refactoring. This is the renaming of data-driven refactorings, neither the structure nor the type of the target program changes just how the program refers to the types it works over. Next, section~\ref{genMaybe} describes a generalisation refactoring. This thesis outlines two generalisations, one (described in section~\ref{genMaybe}) makes code of a specific type (\texttt{Maybe}) work over a type class (\texttt{MonadPlus} or \texttt{Monad}) instead. The other generalises code of one type class to use a class higher the hierarchy(covered in chapter~\ref{applicative}). Finally section~\ref{listToDlist} describes a refactoring that tranforms programs that work over lists to instead use an alternate implementation of lists. The refactoring method described in this chapter could be applied to refactor between types that can be projected onto another type.
 
 \section{Object-Oriented Data Refactorings}\label{ooRefs}
 
-The origins of refactoring are deeply rooted in the object-oriented world~(\cite{programRestructuring},~\cite{refactOOFrameworks}). The canonical catalogue of refactorings remains Martin Fowler's \underline{Refactoring: Improving the Design of Existing Code} ~\citep{fowler}. Fowler's catalogue of refactorings are all written in Java though he purposefully avoided using any features that were unique to Java so that the refactorings could be useful in many different programming languages.
+The origins of refactoring are deeply rooted in the object-oriented world~(\cite{programRestructuring},~\cite{refactOOFrameworks}). Though it traces its origins to work on transforming Algol~\citep{recursiveTransformation}. The canonical catalogue of refactorings remains Martin Fowler's \emph{Refactoring: Improving the Design of Existing Code} ~\citep{fowler}. Fowler's catalogue of refactorings are all written in Java though he purposefully avoided using any features that were unique to Java, so that the refactorings could be applicable in many different programming languages.
 
 As a functional programmer when going through this catalogue of refactorings there seem to be three types of refactorings.
 
 \begin{itemize}
-	\item Refactorings that are applicable in a functional language
-	\item Refactorings not applicable to a functional language
+	\item Refactorings that are directly applicable in a functional language
 	\item Refactorings that could be adapted for use in a functional language
+	\item Refactorings not applicable to a functional language
 \end{itemize}
 
-That first type of refactorings' usefulness to a functional program is easily understood. Refactorings like renaming or adding a parameter don't depend on object-oriented features of the target language. 
+That first type of refactorings' are structural refactorings and their usefulness to a functional program is easily understood. Refactorings like renaming or adding a parameter don't depend on object-oriented features existing in the target language.
 
-The second type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or are meaningless in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, is not as ubiquitous in functional languages because many do not support objects and immutability makes a "setter" function not in the functional style. OCaml would be a notable exception to this rule. OCaml supports objects and allows the programmer to mark variables as mutable so getter and setter methods are possible.
+The third type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or have no equivalent in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, is not as ubiquitous in functional languages because most do not support objects and immutability makes a "setter" function irrelevant. OCaml would be a notable exception to this rule: OCaml supports objects and allows the programmer to mark variables as mutable, and so getter and setter methods are possible.
 
-\begin{lstlisting}[caption={An OCaml object with getter and setter methods.},captionpos=b, language=caml, morekeywords={object,method},label=ocamlObj]
+\begin{figure}[t]
+\begin{lstlisting}[language=caml, morekeywords={object,method}]
 let mInt init_i = object
     val mutable i = init_i
 
@@ -609,20 +602,24 @@ let mInt init_i = object
       i <- new_i
   end
 \end{lstlisting}
+\caption{An OCaml object with getter and setter methods.}
+\label{ocamlObj}
+\end{figure}
 
-This OCaml object from Listing~\ref{ocamlObj} would be a valid target for this refactoring. However these methods are not as ubiquitous as they are in imperative object-oriented languages with mutable data as the default so a refactoring to remove a setter method is of limited value even for OCaml.
+The OCaml object from figure~\ref{ocamlObj} would be a valid target for this refactoring. However these methods are not as common as they are in imperative object-oriented languages with mutable data as the default, so a refactoring to remove a setter method is of limited value even for OCaml.
 
-The third type of refactoring found in~\citep{fowler} is much more interesting to a functional programmer. The specifics of these refactorings aren't directly applicable to functional programs but the underlying motivations are relevant to any programming paradigm. 
+The second type of refactoring found in~\citep{fowler} is much more interesting to a functional programmer. The specifics of these refactorings are not directly applicable to functional programs but the underlying motivations are relevant to any programming paradigm. 
 
-For example here's the motivation for the "Replace Data Value with Object" refactoring in~\citep[pg. 175]{fowler}:
+For example here is the motivation for the "Replace Data Value with Object" refactoring in~\citep[pg. 175]{fowler}:
 
 \begin{displayquote}
-Often in early stages of development you make decisions about representing simple facts as simple data items. As development proceeds you realize that those simple items aren't so simple anymore. A telephone number may be represented as a string for a while, but later you realize that the telephone needs special behavior for formatting, extracting the area code, and the like. For one or two items you may put methods in the owning object, but quickly the code smells of duplication and feature envy. When the smell begins, turn the data value into an object.
+Often in early stages of development you make decisions about representing simple facts as simple data items. As development proceeds you realize that those simple items aren't so simple anymore. A telephone number may be represented as a string for a while, but later you realize that the telephone needs special behavior for formatting, extracting the area code, and the like. For one or two items you may put methods in the owning object, but quickly the code smells of duplication and feature envy\footnote{Feature envy is when the methods of a class are more interesting in a different object than the one it is in.}. When the smell begins, turn the data value into an object.
 \end{displayquote}
 
-This refactoring extracts a field that was some primitive type into an object. The example from~\citep{fowler} works over an order class with a string that representing the customer that placed the order.
+This refactoring extracts a field that was some primitive type into an object. The example from~\citep{fowler} works over an order class with a string that represents the customer that placed an order.
 
-\begin{lstlisting}[caption={The Order class}, language = java, captionpos=b,tabsize=4]
+\begin{figure}[t]
+\begin{lstlisting}[language = java,tabsize=4]
 class Order {
 	public Order (String customer) {
 		_customer = customer;	
@@ -639,10 +636,13 @@ class Order {
 	private String _customer;
 }
 \end{lstlisting}
+\caption{The Order class}
+\end{figure}
 
-The refactoring creates a new customer class that just has a string field with a getter method as seen in Listing~\ref{custCls}. The customer class doesn't add any additional features but the extra layer of abstraction sets up the code base for further development. The customer object could have fields added that represent contact info or further demographic information without polluting the order class with non order relevant data.
+The refactoring creates a new customer class that has a string field with a getter method as seen in figure~\ref{custCls}. The customer class doesn't add any additional features but the extra layer of abstraction sets up the code base for further development. The customer object could have fields added that represent contact info or further demographic information without polluting the order class with order-irrelevant data.
 
-\begin{lstlisting}[caption={The result of the Replace Data Value with Object refactoring when applied to the customer field of the order class.}, language = java, captionpos=b,label=custCls,tabsize=4]
+\begin{figure}[t]
+\begin{lstlisting}[language = java,tabsize=4]
 class Order {
 	public Order (String customer) {
 		_customer = new Customer(customer);	
@@ -671,67 +671,93 @@ class Customer {
 	private final String _name;
 }
 \end{lstlisting}
+\caption{The result of the Replace Data Value with Object refactoring when applied to the customer field of the order class.}
+\label{custCls}
+\end{figure}
 
-Functional programmers have to make similar data representation decisions as the object-oriented programmer. At the start of a project representing a customer just by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction is required.
+Functional programmers have to make similar data representation decisions as the object-oriented programmer. At the start of a project representing a customer just by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction is required. 
 
-This section introduced how object-oriented refactorings help build up the data model over a projects lifetime. In an object-oriented language the primary abstraction method is to just introduce additional objects. These sorts of refactorings for a language with a rich type system like  Haskell offers many more choices for evolving a system's data model. The rest of this chapter will describe refactorings for Haskell that support this evolution.  
+This section introduced how object-oriented refactorings help build up the data model over the lifetime of a project. In an object-oriented language the primary abstraction method is to introduce additional objects. These sorts of refactorings for a language with a rich type system like Haskell offer many more choices for evolving the data model of a system. An equivalent, but simpler refactoring, in the Haskell case would replace the string type synonym with the abstract data type in figure~\ref{custData}. The rest of this chapter will describe refactorings for Haskell that support data model evolution.  
 
+\begin{figure}[t]
+\begin{lstlisting}
+data Customer = Customer {name :: String}
+\end{lstlisting}
+\caption{The algebraic data type for \texttt{Customer}.}
+\label{custData}
+\end{figure}
 \section{Data-Driven Refactorings in Haskell}
 
-Haskell offers a rich environment for data representation. The Haskell 2010 standard defines several types that will be included in the prelude including tuples, lists, characters, strings (which are just lists of characters), several types of numbers, and the function type. Additionally programmers can construct new types with algebraic data types or rename an existing type with type synonyms. Type classes supports overloading as well. The standard library of GHC comes with many type classes that can help produce powerful abstractions~\citep{typeclassopedia}. Contrast this with how most object-oriented type systems are either unified where every type is a subclass of some top level \texttt{Object} class (e.g. C\# or Ruby) or there are a set of predefined primitive types which cannot be changed as well as the object hierarchy (e.g. C++ and Java's type systems). 
+Haskell offers a rich environment for data representation. The Haskell 2010 standard defines several types that are included in the prelude, including tuples, lists, characters, strings (which are just lists of characters), several types of numbers, and the function type. Additionally programmers can construct new types with algebraic and abstract data types or rename existing types with type synonyms. Type classes support overloading as well. The standard library of GHC comes with many type classes that can help produce powerful abstractions~\citep{typeclassopedia}. Contrast this with how most object-oriented type systems are either unified where every type is a subclass of some top level \texttt{Object} class (e.g. C\# or Ruby) or there are is a fixed set of predefined primitive types as well as the object hierarchy (e.g. C++ and Java's type systems). 
 
-These two different approaches to type systems both have pros and cons which has sparked a vigorous (and quite possibly eternal) debate. The goal of this thesis is not to add to this debate, instead hopefully a few things are clear at this point.
+These two different approaches to type systems both have pros and cons which has sparked a vigorous (and quite possibly eternal) debate. The goal of this thesis is not to add to this debate, instead to build from a number of general principles that transcend the debate.
 
 \begin{itemize}
 	\item Data representation is a language independent problem that must be answered in every project.
-	\item The way a project manages and represents its data will (and should) evolve over a project's lifetime.
+	\item The way a project manages and represents its data is very likely to evolve over a project's lifetime and this is indeed desirable.
 	\item Refactoring is a structured way to support this evolution.
-	\item Refactorings for a language like Haskell need to take a different approach than those for object-oriented languages.
+		\item Refactorings for a language like Haskell need to take a different approach than those for object-oriented languages, particularly when refactorings are data-driven rather than ``structural.''  
+	\item Data representation in a rich type system like Haskell's in some sense determines the structure of the program.
 \end{itemize} 
 
 \subsection{Introducing a Type Synonym}\label{introSyn}
 
-Type synonyms in Haskell, as mentioned previously, are a way to name an existing type. A simple example can be seen in listing~\ref{fooSyn}. 
+Type synonyms in Haskell, as mentioned previously, are a way to name an existing type. A simple example can be seen in figure~\ref{fooSyn}. 
 
-\begin{lstlisting}[label=fooSyn,caption={A simple type synonym.}]
+\begin{figure}[t]
+\begin{lstlisting}
 type Foo = (String, Int)
 
 f :: Foo -> Foo
 f x@(_, 0) = x
 f (str, i) = (tail str, i-1) 
 \end{lstlisting}
+\label{fooSyn}
+\caption{A simple type synonym.}
+\end{figure}
 
 Any place that where the \texttt{Foo} synonym is in scope the new name can be used to refer to any value of type \texttt{(String, Int)}. In fact "\texttt{Foo}s" and "\texttt{(String, Int)}s" are completely interchangeable. Introducing a synonym is a good way to quickly and simply name types to suggest their specific use in the current application.
 
-Returning to the example from~\citep{fowler} used in section~\ref{ooRefs} of an order type that keeps track of the customer who placed the order (among other things presumably but they have been left out here for brevity's sake), see listing~\ref{haskellOrder} for a Haskell implementation of this type and a function that counts how many orders a particular customer has placed in a list of orders.
+Returning to the example from~\citep{fowler} of an order type that keeps track of the customer who placed the order used in section~\ref{ooRefs}, see figure~\ref{haskellOrder} for a Haskell implementation of this type and a function that counts how many orders a particular customer has placed in a list of orders.
 
-\begin{lstlisting}[label=haskellOrder,caption={An order algebraic data type.}]
+\begin{figure}
+\begin{lstlisting}
 data Order = Order {customer :: String}
 
 numberOfOrdersFor :: [Order] -> String -> Int
 numberOfOrdersFor orders name = length (filter (\ord -> name == (customer ord)) orders)
 \end{lstlisting}
+\label{haskellOrder}
+\caption{Using an algebraic data type for \texttt{order}.}
+\end{figure}
 
-The current representation of a customer as just a \texttt{String} is a bit underdeveloped as it is. Introducing a customer synonym is a simple step that sets up the code base for further development. The synonym will help clearly mark which strings in the program stand for customers and which are  not.
+The current representation of a customer as just a \texttt{String} is underdeveloped. Introducing a customer synonym is a simple step that sets up the code base for further development. The synonym will clearly mark which strings in the program stand for customers and which do not.
 
-The introduce a type synonym refactoring works by taking a type and a valid synonym name (as per the Haskel 2010 standard~\citep{haskell2010}) and creates a new synonym. In this case the type is \texttt{String} and the synonym name should be something like "\texttt{Customer}." The only precondition of the refactoring is that the new synonym name cannot cause a name clash. 
+The introduce a type synonym refactoring works by taking a type and a valid synonym name (as per the Haskell 2010 standard~\citep{haskell2010}) and creates a new synonym. In this case the type is \texttt{String} and the synonym name should be something like "\texttt{Customer}." The only precondition of the refactoring is that the new synonym name cannot cause a name clash with any other variables in the same module and if the synonym is exported in any client modules that define something of the same name will need to qualify the import of the synonym. 
 
-\begin{lstlisting}[caption={The customer synonym}]
+\begin{figure}[t]
+\begin{lstlisting}
 type Customer = String
 \end{lstlisting}
+\caption{The customer synonym}
+\end{figure}
 
-After this the next part of the refactoring involves replacing the appropriate uses of the type with the new synonym. This part of the refactoring is difficult to automate and needs to be interactive\footnote{This is not a feature of HaRe yet.}. There is no way to infer which instances of \texttt{String} (in the case of this example) should be replaced with the \texttt{Customer} synonym. The code from listing~\ref{haskellOrder} can have all of the string instances replaced by \texttt{Customer} because all the strings are being used to represent one. If there were a second function \texttt{printThankYou} which has type \texttt{String -> Order -> IO ()} which prints out a customized thank you message to the customer from the business for their order. 
+After this the next part of the refactoring involves replacing the appropriate uses of the type with the new synonym. This part of the refactoring is difficult to automate and needs to be interactive\footnote{This is not a feature of HaRe yet.}. There is no way to infer which instances of \texttt{String} (in the case of this example) should be replaced with the \texttt{Customer} synonym. The code from listing~\ref{haskellOrder} can have all of the string instances replaced by \texttt{Customer} because all the strings are being used to represent a customer. If there were a second function \texttt{printThankYou} which has type \texttt{String -> Order -> IO ()} which prints out a customized ``thank you'' message to the customer for their order. 
 
-\begin{lstlisting}[caption={The printThankYou function}]
+\begin{figure}[t]
+\begin{lstlisting}
 printThankYou :: String -> Order -> IO ()
 printThankYou businessName order = do
 	putStrLn ("Thank you " ++ (customer order) ++ " for your order.")
 	putStrLn (businessName ++ " hopes to see you again soon!")
 \end{lstlisting}
+\caption{The \texttt{printThankYou} function}
+\end{figure}
 
-Though the first argument to \texttt{printThankYou} is a \texttt{String} it does not represent a customer therefore shouldn't be replaced by the new synonym. The implicit meaning of the first argument hasn't been encoded in the type system so the programmer has to intervene during the refactoring to make their intention for each instance of \texttt{String} clear. The final result of the refactoring can be seen in listing~\ref{orderRefact}. 
+Though the first argument to \texttt{printThankYou} is a \texttt{String} it does not represent a customer therefore should not be replaced by the new synonym. The implicit meaning of the first argument hasn't been encoded in the type system so the programmer has to make a decision during the refactoring to make their intention for each instance of \texttt{String} clear. The final result of the refactoring can be seen in figure~\ref{orderRefact}. 
 
-\begin{lstlisting}[label=orderRefact,caption={The final result after adding a synonym for String.}]
+\begin{figure}[t]
+\begin{lstlisting}
 type Customer = String
 
 data Order = Order {customer :: Customer}
@@ -744,19 +770,27 @@ printThankYou businessName order = do
 	putStrLn ("Thank you " ++ (customer order) ++ " for your order.")
 	putStrLn (businessName ++ " hopes to see you again soon!")
 \end{lstlisting}
+\label{orderRefact}
+\caption{The program after adding a synonym for String.}
+\end{figure}
 
- This transformation might seem like too small of a step. Wouldn't it be preferable to introduce a more powerful abstraction such as an algebraic data type? One of the principles of the Agile Manifesto is "simplicity" which is described as "maximizing the amount of work not done is essential"~\cite{agileManifesto}. The work not done in this case is the introduction of a more complex customer representation. This small step does clearly differentiate the strings that represent customers from other strings that represent other types of data.
-
-
-\section{Generalising Maybe}
+ This transformation might seem like too small of a step. Wouldn't it be preferable to introduce a more powerful abstraction such as an algebraic data type? One of the principles of the Agile Manifesto is "simplicity" which is described as "maximizing the amount of work not done is essential"~\citep{agileManifesto}. The work not done in this case is the introduction of a more complex customer representation. This small step does clearly differentiate the strings that represent customers from other strings that represent other types of data.
  
-A common data refactoring is generalisation. Generalisation is taking code written for a specific type and rewriting it to use a more general type. The newly generic code is applicable in more places and can help reduce code duplication.\underline{Refactoring} dedicates an entire chapter to generalisation cataloguing refactorings like "extract subclass" and "extract interface"~\citep[pg. 319]{fowler}. 
+Small refactorings are also a good practice for tool builders. Creating multiple small composable steps that can be used in multiple ways are much more flexible than large ``monolithic'' style refactorings.
+
+
+\section{Generalising Maybe}\label{genMaybe}
+
+A common type of refactoring is generalisation. A structural generalising refactoring would be extract a method or function. It takes expressions specific to a single function and generalises them so that they are applicable to multiple functions.
+
+Data-driven generalisation is taking code written for a specific type and rewriting it to use a more general type. The newly generic code is applicable in more places and can help reduce code duplication. Fowler's Refactoring dedicates an entire chapter to generalisation, cataloguing refactorings like "extract subclass" and "extract interface"~\citep[pg. 319]{fowler}. 
 
 Generalisations for object-oriented languages either move functionality up in a hierarchy (as in "push method up") or change the hierarchy by adding classes (e.g. "extract subclass"). Object-oriented languages have a single hierarchy since every object inherits from a root class typically just called \texttt{Object}. Functional languages don't have this single unified hierarchy, but smaller hierarchies do exist because type classes can inherit from one another. 
 
-This thesis will outline two generalisations, one makes code of a specific type work over a type class instead (this section), the other generalises code of one type class to use a class higher the hierarchy(covered in chapter~\ref{applicative}). This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} or, if possible, the \texttt{Monad} type classes. 
+This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. 
 
-\begin{lstlisting}[caption={The \texttt{Maybe} data type definition and \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.},label=maybeMonadPlus]
+\begin{figure}[t]
+\begin{lstlisting}
 data Maybe a = Nothing
                  | Just a
                  
@@ -769,12 +803,16 @@ class Monad m => MonadPlus m where
    mzero :: m a
    mplus :: m a -> m a -> m a
 \end{lstlisting}
+\caption{The \texttt{Maybe} data type definition and \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}
+\label{maybeMonadPlus}
+\end{figure}
  
-Listing~\ref{maybeMonadPlus} contains the \texttt{Maybe} instance of and the class declaration for \texttt{MonadPlus}. The \texttt{Maybe} type represents a computation (returned wrapped in the \texttt{Just} constructor) that can fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a typeclass for monads that also have a monoidal structure~\footnote{A monoid is a semigroup who's associative binary operation has an identity element.}. 
+Figure~\ref{maybeMonadPlus} contains the class declaration for \texttt{MonadPlus} the \texttt{Maybe} instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a typeclass for monads that also have a monoidal structure~\footnote{A monoid is a semigroup whose associative binary operation has an identity element.}. 
 
 The \texttt{MonadPlus} class helps generalise monads that contain some concept of failure and choice. The \texttt{mzero} value represents a failed computation and \texttt{mplus} represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
 
-\begin{lstlisting}[caption={\texttt{Maybe}'s monad definition}, label=maybeMonad]
+\begin{figure}
+\begin{lstlisting}
 class Applicative m => Monad m where
 	return :: a -> m a
     (>>=)  :: forall a b. m a -> (a -> m b) -> m b
@@ -785,76 +823,106 @@ instance Monad Maybe where
 	(Just a) >>= f = f a
 	Nothing  >>= _ = Nothing
 \end{lstlisting}
+\caption{\texttt{Maybe}'s monad instance definition}
+\label{maybeMonad}
+\end{figure}
 
-\subsubsection{Generalising Maybe to Monad}\label{genMonad}
+\subsection{Refactoring Maybe to Monad}\label{genMonad}
 
-This refactoring replaces \texttt{Maybe} specific code with the more general \texttt{Monad} and \texttt{MonadPlus} operations. This is done by recognizing when \texttt{Maybe} specific code is structured like the more general operations. Listing~\ref{mmp1} contains a simple example of this.  
+This refactoring replaces \texttt{Maybe}-specific code with the more general \texttt{Monad} and \texttt{MonadPlus} operations. This is done by recognizing when \texttt{Maybe}-specific code is structured in the same way as the more general operations. Figure~\ref{mmp1} contains a simple example of this.  
 
-\begin{lstlisting}[caption={\texttt{inc}},label=mmp1]
+\begin{figure}[t]
+\begin{lstlisting}
 inc :: Maybe Int -> Maybe Int
 inc Nothing = Nothing
 inc (Just i) = (Just (i + 1))
 \end{lstlisting}
+\caption{\texttt{inc}}
+\label{mmp1}
+\end{figure}
 
-The function \texttt{inc} can be rewritten to use the monadic operations bind (\texttt{>>=}) and \texttt{return} instead, this is because \texttt{inc}'s definition matches \texttt{Maybe}'s definiton of bind. Listing~\ref{incRewrite} has another version \texttt{inc} of so that relationship is clearer. 
+The function \texttt{inc} can be rewritten to use the monadic operations bind (\texttt{>>=}) and \texttt{return} instead, this is because the definition of \texttt{inc} matches the definition of bind in the instance declaration of \texttt{Maybe} as a monad. Figure~\ref{incRewrite} has another version \texttt{inc} in which that relationship is clearer.
 
-\begin{lstlisting}[caption={\texttt{inc} rewritten to look more like bind},label=incRewrite]
+\begin{figure}[t]
+\begin{lstlisting}
+inc :: Maybe Int -> Maybe Int
+inc x = new_inc x f
 
-inc :: Maybe Int -> (Int -> Maybe Int) -> Maybe Int
-Nothing `inc` _ = Nothing
-(Just i) `inc` f = f i
+new_inc :: Maybe Int -> (Int -> Maybe Int) -> Maybe Int
+Nothing `new_inc` _ = Nothing
+(Just i) `new_inc` f = f i
 
 f i = Just (i + 1)
 \end{lstlisting}
+\caption{\texttt{inc} rewritten to look more like bind}
+\label{incRewrite}
+\end{figure}
 
-The new version of \texttt{inc} has been written using infix notation, to more closely match \texttt{Maybe}'s definition of bind. Also like \texttt{Maybe}'s bind when \texttt{inc}'s first argument is \texttt{Nothing} it just returns \texttt{Nothing}. Finally the right hand side of \texttt{inc}'s second case was lifted into a separate function and is passed to the new \texttt{inc} as an argument, just like bind.
+The new version of \texttt{inc} has been written using infix notation, to more closely match \texttt{Maybe}'s definition of bind. Also like \texttt{Maybe}'s bind when \texttt{inc}'s first argument is \texttt{Nothing} it just returns \texttt{Nothing}. Finally the right hand side of \texttt{inc}'s second case was lifted into a separate function and is passed to the new \texttt{inc} as an argument, just like \texttt{bind}.
 
-In practice the refactoring will, by default, create an anonymous function from the right hand side of the \texttt{Just} case with calls to \texttt{Just} and \texttt{Nothing} replaced with \texttt{return} and \texttt{mzero} respectively. The final refactored version of \texttt{inc} is in listing~\ref{mmp1Ref} 
+In practice the refactoring will, by default, create an anonymous function from the right hand side of the \texttt{Just} case with calls to \texttt{Just} and \texttt{Nothing} replaced with \texttt{return} and \texttt{mzero} respectively. The final refactored version of \texttt{inc} is in figure~\ref{mmp1Ref} 
 
-\begin{lstlisting}[caption={Final output from generalising \texttt{inc}},label=mmp1Ref]
+\begin{figure}[t]
+\begin{lstlisting}
 inc :: (Monad m) => m Int -> m Int
 inc mi = mi >>= (\i -> (return (i+1)))
 \end{lstlisting}
+\caption{Final output from generalising \texttt{inc}}
+\label{mmp1Ref}
+\end{figure}
 
 It is worth saying that if the right hand side of the \texttt{Just} case from the original implementation of \texttt{inc} contained calls to \texttt{Nothing} then this function could not be generalised to \texttt{Monad}. Instead, the anonymous function would replace the occurrences of \texttt{Nothing} with \texttt{mzero} instead.  
  
-\subsubsection{Generalising Maybe to MonadPlus} 
+\subsection{Refactoring Maybe to MonadPlus} 
 
 The first example could be rewritten using functionality provided only by the \texttt{Monad} type class. Obviously this isn't always the case. An example of a function that cannot be completely generalised to \texttt{Monad} is in listing~\ref{mmp2}.
 
-\begin{lstlisting}[caption={\texttt{showNat}}, label=mmp2]
+\begin{figure}[t]
+\begin{lstlisting}
 showNat :: Int -> Maybe String
 showNat i =
   if (i <= 0)
     then (Just (show i))
     else Nothing
 \end{lstlisting}
+\caption{\texttt{showNat}}
+\label{mmp2}
+\end{figure}
 
 The function \texttt{showNat} takes in a pure value and returns a \texttt{Maybe}, instead of taking in a \texttt{Maybe} and returning another \texttt{Maybe} as in the previous example. The more general version of \texttt{showNat} needs to be able to express the idea of failure that \texttt{MonadPlus} encodes with the \texttt{mzero} operation. 
 
-\begin{lstlisting}[caption={\texttt{showNat} refactored}, label=mmp2Ref]
+\begin{figure}[t]
+\begin{lstlisting}
 showNat :: (MonadPlus m) => Int -> m String
 showNat i =
   if (i <= 0)
     then (return (show i))
     else mzero
 \end{lstlisting}
+\caption{\texttt{showNat} refactored}
+\label{mmp2Ref}
+\end{figure} 
  
-Listing~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. In this case the refactoring can simply replace the \texttt{Maybe} specific calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from listing~\ref{mmp1Ref} was constructed by changing calls to \texttt{Just} to \texttt{return} and calls to \texttt{Nothing} to \texttt{mzero}. 
+Figure~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. In this case the refactoring can simply replace the \texttt{Maybe}-specific calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from listing~\ref{mmp1Ref} was constructed by changing calls to \texttt{Just} to \texttt{return} and calls to \texttt{Nothing} to \texttt{mzero}. 
 
-Due to \texttt{Monad} and \texttt{MonadPlus} both of \texttt{Maybe}'s constructors can be replaced with a more general operation. However if a function deconstructs a \texttt{Maybe} type through pattern matching it may not be generalisable. Consider the function \texttt{printResult} in listing~\ref{printRes}.
+Due to the \texttt{return} operator of \texttt{Monad} being equivalent to \texttt{Just} and \texttt{mzero}being supplied by \texttt{MonadPlus}, both of \texttt{Maybe}'s constructors can be replaced with a more general operation. Between these two type classes all of the functionality of \texttt{Maybe} can be replaced in functions that build \texttt{Maybe}s. However if a function deconstructs a \texttt{Maybe} type through pattern matching it may not be generalisable. Consider the function \texttt{printResult} in figure~\ref{printRes}.
 
-\begin{lstlisting}[caption={\texttt{printResult}},label=printRes]
+\begin{figure}[t]
+\begin{lstlisting}
 printResult :: (Show a) => Maybe a -> IO ()
 printResult m =
   case m of
      Nothing -> putStrLn "Something went wrong"
      (Just i) -> putStrLn $ "The result is: " ++ (show i)
 \end{lstlisting}
+\caption{\texttt{printResult}}
+\label{printRes}
+\end{figure}
 
 \texttt{printResult} uses \texttt{Maybe}'s constructors for pattern matching rather than in expressions; there is no generic pattern match for \texttt{Just}. Refactoring \texttt{printResult} will require the programmer to provide a way to convert its argument to \texttt{Maybe}.
 
-\begin{lstlisting}[caption={Refactored \texttt{printResult}},label=printRef]
+\begin{figure}[t]
+\begin{lstlisting}
 printResult :: (Show a, MonadPlus m) => (m a -> Maybe a) -> m a -> IO ()
 printResult f = printResult_old . f
    where
@@ -864,45 +932,74 @@ printResult f = printResult_old . f
   	  Nothing -> putStrLn "Something went wrong"
   	  (Just i) -> putStrLn $ "The result is: " ++ (show i)
 \end{lstlisting}
+\caption{Refactored \texttt{printResult}}
+ \label{printRef}
+\end{figure}
  
-Listing~\ref{printRef} show the finished refactoring of \texttt{printResult}. The original definition of \texttt{printResult} is renamed and moved into a local definition. The new \texttt{printResult} function now takes in an additional parameter, an "abstraction function." The abstraction function abstracts the new type \texttt{m a} back to the old \texttt{Maybe a}. The inverse of the abstraction function is the projection function\footnote{In this specific case the projection function is of type: \texttt{Maybe a -> m a}}. These types of functions are used more in the next section (\ref{listToDlist}).
+Figure~\ref{printRef} show the finished refactoring of \texttt{printResult}. The original definition of \texttt{printResult} is renamed and moved into a local definition. The new \texttt{printResult} function now takes in an additional parameter, an "abstraction function." The abstraction function abstracts the new type \texttt{m a} back to the old \texttt{Maybe a}. The inverse of the abstraction function is the projection function\footnote{In this specific case the projection function is of type: \texttt{Maybe a -> m a}}. These types of functions are used more in the next section (\ref{listToDlist}).
 
 When passed the abstraction function \texttt{printResult} just converts the now genericly typed argument to \texttt{Maybe a} and then calls the original function definition.
+
+In general this refactoring case doesn't do much. This is because its difficult to ``consume'' a more general type due to argument types being contravariant under the function type constructor.
  
-\section{Lists to Hughes Lists a Refactoring}\label{listToDlist}
+\section{``Lists to Hughes Lists'' Refactoring}\label{listToDlist}
 
-The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. As the project develops more and more decisions must be made about how data is stored and processed. Mid-development it may become necessary to change what data structure the program is used.
+The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. As a project develops more and more decisions must be made about how data is represented and processed. Mid-development it may become necessary to change which data structures the program uses in order to facilitate adding additional features or for performance reasons.
 
-This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily to have a formal relationship from the compiler's point of view (e.g. both implement the same type class) but instead have a similar "interface" for to interact with. 
+This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily to have a formal syntactic relationship from the compiler's point of view (e.g. both implement the same type class) but instead have an ad-hoc, semantic similarity. 
 
 \subsection{Hughes Lists}
 
-Appending two lists into a single list is a basic and key operation. The standard implementation of append is seen in listing~\ref{concat}. 
+Appending two lists into a single list is a fundamental operation over lists. The standard implementation of append is seen on line one in figure~\ref{append}.\footnote{The \texttt{(++)} operator is the infix definition of append.} 
 
-\begin{lstlisting}[caption={The standard definition of concat},label=concat]
+\begin{figure}[t]
+\begin{lstlisting}
 (++) :: [a] -> [a] -> [a]
 []  ++ ys = ys
 (x:xs) ++ ys = x:(xs ++ ys)
 \end{lstlisting}
+\caption{The standard definition of append}
+\label{append}
+\end{figure}
 
-If the first argument to append is the empty list then append can just return the second argument. In the other case append traverses the first list popping off the head of the first list and recursively appending the tail of the first list and the second argument. The performance of append is proportional to the length of its first argument. This has the unfortunate side effect where if a program builds of a list by repeatedly appending  to the end of a list the program will spend significant amounts of time traversing the beginning of the list over and over. In total the performance of this function ends up being $O(n^2)$ where $n$ is the length of the final list.
+If the first argument to append is the empty list then append can just return the second argument. In the other case append traverses the first list popping off the head of the first list and recursively appending the tail of the first list and the second argument. The performance of append is proportional to the length of its first argument. This has the unfortunate side effect that if a program builds of a list by repeatedly appending  to the end of a list the program will spend significant amounts of time traversing the beginning of the list over and over. In total the performance of this function ends up being $O(n^2)$ where $n$ is the length of the final list.
 
-Fortunately there is an alternative representative of lists that allows $O(n)$ time appends. This alternative representation was first described by John Hughes in~\citep{hughesList} (hence their name), they are also known as difference lists~\citep{realWorldHaskell}; difference lists is the name that they are provided by in Hackage~\citep{dlist}. In Hughes lists elements are stored as partial applications of the append function, these partial applications are then composed together using function composition (the \texttt{(.)} operator in Haskell). 
+An example of a function that exhibits this behaviour is \texttt{countdown}, which is defined in figure~\ref{countdown}. \texttt{countdown} constructs a string that lists the numbers starting at the argument \texttt{i} down to zero. During each recursive call the previously computed result is traversed but this parameter gets larger each time which is what causes the $O(n^2)$ performance.
+
+\begin{figure}[t]
+\begin{lstlisting}
+countdown :: Int -> String
+countdown i = f i ""
+  where f 0 s = s ++ "0"
+          f i s = let newS = s ++ (show i) ++ ", " in
+          f (i-1) newS
+\end{lstlisting}
+\caption{The countdown function runs in $O(n^2)$ time.}
+\label{countdown}
+\end{figure}
+
+The poor performance of \texttt{countdown} quickly becomes noticable with \texttt{countdown 10000} taking around six seconds to run.\footnote{On an Intel i5 4690k processor with 16 GB of RAM}
+
+Fortunately there is an alternative representative of lists that allows $O(n)$ time for such nested appends. This alternative representation was first described by John Hughes in~\citep{hughesList} (hence their name), they are also known as difference lists~\citep{realWorldHaskell}; difference lists is the name that they are provided by in Hackage~\citep{dlist}. In Hughes lists elements are stored as partial applications of the append function, these partial applications can then be composed together using function composition (the \texttt{(.)} operator in Haskell) to append the two lists together. 
 
 Difference lists store the values \texttt{[1,2,3]} as \texttt{([1,2,3] ++)} which is of type \texttt{Num a => [a] -> [a]}. Appending \texttt{[4,5,6]} to \texttt{([1,2,3] ++)} first involves converting it to a difference lists (\texttt{([4,5,6] ++)} in this case) then these two difference lists can be appended with function composition which results in \texttt{([1,2,3] ++) . ([4,5,6] ++)}. 
 
-\begin{lstlisting}[caption={Building and deconstructing difference lists.},label=ghciDList]
+\begin{figure}[t]
+\begin{lstlisting}
 > let lst = ([1,2,3] ++) . ([4,5,6] ++)
 > :t lst
 lst :: Num a => [a] -> [a]
 > lst []
 [1,2,3,4,5,6]
 \end{lstlisting}
+\caption{Building and deconstructing difference lists.}
+\label{ghciDList}
+\end{figure}
 
-As seen in listing~\ref{ghciDList}, once it comes time to retrieve the normal list from a difference list applying an empty list to the difference list and the partial applications are evaluated from right to left. Internally difference lists are just a wrapper around a function from lists to lists. Listing~\ref{dlistDef} shows the definition of the \texttt{DList} new type which contains the partial application. The \texttt{unDL} function simply removes the \texttt{DL} constructor. 
+As seen in figure~\ref{ghciDList}, once it comes time to retrieve the normal list the difference list is applied to an empty list. Function composition is evaluated from right to left so this keeps the left operand of \texttt{(++)} small. Internally difference lists are just a wrapper around a function from lists to lists. Figure~\ref{dlistDef} shows the definition of the \texttt{DList} new type which contains the partial application. The \texttt{unDL} function simply removes the \texttt{DL} constructor. 
 
-\begin{lstlisting}[caption={The definition of \texttt{DList} taken from~\citep{realWorldHaskell}}, label=dlistDef]
-
+\begin{figure}[t]
+\begin{lstlisting}
 newtype DList a = DL {
    unDL :: [a] -> [a]
 }
@@ -916,21 +1013,38 @@ toList (DL xs) = xs []
 append :: DList a -> DList a -> DList a
 append xs ys = DL (unDL xs . unDL ys)
 \end{lstlisting}
+\caption{The definition of \texttt{DList} taken from~\citep{realWorldHaskell}}
+\label{dlistDef}
+\end{figure}
 
 While difference lists support fast appends there is no such thing as a free lunch, speed ups for certain functions are paid for by slowdowns in other places. Getting the head and tail of a normal list are both constant time operations but become linear time for difference lists because the difference lists will have to be converted back to normal lists. 
 
 
 \subsection{Refactoring lists to Hughes lists}
 
-For functional programmers, lists are a very familiar and versatile data structure. However, if an application requires repeated appends as described at the start of this section their performance becomes an issue. Difference lists provide a similar interface to lists but without this troublesome behaviour. This section will describe a refactoring to convert programs written using normal lists to instead use difference lists. 
+For functional programmers, lists are a very familiar and versatile data structure. However, if an application requires repeated appends as described at the start of this section their performance becomes an issue. Difference lists provide a similar interface to lists but without this troublesome behaviour. This section will describe a refactoring to convert programs written using normal lists to use difference lists instead. 
 
-\subsubsection{Isomorphic Types} 
+\subsubsection{Embeddable Types} 
 This refactoring takes the view that a type consists of some structure and a set of functions that operate on that structure. 
 
-Two types, \textit{A} and \textit{B} are considered isomorphic if there exists a projection function \textit{proj :: A -> B}, an abstraction function \textit{abs :: B -> A}, and a set of pairs where each pair consists of one function that operates over \textit{A} and the function that performs the same operation over \textit{B}. For example, if type \textit{A} had a function \textit{add} and \textit{B} has a function \textit{insert} that both add a new element to the respective collections these two functions should be paired. The refactoring modifies the target function(s) by replacing functions using the old type with the function they are paired with. If functions exist that are not in the set of pairs then the projection and/or abstraction functions are inserted to change the type of that particular branch of the abstract syntax tree.
+This refactoring requires that a source type is ``reversibly embeddable'' into the target type. If the source type is some type $A$ and the target type is some type $B$ then for $A$ to be reversibly embeddable in $B$ two functions must exist. The projection function $proj :: A \rightarrow B$ and the abstraction function $abs :: B \rightarrow A$. The property in equation~\ref{eq1} must hold for $A$ to be embeddable in $B$. However, the property in equation~\ref{eq2} does not necessarily hold.   
 
-In the list to Hughes list case the projection function is \texttt{fromList} (because it projects lists into the new type \texttt{DList}) and the abstraction function is \texttt{toList}. What to define the set of pairs as is an interesting problem with multiple "correct" solutions. The \texttt{Data.DList} module exports the following functions~\citep{dlist}.
+\begin{figure}[t]
+\begin{equation}\label{eq1}
+abs . proj = id
+\end{equation}
 
+\begin{equation}\label{eq2}
+proj . abs \neq id
+\end{equation}
+\end{figure}
+
+Intuitively this means that it needs to be possible to retrieve the $A$ type from a $B$ exactly as it was when it was projected into the new type. The reverse does not need to be true because any values of type $B$ were introduced by the refactoring so any information lost converting a $B$ back into an $A$ wasn't in the original program and so does not need to be preserved to preserve behaviour.
+
+In the "list to Hughes list" case the projection function is \texttt{fromList} (because it embeds lists into the new type \texttt{DList}) and the abstraction function is \texttt{toList}. How to define the set of pairs is an interesting problem with multiple solutions. The \texttt{Data.DList} module exports the following functions~\citep{dlist}.
+
+
+\begin{table}
 \begin{center}
 \begin{tabular}{| c | c | c |}
   \hline
@@ -942,76 +1056,112 @@ In the list to Hughes list case the projection function is \texttt{fromList} (be
   \hline	
   \texttt{head} & \texttt{tail} & \texttt{unfoldr}\\ 
   \hline  
-  \texttt{foldr} & \texttt{map} \\
+  \texttt{foldr} & \texttt{map} & \\
   \hline
 \end{tabular}
 \end{center}
+\caption{The DList API}
+\end{table}
 
-From this list the two bolded functions\footnote{(\texttt{snoc :: DList a -> a -> DList a}) appends a single element to a list}\footnote{(\texttt{list :: b -> (a -> DList a -> b) -> Dlist a -> b}) is list elimination for dlists} are the only functions without normal list counterparts. The rest of the \texttt{DList} API could be paired with equivalent list functions. However, its not necessarily a good idea for every normal list function to be refactoring to its \texttt{DList} equivalent. As was mentioned certain \texttt{DList} functions are less efficient than the corresponding normal function, the primary purpose of this refactoring is defeated if the refactored code runs slower than the original source.
 
-Fortunately different versions of the refactoring can be made by defining separate sets depending on the behaviour that is desired. For example one set could only include the \texttt{DList} constant time operations (\texttt{append}, \texttt{empty}, and \texttt{cons}) and another set could include all possible pairings. 
+From this list the two bold functions are the only functions without normal list counterparts. In the case of \texttt{snoc}, which appends a single element to the end of a \texttt{DList}, there is no normal list equivalent presumably because Hughes lists are specifically designed for append-heavy operations so making a function specifically for appending a single element onto the end of a \texttt{DList} is useful. The \texttt{list}, shown in figure~\ref{dListList}, makes up for the lack of pattern matching over \texttt{DList}s.
+
+\begin{figure}[t]
+\begin{lstlisting}
+list :: b -> (a -> DList a -> b) -> DList a -> b
+list nill consit dl =
+  case toList dl of
+    [] -> nill
+    (x : xs) -> consit x (fromList xs)
+\end{lstlisting}
+\caption{The definition of \texttt{list} from~\citep{dlist}}
+\label{dListList}
+\end{figure}
+
+The rest of the \texttt{DList} API could be paired with equivalent list functions. However, its not necessarily a good idea for every normal list function to be refactoring to its \texttt{DList} equivalent. As was mentioned certain \texttt{DList} functions are less efficient than the corresponding normal function, the primary purpose of this refactoring is defeated if the refactored code runs slower than the original source.
+
+Fortunately different versions of the refactoring can be made by defining separate sets depending on the behaviour that is desired. For example one set could only include the \texttt{DList} constant time operations (\texttt{append}, \texttt{empty}, and \texttt{cons}) and another set could include all possible pairings.
+
+The obvious choice for the set is to just include every possible pairing. However, it may be beneficial to limit which functions can be replaced based on the motivation for the refactoring and what list functions are being used in the source program. In the list to Hughes list case this refactoring is performed to increase the performance of append operations. In this case it may be beneficial to only allow append to be swapped for the DList append. Another possibility in this case would be to only allow the \texttt{DList} functions that run in constant time to be introduced.\footnote{\texttt{empty}, \texttt{cons}, and \texttt{append}}. 
+
+The composition of the set of functions is highly dependent on the relationship between the source and target types and which functions the source program is using. For this reason the implementation of this refactoring in HaRe is as adaptable as possible so that users can customize the set for their own needs (see Chapter~\ref{implementation}).
 
 \subsubsection{Transforming functions}
 
 The refactoring breaks into three different cases depending on the type of the target function. 
 
-In section~\ref{introSyn} there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about what the user's intent is or directly solicit information from them. This refactoring is no different, for any given function there multiple correct definitions. Take for example the function \texttt{insComma} in listing~\ref{insComma}.
+In introduce type synonym refactoring from section~\ref{introSyn} there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not, and indeed cannot, know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about what the user's intent is or to directly solicit information from them. This refactoring is no different: for any given function there are multiple possible ``correct" definitions the refactoring could produce. Take for example the function \texttt{insComma} in figure~\ref{insComma}.
 
-\begin{lstlisting}[label=insComma,caption={\texttt{insComma}}]
+\begin{figure}[t]
+\begin{lstlisting}
 insComma :: String -> String -> String
 insComma s1 s2 = s1 ++ "," ++ s2
-\end{lstlisting}  
+\end{lstlisting} 
+\caption{\texttt{insComma}}
+\label{insComma}
+\end{figure} 
 
-When refactoring both of the arguments to and the result type of \texttt{insComma} to all become \texttt{DList Char} there are multiple ways to refactor this function. Listing~\ref{commaRef} shows two possibilities, which one should the refactoring produce and why?
+When refactoring both of the arguments and the result type of \texttt{insComma} to become \texttt{DList Char} there are multiple ways to refactor this function. Figure~\ref{commaRef} shows two possibilities, which one should the refactoring produce and why?
 
-To make this decision, the refactoring must infer that because this function is being refactored to use the new type the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends whereas the second example converts the two arguments into lists appends everything together and then converts the result back into a \texttt{DList}. The refactoring prioritises minimising the amount of conversions introduced into the refactored program.
+To make this decision, the refactoring is designed to reflect the assumption that because this function is being refactored to use the new type the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends whereas the second example converts the two arguments into lists appends everything together and then converts the result back into a \texttt{DList}. The refactoring prioritises minimising the amount of conversion introduced into the refactored program.  
 
-\begin{lstlisting}[label=commaRef,caption={Two possible refactorings for \texttt{insComma}}]
+\begin{figure}[t]
+\begin{lstlisting}
 insComma_1 :: DList Char -> DList Char -> DList Char
 insComma_1 s1 s2 = s1 `append` fromList (",") `append` s2
 
 insComma_2 :: DList Char -> DList Char -> DList Char
 insComma_2 s1 s2 = fromList ((toList s1) ++ (",") ++ (toList s2))
 \end{lstlisting}
+\caption{Two possible refactorings for \texttt{insComma}}
+\label{commaRef}
+\end{figure}
 
-\subsubsection{Example 1}
+\subsection{Modifying the Type of a Parameter}
 
-The simplest case of this refactoring is modifying the type of a parameter. Consider the example in listing~\ref{median} that calculates the median of list of numbers. 
+The simplest case of this refactoring is modifying the type of a parameter. Consider the example in figure~\ref{median} that calculates the median of list of numbers. 
 
-\begin{lstlisting}[caption={Calculating a median}, label=median]
-
+\begin{figure}[t]
+\begin{lstlisting}
 median :: Fractional a => [a] -> a
 median lst = foldr (+) 0 lst / length lst
-
 \end{lstlisting} 
+\caption{Calculating a median}
+\label{median}
+\end{figure}
 
-Refactoring \texttt{median}'s first argument to become a Hughes list is fairly straight forward matter of wrapping the, now of type \texttt{DList}, parameter \texttt{lst} with the abstraction function \texttt{toList}. The refactored version of \texttt{median} is in listing~\ref{medianRef}. 
+Refactoring \texttt{median}'s first argument to become a Hughes list is fairly straight forward matter of wrapping the, now of type \texttt{DList}, parameter \texttt{lst} with the abstraction function \texttt{toList}. The refactored version of \texttt{median} is in figure~\ref{medianRef}. The \texttt{DList} functions have been prefaced with the \texttt{DL} qualifier to differentiate which functions come from which API. This convention will be used through the remainder of the section.  
 
-\begin{lstlisting}[caption={\texttt{median} refactored}, label=medianRef]
-
+\begin{figure}[t]
+\begin{lstlisting}
 median :: Fractional a => DList a -> a
-median lst = foldr (+) 0 (toList lst) / length (toList lst)
+median lst = foldr (+) 0 (DL.toList lst) / length (DL.toList lst)
+\end{lstlisting}  
+\caption{\texttt{median} refactored}
+\label{medianRef} 
+\end{figure}
 
-\end{lstlisting}    
+This example is one of the cases where there are multiple possible refactorings. Figure~\ref{medianRef2} shows a different version of a refactored median, because \texttt{foldr} is defined both for difference lists and normal lists the abstraction function could be added around that expression instead. Which version should the refactoring produce?
 
-This example is one of the cases where there are multiple possible refactorings. Listing~\ref{medianRef2} shows a different version of a refactored median, because \texttt{foldr} is defined both for difference lists and normal lists the abstraction function could be added around that expression instead. Which version should the refactoring produce?
-
-\begin{lstlisting}[caption={\texttt{median} refactored another way.}, label=medianRef2]
-
+\begin{figure}[t]
+\begin{lstlisting}
 median :: Fractional a => DList a -> a
-median lst = toList (foldr (+) 0 lst) / length (toList lst)
-
-\end{lstlisting}    
+median lst = DL.toList (DL.foldr (+) 0 lst) / length (DL.toList lst)
+\end{lstlisting}  
+\caption{\texttt{median} refactored another way.}
+\label{medianRef2}
+\end{figure}  
 
 In this case where the refactoring targets a parameter and the function's result is a type other than a Hughes list the refactoring assumes that the programmer wants the Hughes list converted as soon as possible in the function. 
 
-\subsubsection{Example 2}
+\subsection{Modifying the Result Type}
 
-The second example covers the case where the result type of a function is refactored to use \texttt{DList} instead of list. Listing~\ref{enumBefore} contains the definition of a simple algebraic data type of a tree, a function (\texttt{enumerate}) that returns an in-order list of all the tree's elements, and a function that prints a tree's enumeration to standard output. 
+The second example covers the case where the result type of a function is changed to \texttt{DList} instead of list. Figure~\ref{enumBefore} contains the definition of a simple algebraic data type of a tree, a function (\texttt{enumerate}) that returns an in-order list of all the tree's elements, and a function that prints a tree's enumeration to standard output. 
 
 This time the refactoring will affect the result type of the function. As opposed to the previous example where changes occurred at the leaves of the abstract syntax tree this case of the refactoring changes the type of the AST's root. 
 
-\begin{lstlisting}[caption={Definition of enumerate}, label=enumBefore]
+\begin{figure}[t]
+\begin{lstlisting}
 data Tree a = Leaf
             | Node (Tree a) a (Tree a)
 
@@ -1023,51 +1173,62 @@ printEnumTree :: (Show a) => Tree a -> IO ()
 printEnumTree tree = let lst = enumerate tree in
   print lst
 \end{lstlisting}
+\caption{Definition of enumerate}
+\label{enumBefore}
+\end{figure} 
 
 Changing the type of the AST's root requires the refactoring to traverse the tree top down from left to right. This is because the result type of any syntax tree is determined by the function (or value in the case of tree with only a single node) in the leftmost child. 
 
-\texttt{enumerate}'s first case is simple enough to refactor. There is only a single value in the tree the empty list literal. This node's current type is \texttt{[a]} and it needs to become \texttt{DList a}. When the refactoring reaches the \texttt{[]} value it searches to see if it is paired with some difference list operation in the set of pairs. The empty list literal is paired with the difference list operation \texttt{empty}, the refactoring sees this and replaces the empty list with \texttt{empty}.
+\texttt{enumerate}'s first case is simple enough to refactor. There is only a single value in the tree the empty list literal. This node's current type is \texttt{[a]} and it needs to become \texttt{DList a}. When the refactoring reaches the \texttt{[]} value it searches to see if it is paired with some difference list operation in the set of pairs. The empty list literal is paired with the difference list operation \texttt{empty}, the refactoring sees this and replaces the empty list with \texttt{DL.empty :: DList a}.
 
 After the replacement of \texttt{[]} \texttt{enumerate}'s first case is successfully refactored. The second case of \texttt{enumerate} is more complex than the first. Figure~\ref{enumAST} shows a syntax tree for \texttt{enumerate}'s second case. 
 
-\begin{figure}[h]\label{enumAST}
+\begin{figure}[h]
 	\begin{center}
 		\includegraphics[scale=.5]{graphVis/Chapter3/enumerate.png}
 	\end{center}
 	\caption{A simplified syntax tree of \texttt{enumerate}'s second case.}
+	\label{enumAST}
 \end{figure}
 
-The refactoring begins the traversal at the top of the syntax tree with the goal of modifying the entire tree to have a result type of \texttt{DList a}. The root node of the tree is the operator application of the left append operation. This append's result type is the type that determines the whole tree's result type. The standard append operation is paired with the difference list \texttt{append} operation. The refactoring checks to ensure that the difference list append has the correct result type and because it does makes the replacement.\footnote{The refactoring will automatically make \texttt{append} infix by surrounding the call with backtick characters since this replacement is modifying an operator application.} After replacing \texttt{++} with \texttt{append} the result type is correct but the function will no longer type check because \texttt{++} and \texttt{append}'s arguments are not the same types. 
+The refactoring begins the traversal at the top of the syntax tree with the goal of modifying the entire tree to have a result type of \texttt{DList a}. The root node of the tree is the operator application of the left-hand append operation. This append's result type is the type that determines the whole tree's result type. The standard append operation is paired with the difference list \texttt{DL.append} operation. The refactoring checks to ensure that the difference list append has the correct result type and because it does makes the replacement.\footnote{The refactoring will automatically make \texttt{DL.append} infix by surrounding the call with backtick characters since this replacement is modifying an operator application.} After replacing \texttt{++} with \texttt{DL.append} the result type is correct but the function will no longer type check because \texttt{++} and \texttt{DL.append}'s arguments are not the same types. 
 
 The refactoring then must recurse down both the left and right subtrees to change their types from \texttt{[a]} (the type of \texttt{(++)}'s arguments) to \texttt{DList a} (the type \texttt{append}'s arguments). 
 
-\begin{figure}[h]\label{enumLeft}
+\begin{figure}[h]
 	\begin{center}
 		\includegraphics[scale=.5]{graphVis/Chapter3/enumLeft.png}
 	\end{center}
 	\caption{The left subtree of \texttt{enumerate}'s second case.}
+	\label{enumLeft}
 \end{figure}
 
-The left subtree of the root node is shown in figure~\ref{enumLeft}. The refactoring can descend through the parenthesis (represented by the \texttt{HsPar} constructor); the refactoring continues down the left side of the function application (\texttt{HsApp}). When the refactoring encounters the call to \texttt{enumerate} it recognises that this is the recursive call and even though the type of \texttt{enumerate} stored in the syntax tree is \texttt{Tree a -> [a]} after the refactoring its type will be \texttt{Tree a -> DList a} which is the correct result type  for this subtree. The refactoring can now confirm that the left subtree is of type \texttt{DList a} without checking the right side of the application because the refactoring didn't change the type of \texttt{enumerate}'s arguments.
+The left subtree of the root node is shown in figure~\ref{enumLeft}. The refactoring can descend through the parentheses (represented by the \texttt{HsPar} constructor); the refactoring continues down the left side of the function application (\texttt{HsApp}). When the refactoring encounters the call to \texttt{enumerate} it recognises that this is the recursive call and even though the type of \texttt{enumerate} stored in the syntax tree is \texttt{Tree a -> [a]} after the refactoring its type will be \texttt{Tree a -> DList a} which is the correct result type  for this subtree. The refactoring can now confirm that the left subtree is of type \texttt{DList a} without checking the right side of the application because the refactoring didn't change the type of \texttt{enumerate}'s arguments.
 
-\begin{figure}[h]\label{enumRight}
+\begin{figure}[h]
 	\begin{center}
 		\includegraphics[scale=.5]{graphVis/Chapter3/enumRight.png}
 	\end{center}
 	\caption{The right subtree of \texttt{enumerate}'s second case.}
+	\label{enumRight}
 \end{figure}
 
-After refactoring the left subtree the right subtree needs to be modified to be of type \texttt{DList a} as well. Shown in figure~\ref{enumRight}, the right subtree's root is the second call to \texttt{(++)}. Once again the refactoring replaces \texttt{++} with \texttt{append} because \texttt{append}'s result type is also \texttt{DList a}. Doing this replacement sets off additional traversals that need to ensure that the two arguments to the root node become typed \texttt{DList a} as well. The right argument to the root of this subtree is the \texttt{(enumerate right)} expression which is handled in the same way the \texttt{(enumerate left)} call was handled. The left subtree of figure~\ref{enumRight}  is the list literal \texttt{[x]}. This can be replaced with a call to \texttt{(singleton :: a -> DList a)} the equivalent difference list function. At this point the refactoring is finished modifying \texttt{enumerate} and the result can be seen in listing~\ref{enumRef}.
+After refactoring the left subtree the right subtree needs to be modified to be of type \texttt{DList a} as well. Shown in figure~\ref{enumRight}, the right subtree's root is the second call to \texttt{(++)}. Once again the refactoring replaces \texttt{++} with \texttt{DL.append} because \texttt{append}'s result type is also \texttt{DList a}. Doing this replacement sets off additional traversals that need to ensure that the two arguments to the root node become typed \texttt{DList a} as well. The right argument to the root of this subtree is the \texttt{(enumerate right)} expression which is handled in the same way the \texttt{(enumerate left)} call was handled. The left subtree of figure~\ref{enumRight}  is the list literal \texttt{[x]}. This can be replaced with a call to \texttt{(DL.singleton :: a -> DList a)} the equivalent difference list function. At this point the refactoring is finished modifying \texttt{enumerate} and the result can be seen in listing~\ref{enumRef}.
 
-\begin{lstlisting}[caption={The refactored definition of \texttt{enumerate}}, label=enumRef]
+\begin{figure}[t]
+\begin{lstlisting}
 enumerate :: Tree a -> DList a
 enumerate Leaf = empty
 enumerate (Node left x right) = (enumerate left) `append` (singleton x) `append` (enumerate right)
 \end{lstlisting}
+\caption{The refactored definition of \texttt{enumerate}}
+\label{enumRef}
+\end{figure}
 
-The refactoring isn't finished yet, however. The original definition contained in listing~\ref{enumBefore} had another function \texttt{printEnumTree} that depended on \texttt{enumerate}. The final modification that needs to happen to this example is to wrap all calls to \texttt{enumerate} in \textit{non-refactored} function definitions with the abstraction function to convert the result back to a list. The final product of the refactoring can be seen in listing~\ref{enumFinal}.
+The refactoring isn't finished yet, however. The original definition contained in figure~\ref{enumBefore} had another function \texttt{printEnumTree} that depended on \texttt{enumerate}. The final modification that needs to happen to this example is to wrap all calls to \texttt{enumerate} in \textit{non-refactored} definitions with the abstraction function to convert the result back to a list. The final product of the refactoring can be seen in figure~\ref{enumFinal}.
 
-\begin{lstlisting}[caption={The final product of the refactoring}, label=enumFinal]
+\begin{figure}[t]
+\begin{lstlisting}
 data Tree a = Leaf
             | Node (Tree a) a (Tree a)
 
@@ -1079,30 +1240,40 @@ printEnumTree :: (Show a) => Tree a -> IO ()
 printEnumTree tree = let lst = toList (enumerate tree) in
   print lst
 \end{lstlisting}
+\caption{The final product of the refactoring}
+\label{enumFinal}
+\end{figure}
 
-\subsubsection{Example 3}
+\subsection{Modifying Parameter and Result Types}
 
-The final case of this refactoring involves modifying both the result type and one (or more) of the parameters of the target function. This example will use the \texttt{explode} function from listing~\ref{explode} to refactor both its argument and result type to become \texttt{DList a}.
+The final case of this refactoring involves modifying both the result type and one (or more) of the parameters of the target function. This example will use the \texttt{explode} function from figure~\ref{explode} to refactor both its argument and result type to become \texttt{DList a}.
 
-\begin{lstlisting}[caption={The initial definition of \texttt{explode}},label=explode]
+\begin{figure}[t]
+\begin{lstlisting}
 explode :: [a] -> [a]
 explode lst = concat (map (\x -> replicate (length lst) x) lst)
 \end{lstlisting}
+\caption{The initial definition of \texttt{explode}}
+\label{explode}
+\end{figure}
 
-The abstract syntax tree of explode is in figure~\ref{explode}.
+The abstract syntax tree of \texttt{explode} is in figure~\ref{explode}.
 
-\begin{figure}[!h]\label{explode}
+\begin{figure}[h!]
 	\begin{center}
 		\includegraphics[scale=.5]{graphVis/Chapter3/explode.png}
 	\end{center}
-	\caption{\texttt{explodes}'s syntax tree}
+	\caption{A simplified representation of \texttt{explodes}'s syntax tree}
+	\label{explode}
 \end{figure}
 
-Much like the previous case where just the result type was modified the refactoring will start working on the syntax tree in a top down manner modifying the function definition to have the correct result type. The refactoring starts on the left subtree with the call to \texttt{concat :: Foldable t => t [a] -> [a]}. The equivalent difference list function is \texttt{concat :: Foldable t => t (DList a) -> DList a} since the result type of this version of \texttt{concat} is \texttt{DList a} the refactoring performs the switch. 
+Much like the previous case where just the result type was modified, the refactoring will start working on the syntax tree in a top-down manner modifying the function definition to have the correct result type. This case could also be implemented in a bottom-up manner the top-down method allows for more code reuse from the implementation of the case when the result type is modified.
 
-After the change on the left subtree the refactoring needs to modify the right subtree so that is is of type \texttt{Foldable t => t DList a} rather than its current type of \texttt{Foldable t => t [a]}. The left most child of the right subtree is the call to \texttt{map :: (a -> b) -> [a] -> [b]}. The difference list equivalent map is appropriately typed \texttt{map :: (a -> b) -> DList a -> DList b}. Should the refactoring change this node to the difference list version? And if so what changes will be need to made to other subtrees?
+The refactoring starts on the left subtree with the call to \texttt{concat :: Foldable t => t [a] -> [a]}. The equivalent difference list function is \texttt{DL.concat :: Foldable t => t (DList a) -> DList a} since the result type of this version of \texttt{DL.concat} is \texttt{DList a} the refactoring performs the switch between which function to use. 
 
-The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (the type of \texttt{concat}'s parameter) can be the same type as \texttt{DList b} (\texttt{map}'s result type); since \texttt{DList} is a member of the \texttt{Foldable} type class the swap can happen as long as the \texttt{b} type variable in \texttt{map}'s type is equal to \texttt{DList a}. This node's type after the swap and filling in the known type variables is: \texttt{map :: (a -> DList b) -> DList a -> DList (DList b)} this new type's arguments' types are both different from the original types so the refactoring will need to check both of these subtrees as well. 
+After the change on the left subtree the refactoring needs to modify the right subtree so that it is of type \texttt{Foldable t => t (DList a)} rather than its current type of \texttt{Foldable t => t [a]}. The leftmost child of the right subtree is the call to \texttt{map :: (a -> b) -> [a] -> [b]}. The difference list equivalent map is appropriately typed \texttt{DL.map :: (a -> b) -> DList a -> DList b}. Should the refactoring change this node to the difference list version? And if so what changes will be need to made to other subtrees?
+
+The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (the type of \texttt{DL.concat}'s parameter) can be the same type as \texttt{DList b} (\texttt{DL.map}'s result type); since \texttt{DList} is a member of the \texttt{Foldable} type class the swap can happen as long as the \texttt{b} type variable in \texttt{map}'s type is equal to \texttt{DList a}. This node's type after the swap and filling in the known type variables is: \texttt{DL.map :: (a -> DList b) -> DList a -> DList (DList b)} this new type's arguments' types are both different from the original types so the refactoring will need to check both of these subtrees as well. 
 
 \begin{figure}[h]\label{explodeLam}
 	\begin{center}
@@ -1111,37 +1282,59 @@ The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (t
 	\caption{The syntax tree of the lambda expression in \texttt{explode}.}
 \end{figure}
 
-Starting with the lambda expression (the syntax tree in figure~\ref{explodeLam}) the refactoring needs to modify it's type to become \texttt{a -> DList b}\footnote{\texttt{a} and \texttt{b} could be the same type.}. The current type of the lambda expression is \texttt{a -> [a]} so the refactoring only needs to modify its result type. The refactoring can then proceed to the left-most child of this expression, the call to \texttt{replicate :: Int -> a -> [a]}. The refactoring swaps this call for the difference list version of \texttt{replicate :: Int -> a -> DList a}. 
+Starting with the lambda expression (the syntax tree in figure~\ref{explodeLam}) the refactoring needs to modify it's type to become \texttt{a -> DList b}\footnote{\texttt{a} and \texttt{b} could be the same type.}. The current type of the lambda expression is \texttt{a -> [a]} so the refactoring only needs to modify its result type. The refactoring can then proceed to the left-most child of this expression, the call to \texttt{replicate :: Int -> a -> [a]}. The refactoring swaps this call for the difference list version of \texttt{DL.replicate :: Int -> a -> DList a}. 
 
 If this refactoring were only modifying the result type of \texttt{explode} the refactoring would be done modifying the lambda expression because the type change affects the syntax tree in a top down manner. In this case, however, because  the type of \texttt{explode}'s argument was also changed so leaves of the syntax tree can also have changed type. This means that every subtree needs to be checked to ensure that it still type checks.
 
 The untouched sections of this expression's syntax tree are \texttt{replicate}'s arguments. The second argument is just the variable \texttt{x} which hasn't changed type. The first argument on the other hand is the expression \texttt{(length lst)} and \texttt{lst} is the argument of \texttt{explode} that is now a difference list rather than a normal list. Ideally the refactoring would rewrite this expression by replacing the normal list functions (\texttt{length} in this case) with difference list equivalents. Unfortunately there is no difference list version of \texttt{length} so the refactoring will have to introduce the abstraction function to convert back to a normal list to calculate its length. 
 
-The lambda expression has now been successfully refactored. The rewritten lambda expression is in listing~\ref{lamRef}.\footnote{To help clarify which functions are for lists and which are the difference list versions, all difference list functions have been qualified with the \texttt{DList} identifier.}
+The lambda expression has now been successfully refactored. The rewritten lambda expression is in figure~\ref{lamRef}.\footnote{To help clarify which functions are for lists and which are the difference list versions, all difference list functions have been qualified with the \texttt{DList} identifier.}
 
-\begin{lstlisting}[caption={The refactored lambda expression.},label=lamRef]
+\begin{figure}[t]
+\begin{lstlisting}
 (\x -> DList.replicate (length (DList.toList lst)) x)
 \end{lstlisting}
+\caption{The refactored lambda expression.}
+\label{lamRef}
+\end{figure}
+
 
 Once refactoring the lambda expression is finished there is only a single node of \texttt{explode} that the refactoring hasn't touched yet, the use of \texttt{lst} as the second argument of \texttt{map}. When the refactoring swapped \texttt{map} for its difference list version it was able to determine the new type of both its arguments, \texttt{(a -> DList b)} for the first argument (the lambda expression) and \texttt{DList a} (\texttt{lst}). Fortunately because \texttt{lst} is a target of the refactoring its new type is \texttt{DList a} so this node can remain unchanged.
 
-
-\begin{lstlisting}[caption={The final refactored result of \texttt{explode}.},label=explodeFinal]
-import qualified Data.DList as DList
+\begin{figure}[t]
+\begin{lstlisting}
+import qualified Data.DList as DL
 import Data.DList (DList)
 
 explode :: DList a -> DList a
-explode lst = DList.concat (DList.map (\x -> DList.replicate (length (DList.toList lst)) x) lst)
+explode lst = DL.concat 
+	(DL.map 
+		(\x -> DL.replicate (length (DL.toList lst)) x) 
+		lst)
 \end{lstlisting} 
+\caption{The final refactored result of \texttt{explode}.}
+\label{explodeFinal}
+\end{figure}
 
 The final result of this case of the Hughes list refactoring is in listing~\ref{explodeFinal}.
 
 \section{Summary}
 
-This chapter has introduced the concept of data-driven refactorings for the object-oriented programming paradigm and described three of the data-driven refactorings developed for this thesis. The first, introducing a type signature, creates additional abstraction to better describe what types are representing. Generalising maybe takes code written for a specific type and generalises it so that it is applicable to more types. Finally the list to Hughes list refactoring replaces one type with another equivalent type. This refactoring allows a project to be retyped mid-development because it's not always clear from the beginning of a project what the correct data representation should be.
+This chapter has introduced the concept of data-driven refactorings for the object-oriented programming paradigm and described three of the data-driven refactorings developed for this thesis. The first, introducing a type signature, creates additional abstraction to better describe what types are representing. Generalise Maybe takes code written for a specific type and generalises it so that it is applicable to more types. Finally the list to Hughes list refactoring replaces one type with another equivalent type. This refactoring allows a project to be retyped mid-development because it's not always clear from the beginning of a project what the correct data representation should be.
 
 The following chapters will expand on some of these ideas. The next chapter will describe another form of generalisation that rewrites monadic code into its equivalent applicative functor code. The applicative code can be much cleaner and descriptive in certain cases. It can also allow programmers to take advantage of a different way of executing their programs. Chapter~\ref{chap:monadification} discusses introducing effectful abstractions into pure code. This process helps a code base add additional features, such as shared state, mid-development.
 
+\chapter{Implementing Data-Driven refactorings}\label{implementation}
+
+Implementing Data-Driven refactorings have unique challenges. This chapter will discuss the implementation of the refactoring from the previous chapter.
+
+Outline
+
+\begin{itemize}
+\item Implementation of Introduce Type Synonym
+\item Implementation of Maybe to MonadPlus
+\item Implementation of "Isomorphic" refactoring with a focus on the generalisability of the approach.
+\end{itemize}
 
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
@@ -1488,136 +1681,492 @@ parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
 \end{lstlisting}
 
 
-\chapter{Introducing Effectful Abstractions}\label{chap:monadification}
-Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus on introducing monads and applicatives into pure code.
+\chapter{Introducing Monads}\label{chap:monadification}
+Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus monadification, the process of adding monads to pure code. 
 
-The \texttt{Identity} monad is the monad the does not embody any computation strategy~\citep{identityMonad}. This means that any pure Haskell function could be refactored to be within the Identity monad. This refactoring can take in a set of functions and produce a corresponding set of functions with a monadic type. Take for example this definition of the Fibonacci numbers.
+Monadification of a Haskell program is a common transformation that must be performed if a problem becomes more complicated than is easily expressed without them\footnote{I've had a colleague remark to me: "I can't 
+count the number of times I've been in the middle of something and realized I needed some state."}. The Haskell communities guidelines also advise that monadic and pure code should be separated if possible so Haskell programs should be written as pure code until it is certain that monads are required~\citep{guidelines}. This makes the process of monadification a common transformation that Haskell programs undergo, making it a compelling refactoring target.
 
-\begin{lstlisting}[frame=tblr]
-fib :: Int -> [Int]
-fib 0 = 0
-fib 1 = 1
-fib n = fib (n-1) + fib (n-2)
-\end{lstlisting} 
+This chapter will describe a monadification refactoring. First will be a very brief definition of the \texttt{Monad} type class from GHC. There are multiple styles of monadification as described in~\citep{monadSurvey} and this chapter will describe these styles and discuss their relative merits and usefulness to the Haskell community. Finally the chapter will describe the implementation of monadification within the HaRe project.
+ 
+\section{The Monad Typeclass}
 
-This can be refactored to the Identity monad like so:\pagebreak
+The monad typeclass as it exists in GHC is defined in figure~\ref{monadDef}. The two canonical monad functions are \texttt{return} and bind (\texttt{(>>=)}). \texttt{return} is the function that brings some pure value into the monadic context the default definition is the function \texttt{pure} from the applicative instance of the type. Bind allows for computation to occur within the monadic context.
 
-\begin{lstlisting}[frame=tblr]
-fib :: Int -> Identity [Int]
-fib 0 = return 0
-fib 1 = return 1
-fib n = do
-	x <- fib (n-1)
-	y <- fib (n-2)
-	return (x + y)
+\begin{figure}[t]
+\begin{lstlisting}
+class Applicative m => Monad m where
+	(>>=) :: m a -> (a -> m b) -> m b
+
+	(>>) :: m a -> m b -> m b
+	m >> k = m >>= \_ -> k
+	
+	return :: a -> m a
+	return = pure
+	
+	fail :: String -> m a
+	fail s = errorWithoutStackTrace s
 \end{lstlisting}
+\caption{The monad typeclass}
+\label{monadDef}
+\end{figure}
 
-The new code could then be rewritten very easily (just by changing the type signature) to be within another monad. This allows for a developer to quickly create programs that can take advantage of monadic features such as IO or state. The monadic code could also be generalised to use applicatives with the refactoring detailed in chapter~\ref{applicative} but I also hope to develop a more straightforward way to introduce applicatives for this chapter.
+The other two functions are provided by the GHC implementation of the type class. The \texttt{(>>)} operator allows for composing together functions where the second operation is not dependent on the outcome of the first. \texttt{fail} is called when a pattern match failure occurs inside of a \texttt{do} statement. In figure~\ref{failCall} \texttt{fail} would be called if the function \texttt{f} returns a \texttt{Nothing} rather than a \texttt{Just}.
 
-Finally another abstraction that would seem to have quite a bit of potential for automatic introduction is the \texttt{Arrow} typeclass. Arrows were originally introduced as a more general abstraction to monads in~\citep{genMonadsArrows}. The full relationship between arrows, monads, and applicative functors was more fully described in~\citep{arrowsAndIdioms}. Given the relationship between these three typeclasses I believe it will be worth exploring introducing arrows as well. A possible outline of this chapter would be:
+\begin{figure}[t]
+\begin{lstlisting}
+do{
+(Just n) <- f;
+return (n+1)
+}
+\end{lstlisting}
+\caption{A \texttt{do} statement with a possible call to \texttt{fail} on line 2.}
+\label{failCall}
+\end{figure}
+
+\section{Styles of Monadification}
+
+Up to this point this thesis has been fairly vague about what monadification is beyond the process of introducing monads into a previously pure type. Monadifying a single type changes it from type \texttt{a} to type \texttt{Monad m => m a}. Monadifying a function on the other hand changes the result type of the function because there is no way to extract values out of any given monadic context. Monadification can also affect any combination of parameters. Which parameters are affected depends on the \textit{style} of monadification.
+
+The different styles of monadification can change how a function is evaluated. In~\citep{monadSurvey} five different styles of monadification are described as part of a survey on the Haskell community's use of monads. The monadification styles are:
+
+\begin{itemize}
+\item Full Call-by-Value
+\item Full Call-by-Name
+\item Restricted Call-by-Name
+\item Data-Directed
+\item Restricted Call-by Value
+\end{itemize}
+
+
+\subsection{Full Call-by-Value Monadification}
+
+A call-by-value monadification will ensure that all arguments are evaluated before being passed to a function and a function will also be evaluated before having arguments passed to it. Consider the definition of mergesort in figure~\ref{mergesrt}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+mergesort :: (Ord a) => [a] -> [a]
+mergesort lst = let (l,r) = splitAt ((length lst) `div` 2) lst in
+	merge (mergesort l) (mergesort r)
+	
+merge :: (Ord a) => [a] -> [a] -> [a]
+merge [] r = r
+merge l [] = l
+merge (x:xs) (y:ys) = 
+	case (x < y) of
+	True  -> x:(merge xs (y:ys))
+	False -> y:(merge (x:xs) ys)						
+\end{lstlisting}
+\caption{Mergesort}
+\label{mergesrt}
+\end{figure}
+
+The full call-by-value monadification when applied to \texttt{mergesort} is defined in figure~\ref{fcbv}
+
+\begin{figure}[t]
+\begin{lstlisting}
+
+mergesort :: (Ord a, Monad m) => m ([a] -> m [a])
+mergesort = return (\ lst -> case lst of
+                 [] -> return []
+                 [x] -> return [x]
+                 _ -> do
+                   let (l,r) = splitAt ((length lst) `div` 2) lst
+                   mm1 <- mergesort
+                   v1 <- mm1 l
+                   mm2 <- mergesort
+                   v2 <- mm2 r
+                   return (merge v1 v2))					
+\end{lstlisting}
+\caption{Full call-by-value monadification of mergesort}
+\label{fcbv}
+\end{figure}
+
+\subsection{Full Call-by-Name Monadification}
+
+The full call-by-name monadification ensures arguments are unevaluated when they are passed to the function. The full call-by-name version of \texttt{mergesort} is defined in figure~\ref{fcbn}.
+
+
+\begin{figure}[t]
+\begin{lstlisting}
+mergesort :: (Ord a, Monad m) => m (m [a] -> m [a])
+mergesort = return (\ mlst -> do
+		lst <- mlst			
+		res <- case lst of
+                   [] -> return []
+                   [x] -> return [x]
+                   _ -> do
+                     let (l,r) = splitAt ((length lst) `div` 2) lst
+                     mm1 <- mergesort
+                     v1 <- mm1 (return l)
+                     mm2 <- mergesort
+                     v2 <- mm2 (return r)
+                     return (merge v1 v2)
+		return res)					
+\end{lstlisting}
+\caption{Full call-by-name monadification of mergesort}
+\label{fcbn}
+\end{figure}
+
+The two "full" monadification styles monadify both the arguments to a function as well as the function itself. The remaining styles are restrictions of these full modifications where only some of the arguments are modified not the functions. 
+
+\subsection{Restricted Call-by-Name Monadification}
+This style of monadification is where every argument is contained within the monad. Using the mergesort example again, figure~\ref{resCBN} shows the restricted call-by-name monadification.
+
+\begin{figure}[t]
+\begin{lstlisting}
+mergesort :: (Ord a, Monad m) => m [a] -> m [a]
+mergesort ml = do
+	lst <- ml
+	res <- case lst of
+		[] -> return []
+		[x] -> return [x]
+		_ -> do 
+			let (l,r) = splitAt ((length lst) `div` 2) lst
+			v1 <- mergesort (return l)
+			v2 <- mergesort (return r)
+			return (merge v1 v2)
+	return res	
+\end{lstlisting}
+\label{resCBN}
+\end{figure}
+
+All of the arguments to \texttt{mergesort} in figure~\ref{resCBN} are within the monad so the arguments will be evaluated hence the call-by-name "flavour" as~\citep{monadSurvey} describes it.
+
+\subsection{Data-Directed Monadification}
+This style refactors a certain type to be replaced by a monadic computation over that type. The example given in~\citep{monadSurvey} is a simple arithmetic expression interpreter as seen in figure~\ref{fig:interpreter}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+data Expr = Lit Int
+	| Bin Op Op Expr Expr
+
+data Op = Add | Div
+
+eval :: Expr -> Int
+eval (Lit n) = n
+eval (BinOp op e1 e2)
+	= evalOp op (eval e1) (eval e2)
+	
+evalOp :: Op -> Int -> Int -> Int
+evalOp Add v1 v2 = v1 + v2
+evalOp Div v1 v2 = v1 `div` v2
+\end{lstlisting}
+\caption{The pure interpreter implementation}
+\label{fig:interpreter}
+\end{figure}
+
+With this particular example the programmer wants the expressions to be evaluated within a monad to add effects. Since \texttt{Int} represents the result of an expression in this program this type is monadified as seen in figure~\ref{fig:monInterp}. Importantly this refactoring makes the type of \texttt{evalOp} change to \texttt{Monad m => Op -> m Int -> m Int -> m Int} in addition to monadifying the result type of \texttt{eval}. 
+
+\begin{figure}[t]
+\begin{lstlisting}
+eval :: Monad m => Expr -> m Int
+eval (Lit n) = return n
+eval (BinOp op e1 e2)
+	= evalOp op (eval e1) (eval e2)
+	
+evalOp :: Monad m => Op -> m Int -> m Int -> m Int
+evalOp Add v1 v2 = do 
+	l <- v1
+	r <- v2	
+	return (l + r)
+evalOp Div v1 v2 = do
+	l <- v1
+	r <- v2
+	return (l `div` r)
+\end{lstlisting}
+\caption{A data-directed monadification of the interpreter.}
+\label{fig:monInterp}
+\end{figure}
+
+Data-directed monadification is useful if a particular type can always represent the result of a computation that should be effectful. In the interpreter case, \texttt{Int} is always the result of an evaluation. Even in the only call to \texttt{evalOp} the second and third arguments are computed from recursive calls to \texttt{eval} so those \texttt{Int} types also represent expression evaluation.
+
+This style of monadification would pair well with the introduce a type synonym refactoring to differentiate types that should be monadified. In the interpreter example if it was anticipated that another \texttt{Int} type that didn't represent the result of an evaluation needed to be added to the program.
+
+\subsection{Restricted Call-by-Value Monadification}
+
+The final monadification style simply monadifies the result type of the target function(s). This is the style of monadification that is produced by the algorithm described in~\citep{monadification} and that is implemented in HaRe as part of this thesis work.
+
+Returning to the mergesort example from earlier in the section the restricted call-by-value monadification implementation of this can be seen in figure~\ref{rCBV}.
+
+This style of monadification meshes nicely with the bind operator which expects functions whose arguments are pure values and returns a monadic type. This style of monadification has been implemented in HaRe and the next section will go into greater detail about the implementation of this refactoring.
+
+\begin{figure}[t]
+\begin{lstlisting}
+mergesort :: (Ord a, Monad m) => [a] -> m [a]
+mergesort lst = do
+	let (l,r) = splitAt ((length lst) `div` 2) lst
+	v1 <- mergesort l
+	v2 <- mergesort r
+	merge v1 v2
+	
+merge :: (Ord a, Monad m) => [a] -> [a] -> m [a]
+merge [] r = return r
+merge l [] = return l
+merge (x:xs) (y:ys) = 
+	case (x < y) of
+	True -> do 
+		rst <- (merge xs (y:ys)) 
+		return (x:rst)
+	False -> do
+		rst <- (merge (x:xs) ys)	
+	 	return (y:rst)
+\end{lstlisting}
+\caption{Restricted call-by-value monadification}
+\label{rCBV}
+\end{figure}
+
+\section{Implementation of the Monadification Refactoring}
+
+The implementation of Monadification in HaRe is a fairly strait forward top down transformation. The monadification refactoring takes in a list of positions as input. Those positions define where the functions that should be monadified are defined. 
+
+The monadification refactoring works over sets of functions at once. Figure~\ref{fgMon} defines two functions \texttt{f} and \texttt{g} and the two possible monadifications (\texttt{*\_m1} and \texttt{*\_m2}). The \texttt{f\_m1} function is how \texttt{f} would be rewritten if it was the sole target of the refactoring, since the right hand side of \texttt{f} is composed from pure values and non-monadic functions \texttt{f\_m1} is defined by applying \texttt{return} to the original definition of \texttt{f}.
+
+When the refactoring targets both \texttt{f} and \texttt{g} these functions will be rewritten to their "\texttt{*\_m2}" equivalents. In this case \texttt{g} is handled in the same way \texttt{f\_m1} was defined, because it is defined entirely with non-monadic values the new right hand side is just the old one composed with \texttt{return}. The definition of \texttt{f\_m2} is slightly more interesting, however, due to the call to the monadified function \texttt{g\_m2}. The refactored version of \texttt{g} in this scenario produces a monadic value of type \texttt{Monad m => m Int} so a call to this function can no longer be passed to \texttt{(+)}. Instead that whole sub-expression is replaced with a new variable "\texttt{v1}." The result of the, now monadic, computation (\texttt{g\_m2 x}) is bound to this new variable via the bind (\texttt{>>=}) operator and lambda expression. 
+
+ 
+
+\begin{figure}[t]
+\begin{lstlisting}
+f :: Int -> Int
+f x = (g x) + 1
+
+g :: Int -> Int
+g y = y * 2
+
+f_m1 :: (Monad m) => Int -> m Int
+f_m1 x = return ((g x) + 1)
+
+f_m2 :: (Monad m) => Int -> m Int
+f_m2 x = g_m2 x >>= (\v1 -> return (v1 + 1))
+
+g_m2 :: (Monad m) => Int -> m Int
+g_m2 y = return (y * 2)
+\end{lstlisting}
+\caption{Possible monadification refactorings for the \texttt{f} and \texttt{g} functions.}
+\label{fgMon}
+\end{figure} 
+
+\subsection{Preconditions}
+
+There are two preconditions that must be met before this refactoring can be applied. First the target functions must be fully applied at all call points. This allows the refactoring to assume that that the type of a subtree who's leftmost child is a monadified functions is a monadic value and not something of type \texttt{Monad m => a -> m a}. 
+
+\begin{figure}[t]
+\begin{lstlisting}
+f :: Int -> String -> String
+f n str = (take n str, drop n str)
+
+
+stringHandler :: Maybe Int -> String -> (String, String)
+stringHandler mi s = 
+	let g = case mi of
+		Nothing -> f ((length s) `div` 2)
+		(Just i) -> f i
+	in g s
+\end{lstlisting}
+\caption{The \texttt{stringHandler} function will be rejected by the monadification refactoring.}
+\label{strHan}
+\end{figure}
+
+Like the many of the preconditions for the generalise monads to applicative refactoring other refactorings can help transform programs to pass the preconditions. The \texttt{stringHandler} in figure~\ref{strHan} has calls to \texttt{f} that are not fully saturated. Fortunately $\eta$-expansion can be used to fully saturate the calls to \texttt{f} (see figure~\ref{etaHan}) allowing \texttt{stringHandler} and \texttt{f} to be monadified.\footnote{The original definition of \texttt{stringHandler} could be monadified alone.}
+
+\begin{figure}[t]
+\begin{lstlisting}
+stringHandler :: Maybe Int -> String -> (String, String)
+stringHandler mi s = 
+	let g = case mi of
+		Nothing -> (\x -> f ((length s) `div` 2) x)
+		(Just i) -> (\x -> f i x)
+	in g s
+\end{lstlisting}
+\caption{The new version of \texttt{stringHandler} can be monadified.}
+\label{etaHan}
+\end{figure}
+
+The second precondition that needs to hold before monadification can take place is that none of the target functions can be called by non-monadic functions. This is due to the fact that a target functions result type will change from some pure value \texttt{a} to a monadic computation over \texttt{a} there is no function that retrieves values out of any given monad so the target function, once it is refactored, will be unusable by non-monadic functions. 
+
+This precondition can't really be avoided for the refactoring to happen the set of target functions will have to be changed. Either all functions that reference a target function become target functions as well or the dependent function is dropped from the refactoring.
+
+\subsection{The Transformation}
+
+Very generally monadifying a function works in four steps.
 
 \begin{enumerate}
-\item Introducing the Applicative style
-\item Automated Monadification
-\item Introduction to Arrows
-\item Discussion of Arrows, Applicative, and Monads
-\item Refactoring to Arrows
-\end{enumerate} 
+\item Replace a monadic sub-expression with a new variable
+\item Wrap the modified expression with a lambda that takes in the new variable as an argument
+\item Bind the original monadic sub-expression to the lambda
+\item Repeat until all monadic expressions are removed from the original definition
+\end{enumerate}
 
-\if(FALSE)
-This chapter will cover the refactoring of pure code to become monadic. This chapter will be structured much like chapter~\ref{applicative} with sections covering the motivation behind the refactoring, examples of the refactoring, the preconditions that must hold before applying the refactoring, and variations and related refactorings. 
+The refactoring works over the right hand side of a target function and extracts all monadic sub-expressions first. This is done recursively because monadic calls can be at multiple levels of the syntax tree. Take the function \texttt{f} defined in figure~\ref{simpleMon}. It is the target of monadification along with the functions \texttt{g} and \texttt{h}. 
 
-The \texttt{Identity} monad is the monad the does not embody any computation strategy~\citep{identityMonad}. This means that any pure Haskell function could be refactored to be within the Identity monad. This refactoring can take in a set of functions and produce a corresponding set of functions with a monadic type. Take for example this definition of the Fibonacci numbers.
-
-\begin{lstlisting}[frame=tblr]
-fib :: Int -> [Int]
-fib 0 = 0
-fib 1 = 1
-fib n = fib (n-1) + fib (n-2)
-\end{lstlisting} 
-
-This can be refactored to the Identity monad like so:
-
-\begin{lstlisting}[frame=tblr]
-fib :: Int -> Identity [Int]
-fib 0 = return 0
-fib 1 = return 1
-fib n = do
-	x <- fib (n-1)
-	y <- fib (n-2)
-	return (x + y)
+\begin{figure}[t]
+\begin{lstlisting}
+f x y = f (h x) (g y)
 \end{lstlisting}
+\caption{A simple target function for monadification}
+\label{simpleMon}
+\end{figure}  
 
-The new code could then be rewritten very easily (just by changing the type signature) to be within another monad. This allows for a developer to quickly create programs that can take advantage of monadic features such as IO or state.
+\begin{figure}[t]
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/Chapter6/simpF.png}
+	\end{center}
+	\caption{The syntax tree of \texttt{f} from figure~\ref{simpleMon}}
+	\label{simpF}
+\end{figure}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The syntax tree of the right hand side of \texttt{f} is shown in figure~\ref{simpF}. The transformation starts by top down checking the right subtrees for monadic computations. It will first check the call to \texttt{g} (shaded with grey in figure~\ref{simpF}) then it will check the call to \texttt{h} (the corresponding nodes are inside the box). Both of these subtrees are monadic calls so they will be replaced in the tree with unique generated variables. The refactoring implementation contains a queue where the monadic expressions are paired with the variables that replace them and then stored. After this step the expression is \texttt{f v2 v1} and the queue contains two elements \texttt{[(v1,"(g y)"),(v2,"(h x)")]}. The final step checks if the left most child of the current expression is a call to a monadic function. In this case it is because \texttt{f} is a target of the refactoring but if it wasn't then the expression would be composed with \texttt{return}.
 
+At this point the expression is ready to be part of the right hand side of a lambda expression. First element is popped from the queue (in this case it's \texttt{(v1,"g y")}) the variable name that's stored in the element is the argument name in the lambda expression the expression from the queue is composed with the bind operator. In this manner the refactoring keeps popping elements off of the queue wrapping the previous expression in a lambda with the variable name as its argument and composing this lambda with the expression from the queue using bind until the queue is empty.
 
-This chapter will cover the refactoring pure code to be monadic instead. Take for example the following standard definition of mergesort.
+The final result of refactoring \texttt{f} is shown in figure~\ref{simpF_ref}.
 
-\begin{lstlisting}[frame=tblr]
-mergesort :: (Ord a) => [a] -> [a]
-mergesort [] = []
-mergesort [x] = [x]
-mergesort xs = merge (mergesort fst) (mergesort snd)
-  where fst = take (length xs `div` 2) xs
-        snd = drop (length xs `div` 2) xs
-
-merge :: (Ord a) => [a] -> [a] -> [a]
-merge xs [] = xs
-merge [] ys = ys
-merge (x:xs) (y:ys)
-   | (x <= y) = x:(merge xs (y:ys))
-   | otherwise = y:(merge (x:xs) ys)
+\begin{figure}[t]
+\begin{lstlisting}
+f x y = (g x) >>= (\ v2 -> (g y) >>= (\v1 -> f v2 v1))
 \end{lstlisting}
+\caption{The final refactored version of \texttt{f}}
+\label{simpF_ref}
+\end{figure}
 
-Say that one wanted to refactor this code to become monadic. There are two different ways this could be interpreted, either both \texttt{mergesort} and \texttt{merge} are rewritten to be monadic, or just \texttt{mergesort} could be refactored. \texttt{Merge} cannot be refactored to be monadic without also changing \texttt{mergesort} because \texttt{mergesort} is dependent on the result of calls to \texttt{merge}. If \texttt{merge}'s result is monadic any client functions will also have to be monadic because there is no way to remove the value from a monad. 
+\section{Let Expressions}
 
-Refactoring \texttt{mergesort} to be monadic without refactoring \texttt{merge} produces the following code.
+The previous section details how the refactoring works over simple function applications. This section will describe how a function with a let expression is refactored. This section will use the expression evaluator in figure~\ref{evalExpr} as a motivating example.
 
-\begin{lstlisting}[frame=tblr]
-mergesort :: (Ord a) => [a] -> Identity [a]
-mergesort [] = return []
-mergesort [x] = return [x]
-mergesort xs = do
-  x <- mergesort fst
-  y <- mergesort snd
-  return $ merge x y
-    where fst = take (length xs `div` 2) xs
-             snd = drop (length xs `div` 2) xs
-\end{lstlisting}  
+\begin{figure}[t]
+\begin{lstlisting}
+data Expr = Var Char
+          | N Int
+          | Add Expr Expr
+          | Sub Expr Expr
+          | Assign Char Expr
+          deriving Show
 
-Any program can be refactored into the \texttt{Identity} monad as this monad does not express any computational strategy~\citep{identityMonad}. Here we can see that in cases where pure values would have been returned from \texttt{mergesort} pre-refactoring have now been prepended with \texttt{return}, this lifts these values into the \texttt{Identity} monad. The recursive calls to \texttt{mergesort} now need to be bound to variables in the do block which allow the pure results to be passed to calls to the still pure \texttt{merge}.
+type Env = [(Char,Int)]
 
-Instead of refactoring just \texttt{mergesort} refactoring \texttt{merge} as well would produce slightly different code.
+eval :: Expr -> Env -> (Int,Env)
 
-\begin{lstlisting}[frame = tblr]
-merge :: (Ord a) => [a] -> [a] -> Identity [a]
-merge xs [] = return xs
-merge [] ys = return ys
-merge (x:xs) (y:ys)
-   | (x <= y) = do
-       ls <- merge xs (y:ys)
-       return (x:ls)
-   | otherwise = do
-       ls <- merge (x:xs) ys
-       return (y:ls)
+eval (Var v) env = (head [val | (x,val) <- env, x==v], env)
 
-mergesort :: (Ord a) => [a] -> Identity [a]
-mergesort [] = return []
-mergesort [x] = return [x]
-mergesort xs = do
-  x <- mergesort fst
-  y <- mergesort snd
-  merge x y
-    where fst = take (length xs `div` 2) xs
-            snd = drop (length xs `div` 2) xs
+eval (N n) env = (n,env)
+
+eval (Add e1 e2) env = let (v1,env1) = eval e1 env
+                                    (v2,env2) = eval e2 env1 
+                           in (v1+v2,env2)
+eval (Sub e1 e2) env = let (v1,env1) = eval e1 env
+                                    (v2,env2) = eval e2 env1 
+                           in (v1-v2,env2)
+eval (Assign x e) env = let (v,env1) = eval e env 
+	in (v, (x,v):env1)
 \end{lstlisting}
+\caption{An expression evaluator.}
+\label{evalExpr}
+\end{figure}
 
-The above example's definition of \texttt{mergesort} is very similar to the previous definition. The only difference is that previously the call to \texttt{merge} was a pure value so it needed to be lifted into the monad by \texttt{return}, in this version since merge was also refactored into the monad it can just sit at the end of mergesort.
+The idea is that at this point in the project the explicit passing of the state is unwanted so refactoring \texttt{eval} to become monadic so that the \texttt{Env} can be passed around using the \texttt{State} monad instead. The first two cases that handle the \texttt{Var} and \texttt{N} constructors can simply be wrapped with \texttt{return} because no recursive calls to \texttt{eval} happen in those cases. The three other cases contain let bindings that all call (the now monadic) \texttt{eval}. 
 
-\fi 
+In those cases the local bindings can be used as the variables inside of a lambda expression. This seems simple enough but what order should the bindings be processed in? Consider the let binding in figure~\ref{intLet}, assuming that the \texttt{f} and \texttt{x} variables are in scope, due to lazy evaluation this is a valid Haskell let binding despite \texttt{v1} being referenced on line one before it's defined on line two. However if the let bindings are processed in the obvious way from top to bottom\footnote{In this case: \texttt{g v1 >>= ($\backslash$v2 -> f x >>= ($\backslash$v1 -> ...))}} \texttt{v1} wont be in scope when it's passed to \texttt{g}.  
 
+\begin{figure}[t]
+\begin{lstlisting}
+let v2 = g v1
+     v1 = f x
+    in ...
+\end{lstlisting}
+\caption{An interesting let binding}
+\label{intLet}
+\end{figure}
+
+Fortunately GHC offers a solution, the renamer does dependency analysis on local bindings and orders them so that later bindings may depend on earlier ones but not vise versa~\citep{ghcApi}. This renamed ordering is used to lookup the parsed bindings in dependency analysed order.
+
+Returning to the evaluator example the monadified version is shown in figure~\ref{monEval}.\footnote{Line breaks have been added to aid readability in this setting but the refactoring would not actually do this.} The let bindings in \texttt{eval} can be processed from top to bottom. In the \texttt{Add} case this means that the expression bound on line 16 in figure~\ref{evalExpr} makes up the outermost call to bind and the pattern it was originally bound to becomes the pattern that matches the argument passed to the first lambda expression. 
+\begin{figure}[t]
+\begin{lstlisting}
+eval :: Monad m => Expr -> Env -> m (Int,Env)
+
+eval (Var v) env = return (head [val | (x,val) <- env, x==v], env)
+
+eval (N n) env = return (n,env)
+
+eval (Add e1 e2) env = eval e1 env >>= 
+	(\(v1,env1) -> eval e2 env1 >>= 
+		(\(v2,env2) -> return (v1+v2,env2)))
+
+eval (Sub e1 e2) env = eval e1 env >>= 
+	(\(v1,env1) -> eval e2 env1 >>= 
+		(\(v2,env2) -> return (v1-v2,env2)))
+
+eval (Assign x e) env = eval e env >>= 
+	(\(v,env1) -> return (v, (x,v):env1)))
+\end{lstlisting}
+\caption{The monadified expression evaluator.}
+\label{monEval}
+\end{figure}
+
+If there were pure expressions on the right hand side of the let binding those bindings will remain in a let expression. For example the function starting on line one in figure~\ref{mixLet} contains two let bindings \texttt{pureF} is a pure function and so it remains inside of a let expression whereas \texttt{monF} is a target of the refactoring and it is lifted from the let and passed to bind. 
+
+\begin{figure}[t]
+\begin{lstlisting}
+f x = let y = pureF x
+             z = monF y
+		     in z+x
+
+f_m x = let y = pureF x in
+		monF y >>= (\z -> return z+x)
+\end{lstlisting}
+\caption{A function with a mixture of pure and monadic function calls in a let expression.}
+\label{mixLet}
+\end{figure}
+
+\section{Sugaring}
+
+The refactored program from figure~\ref{monEval} is rewritten in a restricted call-by-value monadification style. However, idiomatic monadic Haskell is not often written in this style. Haskell also supports a piece of syntactic sugar called \texttt{do} notation. This notation allows for a series of bind computations to be written in a more compact and easier to read style. Figure~\ref{doEx} shows how the bind expression on line one can be sugared into the do statement on lines four through six.
+
+\begin{figure}[t]
+\begin{lstlisting}
+m_expr >>= (\x -> return (f x))
+--Sugars to
+
+do
+	x <- m_expr
+	return (f x)
+\end{lstlisting}
+\caption{An example of how binds can sugar to \texttt{do} notation.}
+\label{doEx}
+\end{figure}
+
+\textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are (see \cite{realWorldHaskell} and \cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
+
+The sugaring of bind syntax into \texttt{do} syntax is a separate refactoring in HaRe. This allows for the programmer to choose exactly which functions should be written with \texttt{do} syntax and when functions are clearer remaining as binds. The refactoring takes in a single parameter, the position where the target function is declared. The sugared version of \texttt{eval} from figure~\ref{monEval} is shown in figure~\ref{finEval}. The first two cases weren't bind expressions so they remain just calls to return. The three other cases have been refactored into the equivalent \texttt{do} statements.
+
+\begin{figure}[t]
+\begin{lstlisting}
+eval :: Monad m => Expr -> Env -> m (Int,Env)
+
+eval (Var v) env = return (head [val | (x,val) <- env, x==v], env)
+
+eval (N n) env = return (n,env)
+
+eval (Add e1 e2) env = do
+	(v1,env1) <- eval e1 env
+	(v2,env2) <- eval e2 env1
+	return (v1+v2,env2)
+
+eval (Sub e1 e2) env = do
+	(v1,env1) <- eval e1 env 
+	(v2,env2) <- eval e2 env1
+	return (v1-v2,env2)
+
+eval (Assign x e) env = do
+	(v,env1) <- eval e env
+	return (v, (x,v):env1))
+\end{lstlisting}
+\caption{The sugared evaluator.}
+\label{finEval}
+\end{figure}
+
+Monads are a challenging and fairly unique feature of Haskell and, anecdotally, infamous amongst those trying to learn the language. Monadification is an important and common transformation that Haskell code undergoes. This chapter has described two refactorings that automate this transformation. The monadification refactoring transforms a set of functions into restricted call-by-value monad style where only the result type of a function is made monadic. The second refactoring sugars the binds produced by the monadification into \texttt{do} notation a common structure for monadic Haskell functions.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
