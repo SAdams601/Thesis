@@ -2209,6 +2209,7 @@ Why not:
 1 hint
 \end{lstlisting}
 
+
 \subsection{Haskell Tools Refact}
 
 HaRe isn't the only refactoring tool for Haskell. In late 2016 Haskell Tools Refact was announced and is currently at version 0.7~\citep{haskellTools}. The Haskell Tools project is a GHC based developer tool kit~\citep{haskellToolsGit}. There are six refactorings currently supported.
@@ -2222,15 +2223,17 @@ HaRe isn't the only refactoring tool for Haskell. In late 2016 Haskell Tools Ref
 \item Organize imports
 \end{itemize}
 
+Haskell-tools has implemented  its own abstract syntax tree. The AST of haskell-tools is generated using information from all of GHC's compiler stages. Each node represents the same language elements it just includes additional information that is spread across the different stages of the GHC~\citep{haskellTools}.
+
 The haskell-tools refactorer is currently integrated into the Atom editor\footnote{\url{https://atom.io/}} with Sublime Text\footnote{\url{https://www.sublimetext.com}} support planned for the near future~\citep{haskellTools}
 
 \subsection{Wrangler}
 
-Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\citep{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\citep{erlangHistory}. Erlang's core design tenets include lightweight process, that communicate through message passing. Erlang also boasts a ``let it fail" error handling strategy, where processes either succeed or fail and other specialised processes handle the error~\citep{armstrongThesis}.
+Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\citep{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\citep{erlangHistory}. Erlang's core design tenets include lightweight processes, that communicate through message passing. Erlang also boasts a ``let it fail" error handling architecture, where processes either succeed or fail and other specialised processes handle the error~\citep{armstrongThesis}.
 
-Wrangler has been integrated into both Emacs and Eclipse and currently supports a large library of refactorings, code smells, and other program analysis tools such as clone detection and automatic api migration~\citep{wrangler}. Additionally Wrangler supports a template based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
+Wrangler is accessible from the command line and has been integrated into both Emacs and Eclipse and currently supports a large library of refactorings, code smells, as well as other program analysis tools such as clone detection and automatic API migration~\citep{wrangler}. Additionally Wrangler supports a template based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
 
-The template-based API of Wrangler allows users to define program analysis and transformations using concrete Erlang syntax. Wrangler templates consist of Erlang syntax that may contain meta-variables or meta-atoms that can stand in for any language element. Meta-variables/atoms are variables or atoms that end with the "\texttt{@}" character, this meta-variable/atom will then stand for the next language element. Meta-variables/atoms that end with "\texttt{@@}" are list meta-variables/atoms that match a sequence of language elements as long as they are of same sort~\citep{letsUser}.\footnote{Things like the arguments to a function or a sequence of expressions in a function body are the same "sort."}
+The template-based API of Wrangler allows users to define program analyses and transformations using Erlang concrete syntax. Wrangler templates consist of fragments of Erlang syntax that may contain meta-variables or meta-atoms that can stand for any language element. Meta-variables/atoms are variables or atoms that end with the "\texttt{@}" character, this meta-variable/atom will then stand for the next language element. Meta-variables/atoms that end with "\texttt{@@}" are list meta-variables/atoms that match a sequence of language elements as long as they are of same sort~\citep{letsUser}.\footnote{Things like the arguments to a function or a sequence of expressions in a function body are the same "sort."}
 
 \begin{lstlisting}[caption={Some Wrangler templates},language=erlang,label=templates]
 ?T("erlang:spawn(Arg@)")
@@ -2238,7 +2241,7 @@ The template-based API of Wrangler allows users to define program analysis and t
 ?T("erlang:spawn(Arg@@)")
 \end{lstlisting}
 
-The first template in listing~\ref{templates} matches applications of \texttt{erlang:spawn} when it is called with one argument whereas the second template will match the same function but with any number of arguments.
+The first template in listing~\ref{templates} matches applications of \texttt{erlang:spawn} when it is called with one argument whereas the second template will match the same function with any number of arguments.
 
 Composite refactorings are refactorings that are made up of multiple refactorings run, in sequence, one after the other. It can be challenging to develop composite refactorings if they are not well supported. What should the refactorer do if the second refactoring in a chain of four fails? 
 
