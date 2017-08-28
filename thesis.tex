@@ -1324,6 +1324,7 @@ This chapter has introduced the concept of data-driven refactorings for the obje
 
 The following chapters will expand on some of these ideas. The next chapter will describe another form of generalisation that rewrites monadic code into its equivalent applicative functor code. The applicative code can be much cleaner and descriptive in certain cases. It can also allow programmers to take advantage of a different way of executing their programs. Chapter~\ref{chap:monadification} discusses introducing effectful abstractions into pure code. This process helps a code base add additional features, such as shared state, mid-development.
 
+\if{FALSE}
 \chapter{Implementing Data-Driven refactorings}\label{implementation}
 
 Implementing Data-Driven refactorings have unique challenges. This chapter will discuss the implementation of the refactoring from the previous chapter.
@@ -1335,7 +1336,7 @@ Outline
 \item Implementation of Maybe to MonadPlus
 \item Implementation of "Isomorphic" refactoring with a focus on the generalisability of the approach.
 \end{itemize}
-
+\fi
 \chapter{Generalising Monads to Applicative}
 \label{applicative}
 
@@ -1350,95 +1351,100 @@ This chapter will discuss the design and implementation of a refactoring which w
 \section{The applicative Typeclass}
 \label{sec:appOverview}
 This section will be a quick introduction to the \texttt{Applicative} typeclass and some other functions that are commonly used to write functions in an applicative style. 
-We begin by discussing a superclass of \texttt{Applicative}, \texttt{Functor}. The \texttt{Functor} typeclass defines a single function that must be implemented, \texttt{fmap}.
+We begin by discussing a superclass of \texttt{Applicative}, \texttt{Functor}, shown in figure~\ref{functor}. The \texttt{Functor} typeclass defines a single function that must be implemented, \texttt{fmap}.
 
+\begin{figure}
 \begin{lstlisting}
 class Functor f where
 	fmap :: (a -> b) -> f a -> f b
 \end{lstlisting}
+\caption{The \texttt{Functor} typeclass}
+\label{functor}
+\end{figure}
 
-The \texttt{fmap} function allows for a function to be applied to the contents of the Functor f. One could think of the functor as a context and \texttt{fmap} as a function that allows other functions to run within the \texttt{Functor}'s context. However, what if you wanted to chain together sequences of commands within that context? 
+The \texttt{fmap} function allows for a function to be applied to the contents of the Functor f. The functor could be considered as a context and \texttt{fmap} as a function that allows other functions to run within the \texttt{Functor}'s context. Consider the function \texttt{g}
+and the two values \texttt{x} and \texttt{y} whose types are shown in figure~\ref{gxy}, where \texttt{f} is some functor. With these three things its simple to imagine a situation where its desirable to compute a value of type \texttt{f c}. When \texttt{g} is ``fmapped'' over   \texttt{x} a value of \texttt{(f (b -> c))} is returned.
 
-Lets say you have the function and the following two values:
-
+\begin{figure}[t]
 \begin{lstlisting}
 g :: a -> b -> c
 x :: f a
 y :: f b
 \end{lstlisting}
+\caption{A function and some values in a functor.}
+\label{gxy}
+\end{figure}
 
-\texttt{f} is some functor. You want to get a value of type \texttt{f c} so you do the only thing possible with \texttt{Functor} and use \texttt{fmap}.
+Unfortunately there is no way to either extract the function of type \texttt{(b -> c)} from the functor or apply the \texttt{(f b)} value to the \texttt{(f (b -> c))} value using the \texttt{Functor} typeclass alone. Sequencing commands in this way requires a more powerful abstraction, applicative functors~\cite{realWorldHaskell}. 
 
+In Haskell applicative functors are implemented by the \texttt{Applicative} typeclass. \texttt{Applicative} declares two functions, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in figure~\ref{appTypes} where \texttt{f} is the applicative functor. 
+
+\begin{figure}[t]
 \begin{lstlisting}
-(fmap g x) :: f (b -> c)
-\end{lstlisting}
-
-However, only with \texttt{fmap} there is no way of applying y to the result of the above expression to get a value of type \texttt{f c}. Sequencing commands in this way requires a more powerful abstraction, applicative functors~\cite{realWorldHaskell}. 
-
-In Haskell applicative functors are implemented by the\\ \texttt{Applicative} typeclass. \texttt{Applicative} declares two functions, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown below, %in listing~\ref{appTypes} 
-where \texttt{f} is the applicative functor. 
-
-\begin{lstlisting}%[frame=tblr,label=appTypes,caption={Applicative's minimal complete definition}]
 
 pure :: a -> f a
 (<*>) :: f (a -> b) -> f a -> f b
 \end{lstlisting}
+\caption{Applicative's minimal complete definition}
+\label{appTypes}
+\end{figure}
 
 The \texttt{pure} function is the equivalent of monad's \texttt{return}, it simply lifts a value into the applicative context. The other function \texttt{(<*>)} (which is typically pronounced "applied over" or just "apply"). Apply take in two arguments, both of which are applicative values. The first argument is a function, from types \texttt{a} to \texttt{b}, within the applicative context, and the second argument is an \texttt{Applicative} over type \texttt{a}. Apply will return an \texttt{Applicative} over \texttt{b}.
 
 \subsection{Other useful functions}
 \label{sec:useful}
-Though \texttt{pure} and apply are the only two functions that are required to be defined to declare an instance of applicative there are several other useful functions that can either be derived from these two functions or come from other typeclasses which will be briefly covered here. First there are two variations of apply.
+Though \texttt{pure} and apply are the only two functions that are required to be defined to declare an instance of applicative there are several other useful functions that can either be derived from these two functions or come from other typeclasses which will be briefly covered here. First there are two variations of apply, whose types are listed in figure~\ref{appVars}.
 
+\begin{figure}[t]
 \begin{lstlisting}
 (*>) :: f a -> f b -> f b
 (<*) :: f a -> f b -> f a
 \end{lstlisting}
+\caption{Variations on apply.}
+\label{appVars}
+\end{figure}
 
-These functions sequence actions and still perform the contextual effects of both of their arguments but discard the value of the first and second argument respectively. These functions are used when some operation affects the applicative context but their result will not affect the overall result of the applicative expression. Consider the following example. 
+These functions sequence actions and still perform the contextual effects of both of their arguments but discard the value of the first and second argument respectively. These functions are used when some operation affects the applicative context but their result will not affect the overall result of the applicative expression. 
 
+\begin{figure}[t]
 \begin{lstlisting}
 f :: Int -> IO Customer
 f id = writeToLog id *> getCustomerById id
 \end{lstlisting}
+\caption{A function that logs its argument before returning the result.}
+\label{logApp}
+\end{figure}
 
-The function \texttt{f} looks up a customer datatype from the \texttt{IO} context and logs all of the customer ids that are looked up. We don't really care what \texttt{writeToLog} returns but we do want the effects that it causes (writing a log file) so we compose the calls to \texttt{writeToLog} and \texttt{getCustomerById} with the \texttt{*>} operator to cause both of the functions' effects to happen but only return the value of \texttt{getCustomerById}.
+The function \texttt{f}, from figure~\ref{logApp}, looks up a customer datatype from the \texttt{IO} context and logs all of the customer ids that are looked up. We don't really care what \texttt{writeToLog} returns but we do want the effects that it causes (writing a log file) so we compose the calls to \texttt{writeToLog} and \texttt{getCustomerById} with the \texttt{*>} operator to cause both of the functions' effects to happen but only return the value of \texttt{getCustomerById}.
 
-A consequence of the applicative laws is that every applicative's functor instance will satisfy the following~\cite{control.applicative}: 
+Another useful function is the infix version of \texttt{fmap}, \texttt{(<\$>)}. A consequence of the applicative laws is that every applicative's functor instance will satisfy the equation in figure~\ref{fmapLaw}~\cite{control.applicative}. This means that instead of explicitly lifting every pure function the infix version of \texttt{fmap} can be used instead. The next section will cover how these functions can be used in an applicative style of programming.
 
+\begin{figure}[t]
 \begin{lstlisting}
 f <$> x = pure f <*> x
 \end{lstlisting}
+\caption{All \texttt{Applicative}s have this property.}
+\label{fmapLaw}
+\end{figure}
 
-This means that instead of explicitly lifting every pure function the infix version of \texttt{fmap}: \texttt{(<\$>)} can be used instead. 
-The next section will cover how these functions can be used in an applicative style of programming. 
+ 
 
 
 \section{The Applicative Programming\\ Style}
 \label{sec:appProgStyle}
 
-McBride and Paterson proved that any expression built from the applicative combinators can take the following canonical form~\cite{mcbrideIdioms}:\footnote{This notation is taken from~\cite{mcbrideIdioms} where applicatives were called "idioms", hence the use of "\texttt{is}"}
-
+\begin{figure}[t]
 \begin{lstlisting}
 pure f <*> is_1 <*> ... <*> is_n
 \end{lstlisting}
+\caption{The applicative functor canonical form.}
+\label{canonForm}
+\end{figure}
 
+McBride and Paterson proved that any expression built from the applicative combinators can take the following canonical form in figure~\ref{canonForm}~\cite{mcbrideIdioms}:\footnote{This notation is taken from~\cite{mcbrideIdioms} where applicatives were called "idioms", hence the use of "\texttt{is}"} Where the \texttt{is}'s are computations within the applicative context applied to some pure function \texttt{f} which has been lifted into the context. 
 
-Where the \texttt{is}'s are computations within the applicative context and some may have the form \texttt{pure s} for some pure function \texttt{s}. Due to the rule mentioned at the end of section~\ref{sec:useful} this canonical form can also be expressed using the infix version of fmap \texttt{(<\$>)}. 
+ Context-free parsing is a good use case of the applicative style and many examples in this chapter are taken from parsers defined using the parsec library~\cite{parsec}. The first example of the applicative programming style is a function, from figure~\ref{parseMoney}, that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>}. This parser would recognise "\$4.59" or "\textsterling64.56" and parse it into the  data type in figure~\ref{parseMoney}. The \texttt{parseMoney} function is in the canonical form as defined by~\cite{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount respectively. 
 
-\begin{lstlisting}
-f <$> is_1 <*> ... <*> is_n
-\end{lstlisting}
-
-This is the form that most programs will take when they are refactored from a monadic style. 
-
-
- Context-free parsing is a good use case of the applicative style and many examples in this chapter are taken from parsers defined using the parsec library~\cite{parsec}. The first example of the applicative programming style is a function that parses money amounts of the form:
-
- \begin{lstlisting}
- <currency symbol><whole currency amount>.<decimal amount>
- \end{lstlisting}
- 
 
 \begin{figure}[t]
  \begin{lstlisting}%[frame=tblr]
@@ -1456,41 +1462,48 @@ parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
  \label{parseMoney}
  \end{figure}
  
-This parser would recognise "\$4.59" or "\textsterling64.56" and parse it into the  data type in Figure~\ref{parseMoney} .
-The \texttt{parseMoney} function in Figure~\ref{parseMoney} is in the canonical form as defined by~\cite{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount respectively. 
+The only difference between the \texttt{readWhole} and \texttt{readDecimal} is that \texttt{readDecimal} has to consume the decimal point before reading the number. Instead of duplicating that number code a small refactoring that lifts the parsing of the decimal into the \texttt{parseMoney} function which will allow us to reuse the \texttt{readWhole} function as seen in figure~\ref{altParseMoney}. In this definition of \texttt{parseMoney} the parsed decimal character is discarded because of the use of \texttt{<*} rather than the normal apply.
 
-The only difference between \texttt{readWhole} and \texttt{readDecimal} is that \texttt{readDecimal} has to consume the decimal point before reading the number. Instead of duplicating that number code let us perform a small refactoring to lift the parsing of the decimal into the \texttt{parseMoney} function which will allow us to reuse the \texttt{readWhole} function.
-
+\begin{figure}[t]
  \begin{lstlisting}
 parseMoney :: CharParser () Money
 parseMoney = M <$> parseCurrency <*> readWhole <* char '.' <*> readWhole
  \end{lstlisting}
+ \caption{An alternate \texttt{parseMoney} definition.}
+ \label{altParseMoney}
+\end{figure}
+
  
- Here we can see that the result of parsing the decimal point (which would just be the fullstop character) is discarded because of the use of \texttt{<*} rather than the full apply. All of the variations of apply are left associative so the following definition of \texttt{parseMoney} causes a type error.
- 
+ \begin{figure}[t] 
   \begin{lstlisting}
 parseMoney :: CharParser () Money
 parseMoney = M <$> parseCurrency <*> readWhole <*> char '.' *> readWhole
  \end{lstlisting}
+ \caption{The definition of \texttt{parseMoney} is not well typed.}
+ \label{typeParseErr}
+ \end{figure}
  
-This error can be corrected by parenthesising the subexpression\\ "\texttt{char \textquotesingle.\textquotesingle~*> readWhole}".
+All of the variations of apply\footnote{As in \texttt{(<*>)}, \texttt{(<*)}, and \texttt{(*>)}.} are left associative so the definition of \texttt{parseMoney} in figure~\ref{typeParseErr} causes a type error. This error can be corrected by parenthesising the subexpression\\ "\texttt{char \textquotesingle.\textquotesingle~*> readWhole}".
  
-The canonical style of applicative functions is not always the most idiomatic way to define things. The following function parses strings surrounded by double quotes.
+The canonical style of applicative functions may not be the most idiomatic way to define things. The function from figure~\ref{strParse} parses strings surrounded by double quotes. \texttt{parseStr} does not match the canonical form because no lifted pure function is applied to the rest of the applicative chain. This function could be transformed to canonical form by prepending "\texttt{id <\$>}."
 
+
+\begin{figure}[t]
 \begin{lstlisting}
 parseStr :: CharParser () String 
 parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
 \end{lstlisting}
+\caption{A parser for string literals.}
+\label{strParse}
+\end{figure}
 
-\texttt{parseStr} does not match the canonical form because no lifted pure function is applied to the rest of the applicative chain. This function could be transformed to canonical form by prepending "\texttt{id <\$>}."
 
 The examples covered in this section give a basic introduction to programming in an applicative style. Next we will discuss how the Haskell community has begun to use \texttt{Applicative}s in practice. 
 
 \section{Applicative in practice}
 \label{sec:appInPractice}
 
-To inform the development of this refactoring, is is helpful to understand how the Haskell community has adopted and used the applicative interface. The simplest question we wanted to answer was how many projects are actually taking advantage of the \texttt{Applicative} interface versus using the suggested implementation. When \texttt{Applicative} was made a superclass of \texttt{Monad} an implementation of the \texttt{Applicative} interface was suggested, which allowed programmers to get their existing \texttt{Monad} instances to re-compile successfully with minimum effort. We are interested in how many instances use this suggested implementation.
-%% SJT is this two questions or one? Does suggested implementation = default implementation? Need to clarify.
+To inform the development of this refactoring, is is helpful to understand how the Haskell community has adopted and used the applicative interface. The simplest question we wanted to answer was how many projects are actually taking advantage of the \texttt{Applicative} interface versus using the suggested implementation. When \texttt{Applicative} was made a superclass of \texttt{Monad} an implementation of the \texttt{Applicative} interface was suggested, which allowed programmers to get their existing \texttt{Monad} instances to re-compile successfully with minimum effort. We are interested in how many instances use this suggested implementation which is defined in figure~\ref{appSugImp}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1498,6 +1511,7 @@ pure = return
 (<*>) = ap
 \end{lstlisting}
 \caption{The suggested implementation of \texttt{Applicative}}
+\label{appSugImp}
 \end{figure}
 
 \subsection{Methodology}
@@ -1514,8 +1528,9 @@ Even with these failures we were still able to parse more than 90\% of the Haske
   
 The found \texttt{Applicative} instances in 549 cases were defined using the suggested implementation of \texttt{(<*>) = ap}.
 
-Beyond the instances of \texttt{Applicative} that literally define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example \texttt{Applicative} instances can be automatically derived using the \texttt{GeneralizedNewtypeDeriving} language extension. Another thing that we discovered was several instances duplicated the definition of \texttt{ap} thus:\footnote{Taken from \textit{Sousit} version 0.4}
+Beyond the instances of \texttt{Applicative} that literally define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example \texttt{Applicative} instances can be automatically derived using the \texttt{GeneralizedNewtypeDeriving} language extension. 
 
+\begin{figure}[t]
 \begin{lstlisting}
 instance Monad m => Applicative (Sink i m) where
     pure = return
@@ -1524,10 +1539,13 @@ instance Monad m => Applicative (Sink i m) where
         v <- s
         return (f v)
 \end{lstlisting}
+\caption{The applicative instance of \texttt{Sink} from \textit{Sousit} version 0.4}
+\label{sousitAp}
+\end{figure}
 
-This means that the number of \texttt{Applicative} instances that actually use the suggested implementation is higher than the number found by our search. Note that by defining apply to be \texttt{ap}, this instance of Applicative actually monadic.
+There are also ways to define \texttt{(<*>)} that duplicate the definition of \texttt{ap} without literally defining \texttt{(<*>) = ap}. For example one definition that was found is shown in figure~\ref{sousitAp}, this is an exact copy of the definition of \texttt{ap}. This means that the number of \texttt{Applicative} instances that actually use the suggested implementation is higher than the number found by our search. Note that by defining apply to be \texttt{ap}, this instance of Applicative actually monadic.
 
-%\begin{figure}[t]
+\begin{figure}[t]
 \begin{lstlisting}%[frame=tblr]
 
 ap :: (Monad m) => m (a -> b) -> m a -> m b
@@ -1535,39 +1553,48 @@ ap m1 m2 = m1 >>=
       (\x1 -> m2 >>=
         (\x2 -> return (x1 x2)))
 \end{lstlisting}
-%\caption{The definition of \texttt{ap}}
-%\end{figure}
+\caption{The definition of \texttt{ap}}
+\label{apDefn}
+\end{figure}
 
-The computation of \texttt{ap} will require \texttt{m1} to be evaluated strictly before evaluating \texttt{m2}, whereas apply has no such restriction. The arguments to apply could be computed in parallel, as in~\cite{haxl}. Even if not evaluated in parallel, using the \texttt{Applicative} interface rather than the \texttt{Monadic} can keep static values from being re-evaluated because the two sides of the apply operator are not dependent on one another which saves heap space~\cite{errParsers}.
+The definition of \texttt{ap} (see figure~\ref{apDefn}) forces \texttt{m1} to be evaluated strictly before evaluating \texttt{m2}, whereas apply has no such restriction. The arguments to apply could be computed in parallel, as in~\cite{haxl}. Even if not evaluated in parallel, using the \texttt{Applicative} interface rather than the \texttt{Monadic} can keep static values from being re-evaluated because the two sides of the apply operator are not dependent on one another which saves heap space~\cite{errParsers}.
 
 \subsection{Common Implementation Patterns}
 
-In addition to searching how many instances use the standard implementation, we were also curious as to how other instances of \texttt{Applicative} were being implemented. Are there any general patterns that emerge?
+In addition to searching how many instances use the standard implementation, the search also was used to discover the different ways \texttt{Applicative} instances were being implemented. Are there any general patterns that emerge?
 
-Finding general patterns like this is a much more complex task than just searching for calls to \texttt{ap} in the definition of apply. All of the Applicative implementations were written into a report and the authors manually went through the report looking for implementation patterns that cropped up many times. 
+Finding general patterns like this is a much more complex task than just searching for calls to \texttt{ap} in the definition of apply. All of the Applicative implementations were written into a report and the report was manually analysed for implementation patterns that cropped up multiple times. 
 
-The first common pattern we found simply pattern matches on the type's constructor to unwrap inner values and apply them to each other. The following instance declaration, taken from \textit{SGplus} version 1.1, illustrates this approach.
+The first common implementation pattern simply pattern matches on the type's constructor to unwrap inner values and apply them to each other. The \texttt{Applicative} instance definition in figure~\ref{sgplusPair} is an example of this approach. 
 
+\begin{figure}[t]
 \begin{lstlisting}
 instance Applicative Pair where
  pure a = Pair (a, a)
  (<*>) (Pair (fa, fb)) (Pair (a, b)) = Pair (fa a, fb b)
 \end{lstlisting}
+\caption{The applicative instance from \textit{SGplus} version 1.1}
+\label{sgplusPair}
+\end{figure}
 
-Another pattern that we saw used several times involves constraining the inner type to be \texttt{Applicative} as well and just passing off the work to that inner \texttt{Applicative}. The following example comes from \textit{Docker} version 0.3.0.0.
+Another pattern that was used several times constrains an inner type to be \texttt{Applicative} as well and just passes off the work to that inner \texttt{Applicative} instance. The example in figure~\ref{dockerApp} shows how this can be defined.
 
+\begin{figure}[t]
 \begin{lstlisting}
 instance Applicative m => Applicative (DockerT m) where
     pure a = DockerT $ pure a
     (<*>) (DockerT f) (DockerT v) =  DockerT $ f <*> v
 \end{lstlisting}
+\caption{Applicative instance from \textit{Docker} version 0.3.0.0}
+\label{dockerApp}
+\end{figure}
 
 \section{Refactoring Monadic Programs to use Applicative}
 \label{sec:appRefact}
 
-This section will describe how the refactoring of monadic code to the applicative style works via a series of examples . Many of these examples are taken from the parser for money amounts and a JSON parser. The full source code for these parsers can be found in~\cite{moneyParse} and~\cite{jsonParser}. 
-Consider the example of a parser that parses strings that begin and end with double quotes. 
+This section will describe how the refactoring of monadic code to the applicative style works via a series of examples . Many of these examples are taken from the parser for money amounts and a JSON parser.\footnote{The full source code for these parsers can be found at \url{https://goo.gl/mrCdFh} and \url{https://goo.gl/ysWmSS}} 
 
+\begin{figure}[t]
 \begin{lstlisting}
 parseStr :: CharParser () String
 parseStr = do
@@ -1576,21 +1603,28 @@ parseStr = do
 	char '"'
 	return str
 \end{lstlisting}
+\caption{A string literal parser.}
+\label{strLit}
+\end{figure}
 
-This parser first consumes a double quote character(\texttt{char \textquotesingle"\textquotesingle}) then parses one or more characters that are not double quotes and assigns those characters to the variable named \texttt{str}\footnote{This line is composed of two parser combinators, \texttt{many1}, and \texttt{noneOf}. \texttt{many1} takes another parser as its argument and applies it one or more times returning a list of the results. \texttt{noneOf} takes in a list of characters and succeeds if the current character is not in the provided list; that character is then returned.}. Finally the closing quote is consumed and \texttt{str} is returned. This particular function can be rewritten in the applicative style like so:
+The first example will refactor a parser for string literals, which is defined in figure~\ref{strLit}. This parser first consumes a double quote character(\texttt{char \textquotesingle"\textquotesingle}) then parses one or more characters that are not double quotes and assigns those characters to the variable named \texttt{str}\footnote{This line is composed of two parser combinators, \texttt{many1}, and \texttt{noneOf}. \texttt{many1} takes another parser as its argument and applies it one or more times returning a list of the results. \texttt{noneOf} takes in a list of characters and succeeds if the current character is not in the provided list; that character is then returned.}. Finally the closing quote is consumed and \texttt{str} is returned. The refactored version of the function is shown in figure~\ref{strLit_ref}.
 
+\begin{figure}[t]
 \begin{lstlisting}
 parseStr :: CharParser () String
 parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
 \end{lstlisting}
+\caption{The refactored string literal parser}
+\label{strLit_ref}
+\end{figure}
 
 The refactoring in this case is relatively simple. Since the third and fifth lines of the original function are not bound to a variable we know that the values returned by those functions will be ignored, hence the use of the \texttt{*>} and \texttt{<*} operators. This way the double quotes characters will still be parsed but the values returned by those parsers will be discarded. The original 
 function just returns the variable \texttt{str}, without calling any pure functions. There will therefore be no pure function application to the left of the effectful functions. 
 
-This is a fairly simple function to convert to applicative style. Let's look at another example that adds in more complexity. The function in figure~\ref{pMoney2} is a slight modification of the money parser from Section~\ref{sec:appProgStyle} as well. This version of the parser make the decimal amount optional, so it will recognize both "\textsterling 10.35" and "\texteuro 4".
+This is a fairly simple function to convert to applicative style. The next example is a little more complex. The function in figure~\ref{pMoney2} is a slight modification of the money parser from Section~\ref{sec:appProgStyle} as well. This version of the parser makes the decimal amount optional, so it will recognize both "\textsterling 10.35" and "\texteuro 4".
 
 \begin{figure}[t]
-\begin{lstlisting}%[frame=tlrb]
+\begin{lstlisting}
 
 parseMoney :: CharParser () Money
 parseMoney = do
@@ -1606,29 +1640,28 @@ parseMoney = do
 \label{pMoney2}
 \end{figure}
 
-The \texttt{parseMoney} function parses text into the same \texttt{Money} data type from Section~\ref{sec:appProgStyle}. To get the parser to make the decimal amount optional we use the \texttt{option} parser combinator which takes two arguments. Its second argument is parser that it will attempt to apply and if that fails it will return its first argument. 
-This new version of \texttt{parseMoney} will be refactored to the applicative style like so:
+The \texttt{parseMoney} function parses text into the same \texttt{Money} data type from Section~\ref{sec:appProgStyle}. The \texttt{option} parser allows for the decimial to become optional. The \texttt{option} combinator will attempt to apply the parser which is given as its second argument first. If this parser fails then \texttt{option} returns the value it was given in it's first argument.
 
+\begin{figure}[t]
 \begin{lstlisting}
 parseMoney :: CharParser () Money
 parseMoney = M <$> parseCurrency 
 		             <*> (read <$> many1 digit) 
-		             <*> readDecimal
-              where
-                  readDecimal = read <$> option "0" (do { 
+		             <*> (read <$> option "0" (do { 
                            char '.';
                            d <- many1 digit;
                            return d}))
 \end{lstlisting}
+\caption{The first attempt at refactoring \texttt{parseMoney}.}
+\label{parseMon_ref1}
+\end{figure}
 
 
-The return statement in the original version calls the function \texttt{M} with the three values that come from the monadic context. Since \texttt{M} is a pure function, it is placed at the front of the chain of applicative operations, composed with \texttt{(<\$>)}. The \texttt{whole} and \texttt{decimal} variables are also being applied to pure functions so again we will compose the pure functions (\texttt{read} in this case) and the effectual computations with infix \texttt{fmap}. 
+The return statement in the monadic definition of \texttt{parseMoney} calls the function \texttt{M} with the three values that come from the monadic context. Since \texttt{M} is a pure function, it is placed at the front of the chain of applicative operations, composed with \texttt{(<\$>)}. The \texttt{whole} and \texttt{decimal} variables are being applied to \texttt{read}, a pure function, so these values will be composed with \texttt{read} using the \texttt{(<\$>)} operator. The refactored definition of \texttt{parseMoney} is defined in figure~\ref{parseMon_ref1}.
 
-The where clause in this example has been included for formatting and readability and would not be generated automatically. Even with this clause, however, this function seems quite undesirable compared to the original version. This example would seem to be a bad choice for this refactoring. Fortunately there is a fairly nice solution, just keep refactoring!
+The inner \texttt{do} block that is passed as the second argument to \texttt{option} is also a valid target of this refactoring. The result from applying this refactoring to this \texttt{do} block is shown in figure~\ref{parseMon_ref2}.
 
-We also refactored the inner \texttt{do} block that was part of \texttt{readDecimal} to use the \texttt{Applicative} interface. This final function offers a concise and easy to read alternative to the original function.
-
-%\begin{figure}[h]
+\begin{figure}[t]
  \begin{lstlisting}%[frame=tlrb]
 
 parseMoney :: CharParser () Money
@@ -1637,20 +1670,26 @@ parseMoney =
 	   <*> (read <$> many1 digit) 
 	   <*> (read <$> option "0" (char '.' *> many1 digit))
 \end{lstlisting}
-%\caption{\texttt{parseMoney} after inner do refactoring.}
-%\end{figure}
-\subsection{Splitting the Applicative Chain}
-As chains of applicative computations can get more complicated it is useful or indeed mandatory to parenthesize parts of the function. The following snippet of code parses a single entry from a JSON object. Each entry consists of a string key and a value which can be any valid JSON value, separated by a colon, and stores the key and value in a tuple. 
+\caption{\texttt{parseMoney} after inner do refactoring.}
+\label{parseMon_ref2}
+\end{figure}
 
+\subsection{Splitting the Applicative Chain}
+As chains of applicative computations can get more complicated it is useful or indeed mandatory to parenthesize parts of the function. The \texttt{objEntry}f unction in figure~\ref{objEntry} parses a single entry from a JSON object. Each entry consists of a string key and a value which can be any valid JSON value, separated by a colon, and stores the key and value in a tuple. 
+
+\begin{figure}[t]
 \begin{lstlisting}
 objEntry = (,) 
         <$> (spaces *> parseStr <* spaces <* char ':') 
         <*> (spaces *> parseJVal <* spaces)
 \end{lstlisting}
+\caption{A JSON object parser.}
+\label{objEntry}
+\end{figure}
 
-When there are a large amount of computations that do not affect the final value of the function there can be multiple valid ways to add parenthesis to the function. The definitions of \texttt{objEntry} in Figure~\ref{objEntry2} are equivalent.
+When there are a large amount of computations that do not affect the final value of the function there can be multiple valid ways to add parenthesis to the function. The two definitions of \texttt{objEntry} in Figure~\ref{objEntry2} are equivalent.
 
-Our refactoring will produce the first version of this function, and in general will produce functions with each of the value-producing statements grouped together with the non-value producing statements which are closest to them. Each of these groups will then be surrounded by parentheses, and the groups will be composed using the \texttt{<*>} operator. A more formal description of this is provided in Section~\ref{sec:refacImp}.
+The refactoring will produce the first version of this function, and in general will group each of the value-producing expressions (\texttt{parseStr} and \texttt{parseJVal} in this case) with the closest non-value producing statements. Every group contains a single value producing expression and zero or more non-value producing expressions on either side of the value producing expression. Each of these groups will then be surrounded by parentheses if it contains non-value producing statements, and the groups will be composed using the \texttt{<*>} operator. A more formal description of this is provided in Section~\ref{sec:refacImp}.
 
 
 \begin{figure}[t]
@@ -1667,69 +1706,70 @@ objEntry = (,)
 \caption{Different ways to separate the applicative chain.}
 \label{objEntry2}
 \end{figure}
+
 \subsection{Preconditions}
 \label{sec:appPrecons}
 
-Many functional refactorings have non-trivial preconditions that must hold before the refactoring can be applied~\cite{refacTools}. Fortunately, the refactoring we are discussing here only has two fairly simple preconditions: first, the target function must be definable with the applicative interface not just the monadic interface and secondly, the order that variables are bound in the \texttt{do} block must correspond to the order in which they are used in the return statement. 
+This refactoring has two fairly simple preconditions: first, the target function must be definable with the applicative interface not just the monadic interface and secondly, the order that variables are bound in the \texttt{do} block must correspond to the order in which they are used in the return statement. 
 
-What does this first precondition mean exactly? Where is the line between applicative and monadic? Let's start by looking at the type signatures of the bind and apply functions.
-
+\begin{figure}[t]
 \begin{lstlisting}
 (<*>) :: Applicative f => 
 	f (a -> b) -> f a -> f b
 
 (>>=) :: Monad m => 
    m a -> (a -> m b) -> m b
-\end{lstlisting}  
-
-One thing to keep in mind is that these two functions' arguments are in opposite order. The key difference becomes clearer when examining the type of apply when its arguments are flipped.
-
-\begin{lstlisting}
-flip (<*>) :: Applicative f => 
-   f a -> f (a -> b) -> f b
 \end{lstlisting}
+\caption{The types of apply and bind}
+\label{appBind}
+\end{figure} 
 
-The only difference between this version of apply and bind is in the second argument. The second argument of bind is a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value returned by a computation in the monad, while all of the arguments to apply are contained within the applicative functor.
-What does this mean in practice? Take for example the following function.
+How can the first precondition be enforced? Where is the line between applicative and monadic? Let's start by looking at the type signatures of the bind and apply functions in figure~\ref{appBind}. One thing to keep in mind is that these two functions' arguments are in opposite order where the function type is the first argument to apply whereas the second argument to bind is a function. The difference between bind and apply is in the type of this function argument. The second argument of bind is a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value returned by a computation in the monad, while all of the arguments to apply are fully within the applicative context.
 
+What does this mean in practice? Take for example the function \texttt{f} from figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is applied to \texttt{parseNThings} as a pure value. This first precondition will check that any values bound in the \texttt{do} statement are not used in the right hand side of any expression other than the \texttt{return} statement.
+
+
+\begin{figure}[t]
 \begin{lstlisting}
 f = do
 	n <- parseN
 	xs <- parseNThings n
 	return xs
 \end{lstlisting} 
+\caption{A context dependent parser.}
+\label{parseNThings}
+\end{figure}
 
-The function \texttt{f} first parses a number \texttt{n} that corresponds to the number of things that are to be parsed. This function is not definable using applicative functors because we are using the value \texttt{n} as a pure argument to \texttt{parseNThings}. This first precondition will check that any values bound in the target function are not used in the right hand side of any expression other than the \texttt{return} statement.
+The second precondition is a bit more intuitive to grasp. Consider the function \texttt{g} in figure~\ref{outOrd}. The naive implementation of the refactoring is in lines one and two of figure~\ref{outOrd_ref}. This version of the refactoring maintains the order of statements from the \texttt{do} block but this causes a type error. Instead, if the refactoring swaps the order of the statements (lines five and six of figure~\ref{outOrd_ref}) the order that the contextual effects are performed changes, and the meaning of the refactored program is no longer the same as the source program so the refactoring is not valid.  
 
-The second precondition is a bit more intuitive to grasp. Take the following function for example:
-
+\begin{figure}[t]
 \begin{lstlisting}
-f :: Monad m => m (A,B)
-f = do
+g :: Monad m => m (A,B)
+g = do
 	b <- getB
 	a <- getA
 	return (a,b)
-\end{lstlisting} 
+\end{lstlisting}
+\caption{A function with out of order bindings}
+\label{outOrd}
+\end{figure}
 
-If we refactor this in the obvious way we would get:
-
+\begin{figure}[t]
 \begin{lstlisting}
-f :: Applicative a => a (A,B)
-f = (,) <*> getB <*> getA
+g :: Applicative a => a (A,B)
+g = (,) <*> getB <*> getA
+
+g :: Applicative a => a (A,B)
+g = (,) <*> getA <*> getB
 \end{lstlisting} 
+\caption{Two attempts at refactoring \texttt{g}.}
+\label{outOrd_ref}
+\end{figure}
 
-Which would change the type of the program. Then we try: 
-
-\begin{lstlisting}
-f :: Applicative a => a (A,B)
-f = (,) <*> getA <*> getB
-\end{lstlisting} 
-
-This will typecheck but this has reversed the order than any effects in the applicative context would occur which makes this transformation not a refactoring because it has changed the behaviour of the program. Our refactoring checks that the variables are bound in the same order that they appear in the return statement which prevents both type errors and changing the order in which effects happen.
 
 \subsection{Additional Refactorings}
 \label{sec:otherRefs}
-The preconditions described in the previous section, and the second one in particular, may seem overly strict and needlessly limit the scope of code to which the refactoring could be applied. Instead of developing a single monolithic refactoring that contains many separate cases the approach HaRe takes is to develop multiple small refactorings that can be composed together. Composing refactorings together in this way is known as a composite refactoring~\cite{erlangDomain}.
+The preconditions described in the previous section, and the second one in particular, may seem overly strict and needlessly limit the scope of code to which the refactoring could be applied. Instead of developing a single monolithic refactoring that contains many separate cases the approach HaRe takes is to develop multiple small refactorings that can be composed together. Composing refactorings together in this way is known as a composite refactoring~\cite{wranglerDomain}.
 
 This section will describe a number of refactorings that will help transform (or ``prefactor'') code so that it is capable of passing the preconditions for the generalising applicative refactoring. 
 
@@ -1751,10 +1791,7 @@ f = do
 \end{figure}
 
 
-
-Suppose someone wanted to refactor the function \texttt{f} in Figure~\ref{fMonad} 
-to use an applicative interface rather than a monadic one.
-This code will not pass the preconditions because both \texttt{b} and \texttt{y} are extracted from the monadic context and used in a right hand side expression. However, lines three through five do not really affect the rest of the function so they could be refactored to their own function and then f could be rewritten applicatively. 
+The \texttt{f} function from figure~\ref{fMonad} will not pass the preconditions because both \texttt{b} and \texttt{y} are extracted from the monadic context and used in a right hand side expression. However, lines three through five do not really affect the rest of the function so they could be refactored to their own function and then f could be rewritten applicatively. 
 
 The extraction of monadic code does not have to create a top level variable; if the developer preferred the extracted definition could be in a \texttt{let} or \texttt{where} clause.
 
@@ -1775,7 +1812,6 @@ g = do
 
 \begin{figure}[h]
 \begin{lstlisting}%[frame=tblr]
-
 f = do
 	x <- result1
 	y <- result2
@@ -1788,8 +1824,9 @@ f = do
 
 Instead of extracting an entire function as in subsection~\ref{subSec:extract} a developer may prefer just to inline a do block. This is useful if the monadic section of code is small.
 
-Normally the variable \texttt{z} being used again in line five would prevent the function from being refactored. Merging lines four and five into an inline do block would allow this function pass the preconditions.
+Normally the variable \texttt{z} being used again in line five would prevent the function from being refactored. Merging lines four and five into an inline do block would allow this function pass the preconditions as seen in figure~\ref{inlineDo}. Now the entire function can be refactored to the version defined in figure~\ref{inlineDo_ref}. Additional refactoring can take place with the inner \texttt{do} block also undergoing refactoring.
 
+\begin{figure}[t]
 \begin{lstlisting}
 f = do
 	x <- result1
@@ -1797,28 +1834,25 @@ f = do
 	do{z <- result3; log z}
 	return (x,y)
 \end{lstlisting}
+\caption{\texttt{f} with two lines merged into an inline do block.}
+\label{inlineDo}
+\end{figure}
 
-With this modification the function can now be refactored.
-
+\begin{figure}[t]
 \begin{lstlisting}
 f = (,) 
     <$> result1 
     <*> (result2 <* do{z <- result3; log z})
 \end{lstlisting}
-
-It is worth noting that further refactoring is possible by applying the generalise applicative refactoring to the inner do block.
-
-\begin{lstlisting}
-f = (,) <$> result1 <*> (result2 <* (log <*> result))
-\end{lstlisting}
-
-Much like the previous refactoring the extracted do block could be bound to a variable in the \texttt{let} or \texttt{where} if that produces higher code quality.
+\caption{The inline do allows the function to be rewritten with the applicative operators.}
+\label{inlineDo_ref}
+\end{figure}
 
 \subsubsection{Introduce lambdas to reorder statements}
 
-The other precondition to the generalise applicative refactoring is the condition that all bound variables need to be extracted from the monadic context in the order they appear in the return statement. Take the example given at the end of Section~\ref{sec:appPrecons} repeated here:
+The other precondition to the generalise applicative refactoring is the condition that all bound variables need to be extracted from the monadic context in the order they appear in the return statement. Take the example given at the end of Section~\ref{sec:appPrecons} repeated in figure~\ref{ordering}.
 
-%\begin{figure}[h!]
+\begin{figure}[t]
 \begin{lstlisting}%[frame=tblr]
 
 f = do
@@ -1826,12 +1860,12 @@ f = do
 	a <- getA
 	return (a,b)
 \end{lstlisting} 
-%\caption{The order that \texttt{a} and \texttt{b} are bound fails the precondition}
-%\label{ordering}
-%\end{figure}
+\caption{The order that \texttt{a} and \texttt{b} are bound fails the precondition}
+\label{ordering}
+\end{figure}
 
 
-Since \texttt{a} appears before \texttt{b} in the return statement but \texttt{b} is bound before \texttt{a} this function would not pass the second precondition. If this return statement was refactored to include a lambda that flipped the arguments it could pass this precondition.
+Since \texttt{a} appears before \texttt{b} in the return statement but \texttt{b} is bound before \texttt{a} this function would not pass the ordering precondition. If this return statement was refactored to include a lambda that flipped the arguments it could pass this precondition.
 
 \begin{lstlisting}
 f = do
@@ -1853,29 +1887,10 @@ The composite approach also makes it much easier for the refactoring to be exten
 \section{Implementation of the Refactoring}
 \label{sec:refacImp}
 
-\begin{figure}[t]
-\begin{lstlisting}%[frame=tblr]
-
-doGenApplicative :: FilePath -> String -> SimpPos -> RefactGhc ()
-doGenApplicative fileName funNm pos = do
-  parsed <- getRefactParsed
-  let (Just funBind) = getHsBind pos funNm parsed
-      (Just retRhs) = getReturnRhs funBind
-      (Just doStmts) = getDoStmts funBind
-      boundVars = findBoundVars doStmts
-  checkPreconditions retRhs doStmts boundVars
-  appChain <- constructAppChain retRhs doStmts
-  replaceFunRhs funNm pos appChain
-\end{lstlisting}
-\caption{Generalise to applicative's top-level function.}
-\label{mainFunc}
-\end{figure}
-
-
 The previous section informally discussed how the generalise monad to applicative refactoring in general. In practice there are quite a few options that implementers will make when writing this refactoring, including how parentheses are inserted, for example. This section will discuss more formally how HaRe implements the ``generalise to applicative'' refactoring.
 
 \subsection{Implementation of the Generalising to Applicative Refactoring}
-\begin{figure}
+\begin{figure}[t]
 	\begin{math}
 		\begin{aligned}
 \textbf{Expressions}\\
@@ -1896,18 +1911,11 @@ s \in Stmt\ &::=\ p \leftarrow e\\
 &|\ e
 		\end{aligned}
 	\end{math}
-	\caption{Syntax}
+	\caption{Syntax the refactoring works over.}
 	\label{syntax}
 \end{figure}
 
-The refactoring takes  three arguments: the filepath of the file to be refactored, the name of the function to be refactored, and the position (row, column) in the file of the start of the function to be refactored. 
-
-Figure~\ref{mainFunc} shows the main function that drives the generalise applicative refactoring. This function starts by retrieving the parsed AST from the HaRe API with the \texttt{getRefactParsed} function. HaRe provides a few functions like this that retrieve the AST at different stages of the GHC compiler. 
-
-Next, on line four a pure function traverses  the AST and retrieves the subtree that represents the target function. 
-From that subtree we pull out two other values, the expression that is on the right hand side of the return statement (e.g. in \texttt{return (a,b)} we are talking about \texttt{(a,b)}), and a list of all of the statements in the do block. Finally we go through all of those do statements and get a list of all the variables that are bound in the do block. 
-
-The rest of this section will go through the checking of preconditions and building the applicative expression more thoroughly. The syntax of the target function has been defined in Figure~\ref{syntax}.
+The refactoring takes two arguments: the filepath of the file to be refactored, and the row and column in the file of the start of the function to be refactored. The rest of this section will go through the checking of preconditions and building the applicative expression more thoroughly. The syntax of the target function has been defined in Figure~\ref{syntax}.
 
 
 
@@ -1985,7 +1993,7 @@ The second precondition is checked using a similar method. First we construct a 
 
 Once the preconditions have passed we can start constructing the ``applicative chain'' that will make up the right hand side of the refactored function. This expression is composed of two different types of subexpressions, binding expressions that contribute to the returned value of the function and effectful expressions that are just used for their effects on the applicative context. The code that constructs this effectul part of the applicative chain is contained in Figure~\ref{effects}.
 
-\begin{figure}
+\begin{figure}[t]
 \begin{lstlisting}%[frame=tblr]
 
 objEntry :: CharParser () (String, String)
@@ -2005,19 +2013,19 @@ objEntry = do
 
 In the \texttt{objEntry} parser in Figure~\ref{objEntry} only lines four and eight contribute to the final result. The other expressions just consume input and the returned values of those combinators are discarded. The first step in constructing the applicative chain involves building clusters of statements where each cluster contains a single binding statement (those matching $(p \leftarrow e) :: Stmt$) and its nearest effectful statements (those matching $e :: Stmt$). In the above example we would create two clusters, the first cluster consists of lines three through six and the second of lines seven through nine.\footnote{When there are an odd number of effectful expressions between binding expressions the extra expression is added to the leftmost cluster.}
 
-Within each cluster we then decide which applicative operator goes between each expression. Since there is only one binding statement per cluster we know that the only options are \texttt{(*>)} or \texttt{(<*)}. We simply go through the list and if an statement occurs before the binding statement we know that it will be followed by a \texttt{(*>)} operator and once the binding statement comes up all the remaining expressions are composed with the \texttt{(<*)} operator. The first cluster from the \texttt{objEntry} example is:
+Within each cluster we then decide which applicative operator goes between each expression. Since there is only one binding statement per cluster we know that the only options are \texttt{(*>)} or \texttt{(<*)}. We simply go through the list and if an statement occurs before the binding statement we know that it will be followed by a \texttt{(*>)} operator and once the binding statement comes up all the remaining expressions are composed with the \texttt{(<*)} operator. The first cluster from the \texttt{objEntry} example is: \texttt{(spaces *> parseStr <* spaces <* char ':')}
 
-\begin{lstlisting}
-spaces *> parseStr <* spaces <* char ':'
-\end{lstlisting}
+Once every cluster has been refactored separately all of the clusters are wrapped in parentheses and then composed with the full apply operator (\texttt{<*>}), as seen in figure~\ref{effectObjEntry},
 
-Once every cluster has been refactored separately all of the clusters are wrapped in parentheses and then composed with the full apply operator (\texttt{<*>}), like so
-
+\begin{figure}[t]
 \begin{lstlisting}
     (spaces *> parseStr <* spaces <* char ':') 
 <*> (spaces *> many1 digit <* spaces)
 \end{lstlisting}
-%\captionof{lstlisting}{the fully refactored effectful part of the applicative chain}
+\caption{The effectful expressions for the refactored definition of \texttt{objEntry}}
+\label{effectObjEntry}
+\end{figure}
+
 
 \subsubsection{Building the Pure Expression}
 
@@ -2062,27 +2070,20 @@ Now that the effectful part of the chain has been constructed we must build the 
 
 In the following example the returned values are wrapped in a tuple, which is a special case, and the pair constructor (\texttt{(,)}) will be added to the front of the chain with the infix \texttt{fmap} operator (\texttt{<\$>}).
 
-\begin{lstlisting}
-(,) <$> (spaces *> parseStr <* spaces <* char ':') 
-    <*> (spaces *> many1 digit <* spaces)
-\end{lstlisting}
-
-If the pure expression is just a function like this:
-
+\begin{figure}[t]
 \begin{lstlisting}
 zipperM :: [a] -> IO [(a, b)]
 zipperM lst = do
   lst2 <- getOtherList
   return $ zip lst lst2
 \end{lstlisting}
+\caption{The \texttt{zipperM} function}
+\label{zipperM}
+\end{figure}
 
-then when we build the pure part of the applicative chain we take the expression that is being returned and the list of bound variables. We then remove all of the bound variables from this expression. In the above example this leaves us with just~\texttt{zip lst}, and this expression is what is added to the front of the chain.
+If the pure expression is just a function call such as in \texttt{zipperM} from figure~\ref{zipperM} then the pure part of the expression is built by extracting the expression being returned and removing all of the bound variables from this expression. In the \texttt{zipperM} example this is just~\texttt{zip lst} after removing the \texttt{lst2} which was bound in the \texttt{do} block. Finally this expression is what is added to the front of the chain.
 
-\begin{lstlisting}
-zip lst <$> getOtherList
-\end{lstlisting} 
-
-Once the pure expression has been added the applicative chain is done and we can replace the original function right hand side with this new expression, as shown in Figure \ref{final-fns}.
+Once the pure expression has been added to the front of the applicative chain the new function definition can replace the source function's right hand side. The refactored functions from both examples used in this section are shown in Figure \ref{final-fns}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2103,13 +2104,13 @@ zipperM lst = zip lst <$> getOtherList
 
 There are two things that make a particular application a good candidate for this refactoring. First, and most obviously, the application must be able to be defined using the applicative interface. Secondly, a good candidate will have a large corpus of code that is already written in the monadic style. If a particular library is already defined using applicative functors rather than monads then there is little work for the refactoring to do.
 This section will discuss some libraries where this refactoring could be useful.
-\\
-\\
+
 \subsection{Parsing}
 Many of the examples in this paper are parsers using parser combinator libraries. This has been a classic domain of applicative functors. The first examples of applicative-like developments come from papers on parsing~\cite{efficientParsing,errParsers}.
 
-Indeed, when looking through projects on Hackage that are labeled as parsers, examples of where our refactoring could be applied are numerous. Html-tokenizer is a project that tokenizes HTML code to provide a base for HTML parsers~\cite{htmlTok}. Within it there were several functions that are can be generalised. These functions look very much like what we have already seen before. Take for example the following function that matches an opening tag.
+Indeed, when looking through projects on Hackage that are labeled as parsers, examples of where our refactoring could be applied are numerous. Html-tokenizer is a project that tokenizes HTML code to provide a base for HTML parsers~\cite{htmlTok}. Within it there were several functions that are can be generalised. These functions look very much like what we have already seen before. Take for example the following function that matches an opening tag in figure~\ref{openingTag} and the same function refactoring using this refactoring in figure~\ref{openingTag_ref}.
 
+\begin{figure}[t]
 \begin{lstlisting}
 openingTag :: Parser OpeningTag
 openingTag =
@@ -2123,8 +2124,11 @@ openingTag =
     char '>'
     return (theIdentifier, attributes, closed)
 \end{lstlisting}
-This is refactored into the following function.
+\caption{The \texttt{openingTag} function.}
+\label{openingTag}
+\end{figure}
 
+\begin{figure}[t]
 \begin{lstlisting}
 openingTag :: Parser OpeningTag
 openingTag = (,,) 
@@ -2132,9 +2136,13 @@ openingTag = (,,)
    <*> ((many $ space *> skipSpace *> attribute) <* skipSpace) 
    <*> ((convert <$> optional (char '/')) <* char '>')
 \end{lstlisting}
+\caption{\texttt{openingTag} refactored}
+\label{openingTag_ref}
+\end{figure}
 
-Another parser that has several functions that can be refactored is in the implementation of pi-forall, a simple dependently typed language created by Stephanie Weirich~\cite{piForall}. Below is the function that parses a pi-forall module definition.
+Another parser that has several functions that can be refactored is in the implementation of pi-forall, a simple dependently typed language created by Stephanie Weirich~\cite{piForall}. The function that parses a module definition and its refactored equivalent are shown in figures~\ref{piParse} and ~\ref{piParse_ref}.
 
+\begin{figure}[t]
 \begin{lstlisting}
 moduleDef :: LParser Module
 moduleDef = do
@@ -2146,9 +2154,11 @@ moduleDef = do
   cnames <- get
   return $ Module modName imports decls     cnames
 \end{lstlisting}
+\caption{pi-forall's module definition parser.}
+\label{piParse}
+\end{figure}
 
-which refactors to the following:
-
+\begin{figure}[t]
 \begin{lstlisting}
 moduleDef :: LParser Module
 moduleDef = Module
@@ -2157,8 +2167,9 @@ moduleDef = Module
    <*> layout decl (return ()) 
    <*> get
 \end{lstlisting}
-
-The reason to refactor functions like these parsers is mostly for readability. Unfortunately due to the format of this paper the formatting of the functions has been changed to make them more readable. However on a modestly sized monitor, such as the first  author's 13 inch Macbook pro with a resolution of 1280x800, these functions fit onto a single line. In this format the functions can be read from left to right much like the text to be parsed. This makes it very simple to read the function and visualize the text that it is supposed to be parsing. 
+\caption{The refactored module definition parser}
+\label{piParse_ref}
+\end{figure}
 
 
 
@@ -2166,12 +2177,18 @@ The reason to refactor functions like these parsers is mostly for readability. U
 
 One of the big motivations behind adopting the applicative interface rather than using the monadic interface all the time is that the applicative operators are not inherently sequential. Essentially the left and right hand sides of a call to apply could be executed in parallel. 
 
-Facebook's Haxl project simplifies accessing remote data stores such as databases and web-services~\cite{haxl}. In the background when requests to the data store are composed with the \texttt{(<*>)} operator, concurrency is implicit~\cite{haxl}. With the generalise applicative refactoring programmers will be able to write their data queries in the do notation that they are familiar with and then refactor their code to gain the concurrency benefits. Haxl is the motivating behind the \textit{applicativeDo} project~\cite{applicativeDo}, as discussed further in Section~\ref{sec:related}.
+Facebook's Haxl project simplifies accessing remote data stores such as databases and web-services~\cite{haxl}. In the background when requests to the data store are composed with the \texttt{(<*>)} operator, concurrency is implicit~\cite{haxl}. With the generalise applicative refactoring programmers will be able to write their data queries in the do notation that they are familiar with and then refactor their code to gain the concurrency benefits. Haxl is the motivating behind the \textit{applicativeDo} project~\cite{applicativeDo}, as discussed further in Chapter~\ref{chp:related}.
 
 \subsection{Yesod}
 Another possible application of this refactoring is to parts of the code used to define Yesod webservers~\cite{yesod}. The preferred way to handle the creation and processing of web forms uses the applicative interface~\cite{yesodBook}. Yesod doesn't force forms to be handled applicatively because a monad instance is provided as well but it is the \textit{idiomatic} way to handle web forms. This refactoring would allow people to write in the more familiar do notation and then refactor their code to fit the community standard.
 
 \section{Summary}
+
+This refactoring is another example of a generalisation refactoring that rewrites code to work with a typeclass. The previous examples of this type of refactoring, the Maybe to MonadPlus or the Maybe to Monad refactorings generalised a concrete type to one of its typeclasses. This refactoring can accept code from any instance of a typeclass and generalise it to use the operations from a superclass instead (assuming that code passes the preconditions of course). This refactoring opens the door for possible performance increases if the \texttt{Applicative} instance definition allows for parallel execution of the arguments to apply.
+
+Additionally there are cases where the applicative versions of functions are cleaner and easier to read. Parsers in particular can become very descriptive in the applicative style with function calls being read from left to right in the same order     
+
+  
 
 \chapter{Introducing Monads}\label{chap:monadification}
 Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus monadification, the process of adding monads to pure code. 
@@ -2662,7 +2679,7 @@ Monads are a challenging and fairly unique feature of Haskell and, anecdotally, 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related work}
-
+\label{chp:related}
 This chapter reviews current work in refactoring and other areas of the literature. The chapter is divided into several sections. This chapter will begin with a brief description of refactoring tools in general. The second section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section (\ref{otherTools}) will discuss novel, non-programming language refactoring of wikis and spreadsheets. Section~\ref{refacParallel} discusses automated refactoring tools that introduce parallelism into their target programs. Then Section~\ref{applicativeDo} will describe another approach to using applicative functors in Haskell.  Finally section~\ref{typeTrans} covers work done on type changing program transformations, including the work of Erwig and Ran on monadification~\citep{monadification} and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
 
 \section{Refactoring Tools in Modern IDEs}
