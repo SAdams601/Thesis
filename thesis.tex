@@ -174,13 +174,13 @@
 \begin{preface}
 \section{Abstract}
 
-Refactoring is the process of changing the internal structure of a program without changing its external behaviour. Refactoring increases code quality and reduces its technical debt. However, refactoring by hand is time consuming and error-prone. This makes automated refactoring tools very useful.
+Refactoring is the process of changing the internal structure of a program without changing its external behaviour. The goal of performing refactorings is to increase code quality. However, refactoring by hand is time consuming and error-prone. This makes automated refactoring tools very useful.
 
 Agile software development allows for software to evolve slowly over time. This evolution changes how a program processes, abstracts over, and views its data. This evolution, though necessary, comes with the cost of technical debt. As technical debt increases changes to a code base become more difficult. Refactoring is one of the primary ways to  reduce technical debt. 
 
-There exist refactorings that specifically help software to evolve its data model, however these refactorings are specific to the object-oriented programming paradigm. Haskell is a strongly typed, pure functional programming language. Haskell's rich type system allows for complex and powerful data models and abstractions. This thesis reports on work done to design and automate refactorings that help Haskell programmers develop these abstractions.
+There exist refactorings that specifically help software to evolve its data model, however these refactorings are specific to the object-oriented programming paradigm. Haskell is a strongly typed, pure functional programming language. Haskell's rich type system allows for complex and powerful data models and abstractions. This thesis reports on work done to design and automate refactorings that help Haskell programmers develop and evolve these abstractions.
 
-This work also discussed the current design and implementation of HaRe (the \textit{Ha}skell \textit{Re}factorer). HaRe now supports the Glasgow Haskell Compiler's implementation of the Haskell 2010 standard and its extensions. 
+This work also discussed the current design and implementation of HaRe (the \textit{Ha}skell \textit{Re}factorer). HaRe now supports the Glasgow Haskell Compiler's implementation of the Haskell 2010 standard and its extensions, and uses some of GHC's internal packages in its implementation. 
 
 \section{Acknowledgements}
 First I would like to thank my supervisor Professor Simon Thompson, for his guidance and patience throughout this process. Without his help this thesis would not have been possible.
@@ -188,6 +188,8 @@ First I would like to thank my supervisor Professor Simon Thompson, for his guid
 I also need to thank my parents, Jeff and Diane, for their support and encouragement. You both have been so excited for me to take this opportunity. It can't have been easy to have me live an ocean away, and your support in me started this project has been amazing.
 
 A special thanks go out to Kristin Lamberty, Elena Machkasova, and Nic McPhee the professors of computer science at the University of Minnesota, Morris. All three of you introduced me to the world of computing and I wouldn't be here today without all of your help. You prepared me as much as anyone can be prepared for a PhD.
+
+Alan Zimmerman is cited many times in this thesis but I don't think that is sufficient thanks for all the work he has done. Without you HaRe would not be where it is today. You dedication to the Haskell open source community is much appreciated.
 
 I would like to extend my thanks to Adriana and Gaya Perera for letting me stay with them for the final year of my degree. You very graciously opened your house to me when I needed it and allowed me to stay much longer than any of us were expecting.
 
@@ -201,15 +203,13 @@ Finally I must thank Rosemary for her love and support. You have supported me th
 \section{Functional Programming}
 Functional programming is a programming paradigm that focuses on data values as described by expressions which are built from function applications and definitions~\citep{elementsOfFunc}.  Functions in this case are closely related to the idea of mathematical functions. What qualifies a programming language as functional is debatable but several concepts are often included in languages that are described as functional. 
 
-First-class functions mean that functions are allowed to be treated like any other data type. First-class functions can be passed-to or returned-from from other ``higher-ordered'' functions. There is also a heavy emphasis on functions remaining ``pure'' that is without side-effects, though functional languages do provide ways to use IO or state it is emphasised that functions should remain pure if at all possible. Finally iteration is accomplished through recursion rather than looping.
-
+First class functions mean that functions are allowed to be treated like any other data type. First class functions can be passed to or returned from from other ``higher-order'' functions. Iteration is accomplished through recursion rather than via looping. There is also a heavy emphasis on functions remaining ``pure'' that is without side effects, though functional languages do provide ways to use IO or state it is emphasised that functions should remain pure if at all possible. Haskell's type system allows for effectful computations to be contained within monad types.
   
 \section{Haskell}
 \label{haskell}
-Haskell is a statically typed, lazily evaluated, pure functional language. Haskell is strongly and statically typed, and supports Hindley-Milner type inference~\citep{wikiIntro}. Type inference means that a Haskell programs do not need every type to be explicitly listed in the source code. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
+Haskell is a statically typed, lazily evaluated, pure functional language. Haskell is strongly and statically typed, and supports Hindley-Milner type inference(\cite{hindley},\cite{milner}). Type inference means that a Haskell programs do not need every type to be explicitly listed in the source code. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
 
-Lazy evaluation means that Haskell expressions are not evaluated when they are passes as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in figure~\ref{lazyY}, 
-the parameter y will never be evaluated.
+Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is a list containing all of the natural numbers. 
 
 \begin{figure}[t]
 \begin{verbatim}
@@ -221,30 +221,30 @@ False -> x + 1
 \label{lazyY}
 \end{figure}
 
-Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads contain any potentially side effect causing operations inside of them allowing the rest of the program to remain pure.
+Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads represent computations, which when run will have effects as well as producing a result. A principle topic of this thesis is refactoring to support patterns of computation related to Monads and other related structures. 
 
 \section{Refactoring} 
-Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was coined in 1991 in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}.
+Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was coined in 1991 in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}, \cite{performanceRestructuring}). Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}.
 
-Behaviour preservation is what separates refactoring from other types of program manipulation. This idea of functionality preservation means that refactoring will not introduce new bugs or eliminate old ones. To prevent semantic changes after refactoring, many refactorings have non-trivial preconditions~\citep{refacTools}.
+Behaviour preservation is what separates refactoring from other types of program manipulation. This idea of functionality preservation means that refactoring will not introduce new bugs or eliminate old ones. To prevent semantic changes after refactoring, many refactorings have non-trivial preconditions~\citep{mens2002formalising}. For example, the renaming refactoring should check that the new name being introduced does not cause a name clash with a name already used in the source program.
 
-Manual refactoring is tedious and error prone, and depends on high testing coverage to ensure that functionality is preserved~\citep{fowler}. This means that tools that can automatically perform refactorings and ensure that preconditions are met are highly desirable.
+Manual refactoring is tedious and error prone because changes to small portions of code may require system-wide changes. When deleting a parameter from a function, for example, every call site of that function also needs to be modified, and missing even a single call site will cause an error. Refactoring by hand depends on high testing coverage to ensure that functionality is preserved~\citep{fowler}. This means that tools that can automatically perform refactorings and ensure that preconditions are met are highly desirable.
 
 \subsection{Functional refactoring}
 
-Refactoring a functional language has a few key differences from refactoring an imperative language. The higher-order nature functional languages means that any sub-expression of a function is a candidate for generalisation whereas in other languages the types of parameters and results is limited. The semantics of functional languages also allow for the complete checking of preconditions based on the static semantics of the language~\citep{refacTools}.
+Refactoring a functional language has a few key differences from refactoring an imperative language. The higher-order nature functional languages means that any sub-expression of a function is a candidate for generalisation whereas in other languages the types of parameters and results is limited. The semantics of functional languages also allow for more comprehensive checking of preconditions based on the static semantics of the language~\citep{refacTools}.
 
-It is also not unusual for functional refactorings to be substantially different than their object-oriented (OO) counterparts. For example creating a case statement from a multi-equation function definition in a functional language versus inlining a virtual method as a case statement in an OO language require substantially different program manipulations~\citep{huiqingThesis}. Additionally there can be refactorings with no OO counterpart, monadification, for instance.
+It is also not unusual for functional refactorings to be substantially different than their object-oriented (OO) counterparts. For example creating a case statement from a multi-equation function definition in a functional language versus inlining a virtual method as a case statement in an OO language require substantially different program manipulations~\citep{huiqingThesis}. Additionally there can be refactorings with no OO counterpart, monadification the introduction of monadic types into otherwise pure code, for instance.
 
-\section{Contributions of this Research}
+\section{Summary}
 
-The work in this thesis was carried out in HaRe (the \textbf{Ha}skell \textbf{Re}factorer). This study focused on adding additional refactorings to HaRe of a new type. Rather than being motivated by the structural problems of a program data-driven refactorings seek to resolve issues that are caused by the data types a program uses. The contributions of this research are:
+One of the most widely accepted best practices in software development is the concept of incremental change, an essential concept of both~\citep{agileManifesto} and~\citep{extremeProg}. Refactoring remains a key step in this incremental development process to preventing technical debt from causing development to slow to a crawl.
 
-\begin{itemize}
-	\item Extending the HaRe API to better support data-driven refactorings. These refactorings are complex and require more information from the abstract syntax of GHC than prior refactorings in HaRe. The contributions to the API were focused on analysis of the types of nodes and creating a higher level interface for common small expression level transformations.
-	\item The design and implementation of a set of data-driven refactorings. This is a new category of refactorings that haven't been developed for Haskell previously.
-\end{itemize}
-  
+Much of the refactoring literature focuses on changes that need to be made to the structure of programs. The structure of a program is very important and structural refactorings can maintain the ``separation of concerns'' by extracting functions from existing definitions or ensuring that a programs names reflect what the program currently does. This thesis argues that it is just as important to maintain the ways that a program structures and evaluates the data it computes.
+
+This thesis has chosen to use the term ``data-driven'' to describe the type of refactorings that are prompted by the data that a program computes. These refactorings can be prompted by an insufficiently fine-grained data model. For example, the ``introduce type synonym'' refactoring separates certain instances of a type that are used to represent different things.
+
+This thesis also takes advantage of Haskell's call-by-need evaluation strategy which allows for control flow to be abstracted by the user. The ``generalise monad to applicative refactoring'' (see Chapter~\ref{chp:applicative}) takes code that was formally monadic and sequentially evaluated and makes it possible to evaluate it in parallel. The ``generalise maybe'' refactorings from section~\ref{genMaybe}, takes a concrete effect and makes it an abstract one that can be instantiated in multiple ways. Both of these refactorings are applied as either the programmer's understanding of the data they are working with becomes more nuanced or to prepare the program's data model for enhancement. In this way the data ``drives'' these refactorings.
 
 \section{Thesis Outline}
 
@@ -252,53 +252,69 @@ This thesis will proceed as follows:
 
 \textbf{Chapter~\ref{chp:hare}: Background: Refactoring Haskell in HaRe}
 
-This chapter will cover the history of HaRe, the technologies it depends on, and the current implementation of HaRe. Specifically there will be an overview of the GHC API~\citep{ghcApi}, the generic traversal library Scrap Your Boilerplate~\citep{syb}, and ghc-exactprint~\citep{exactprint}. This chapter will also describe how the inner workings of HaRe are implemented and the functions that compose its API. Finally it will describe the design and development process of implementing refactorings for HaRe.
+This chapter covers the history of HaRe, the technologies it depends on, and the current implementation of HaRe. Specifically there is an overview of the GHC API~\citep{ghcApi}, the generic traversal library Scrap Your Boilerplate~\citep{syb}, and ghc-exactprint~\citep{exactprint}. This chapter also describes how the inner workings of HaRe are implemented and the functions that compose its API. Finally it discuses the design and development process of implementing refactorings for HaRe.
 
 \textbf{Chapter~\ref{chp:ddRefs}: Data-Driven Refactorings}
 
-Chapter~\ref{chp:ddRefs} will be an introduction to data-driven refactorings. The chapter begins with a discussion of this type of refactoring for object-oriented languages. The rest of the chapter will describe data-driven refactorings for the Haskell programming language. This begins with a description of the ``introduce a type synonym'' the ``renaming'' refactoring of data-driven refactorings. The other two refactorings covered in this chapter are the ``generalising maybe'' and ``list to hughes list'' refactorings.
+Chapter~\ref{chp:ddRefs} introduces data-driven refactorings. The chapter begins with a discussion of this type of refactoring for object-oriented languages. The rest of the chapter describes data-driven refactorings for the Haskell programming language. First there is a description of the ``introduce a type synonym'' the ``renaming'' refactoring of data-driven refactorings. The other two refactorings covered in this chapter are the ``generalising maybe'' and ``list to hughes list'' refactorings.
 
-The ``generalising maybe'' refactoring rewrites functions that use the concrete type of \texttt{Maybe} to instead use the operations provided by the typeclasses it implements \texttt{Monad} and/or \texttt{MonadPlus}. The final refactoring describe by this chapter is the ``list to Hughes list'' refactoring. Hughes lists (also known as difference lists) are an alternative implementation for lists that support $O(n)$ time appends. This refactoring takes functions that use that standard list implementation and rewrites the function to use Hughe lists instead. The approach for this refactoring is applicable between any two types that are ``reversibly embeddable'' a concept that will be defined as well.
+The ``generalising maybe'' refactoring rewrites functions that use the concrete type of \texttt{Maybe} to instead use the operations provided by the typeclasses it implements \texttt{Monad} and/or \texttt{MonadPlus}. The final refactoring described by this chapter is the ``list to Hughes list'' refactoring. Hughes lists (also known as difference lists) are an alternative implementation for lists that support $O(n)$ time appends. This refactoring takes functions that use that standard list implementation and rewrites the function to use Hughe lists instead. The approach for this refactoring is applicable between any two types that are ``reversibly embeddable'' a concept that will be defined as well.
+
+\textbf{Chapter~\ref{generalImp}: Implementing Data-Driven Refactorings in HaRe}
+
+This chapter continues on from the refactoring designs presented in chapter~\ref{chp:ddRefs} to describe HaRe's implementation of both the ``Maybe to MonadPlus'' and the ``List to Hughes List'' refactorings. There is also be a discussion of the API that  supports the ``List to Hughes List'' refactoring and can be used to define further ``reversibly embeddable'' type refactorings. Finally this chapter will describe the enhancements made to HaRe's API, specifically the addition of high level transformation functions.  
 
 \textbf{Chapter~\ref{chp:applicative}: Generalising Monads to Applicative}
 
-This chapter will present another generalisation refactoring. Applicative functors are a, relatively, new addition to the Haskell environment. Applicative functors are an interface for sequencing effectful computations. Currently the Haskell community predominantly uses the monadic interface for effects. This chapter will describe the design and implementation of a refactoring for taking a monadic \texttt{do} statement and transforming it to use the \texttt{Applicative} (the Haskell typeclass for Applicative functors) interface instead.
+This chapter presents another generalisation refactoring. Applicative functors are a, relatively, new addition to the Haskell environment. Applicative functors are an interface for sequencing effectful computations. Currently the Haskell community predominantly uses the monadic interface for effects. This chapter will describe the design and implementation of a refactoring for taking a monadic \texttt{do} statement and transforming it to use the \texttt{Applicative} (the Haskell typeclass for Applicative functors) interface instead.
 
 This chapter also describes how the Haskell community is currently using the \texttt{Applicative} interface, based on the results of a survey of Hackage the Haskell package archive~\citep{hackage}. Finally this chapter concludes with a discussion of possible applications of the refactoring.
 
 \textbf{Chapter~\ref{chp:monadification}: Introducing Monads} 
 
-Chapter~\ref{chp:monadification} describes the monadification refactoring. Monadification is the process of introducing monads into pure code. Monads are the standard way for effects to be used in Haskell and so a refactoring to automatically add them is very useful to the community. There are many styles of monadification and this chapter will describe several of them. Finally it will discuss the implementation of the monadification refactoring in HaRe.
+Chapter~\ref{chp:monadification} describes the monadification refactoring. Monadification is the process of introducing monads into pure code. Monads are the standard way for effects to be used in Haskell and so a refactoring to automatically add them is very useful to the community. There are many styles of monadification and this chapter describes several of them. Finally it discusses the implementation of the monadification refactoring in HaRe.
 
 \textbf{Chapter~\ref{chp:related}: Related work}
 
-The final content chapter will discuss the literature related to this thesis. This chapter covers other refactoring tools for other functional languages and object-oriented languages. This chapter also discusses multiple projects that are using refactoring in unique and interesting ways such as introducing parallelism, and non-traditional programming languages. Next the chapter describes work on developing syntactic sugar for applicative functors. Finally there is a brief discussion of type changing program transformation systems.
+The final content chapter discusses the literature related to this thesis. This chapter covers other refactoring tools for other functional and object-oriented languages. This chapter also discusses multiple projects that are using refactoring in unique and interesting ways such as introducing parallelism, and non-traditional programming languages. Next the chapter describes work on developing syntactic sugar for applicative functors. Finally there is a brief discussion of type changing program transformation systems.
 
 \textbf{Chapter~\ref{chp:conc}: Conclusion}
 
 The final chapter summarises the work done for this thesis and the contributions it has made. It concludes with a discussion of future work that could be performed on HaRe.
 
+\section{Contributions of this Research}
+
+The work in this thesis was carried out in HaRe (the \textbf{Ha}skell \textbf{Re}factorer). This study focused on adding additional refactorings to HaRe of a new type. Rather than being motivated by the structural problems of a program data-driven refactorings seek to resolve issues that are caused by the data types a program uses. The contributions of this research are:
+
+\begin{itemize}
+	\item Extending the HaRe API to better support data-driven refactorings. These refactorings are complex and require more information from the abstract syntax of GHC than prior refactorings in HaRe. The contributions to the API were focused on analysis of the types of nodes and creating a higher level interface for common small expression level transformations. These changes are described in \textbf{chapter~\ref{generalImp}}.
+	\item The design and implementation of the ``generalise maybe'' and ``list to Hughes list'' refactoring, described in chapters~\ref{chp:ddRefs} and ~\ref{generalImp}. The ``generalise maybe'' refactoring is a way of taking a concrete effect and turning it into an abstract one so that it can be instantiated in multiple ways. The ``list to Hughes list'' refactoring describes a way to rewrite  a program's data model to use a different type with a similar interface.
+	\item The design and implementation of the ``Generalise Monads to Applicative'' refactoring, chapter~\ref{chp:applicative}. Effects in Haskell are typically handled using monads, a powerful abstraction that allows the type system to check the type of the effects that are being performed by a program. Since the introduction of monads the Haskell community has developed more fine-grained approaches to effect handling. This refactoring allows software systems to handle effects using the applicative as opposed to the monadic interface.
+	\item The design and implementation of the ``monadification'' refactoring, see chapter~\ref{chp:monadification}. Monadification is the process of making a program work over a monadic type rather than a pure one. This refactoring supports the evolution of pure programs to effectful ones.
+\end{itemize}
+
 \chapter{Background: Refactoring Haskell in HaRe}
 \label{chp:hare}
 
 
-Work on HaRe started in early 2003 at the University of Kent. HaRe was originally created by Huiqing Li, Claus Reinke, and Simon Thompson~\citep{refacWebsite}. This chapter begins with a brief discussion of the original implementation of HaRe. HaRe was originally implemented to support the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is the current formal language standard but the Glasgow Haskell Compiler (GHC) has become the de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that do everything from changing the type system to adding new syntax features~\citep{langExts}.
+Work on HaRe started in early 2003 at the University of Kent. HaRe was originally created by Huiqing Li, Claus Reinke, and Simon Thompson~\citep{refacWebsite}. The first implementation of HaRe supported the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is the current formal language standard but the Glasgow Haskell Compiler (GHC) has become the de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that do everything from changing the type system to adding new syntax features~\citep{langExts}.
 
-
+This chapter begins, in section~\ref{hareOrig}, with a brief discussion of the original implementation of HaRe. This section includes a description of programmatica~\citep{programatica}, HaRe's first language backend, and Strafunski-StrategyLib~\citep{strafunski}, the generic programming library that assisted HaRe in transforming the abstract syntax tree of source programs. Next the chapter describes the current libraries that HaRe depends on. Section~\ref{ghcApi} describes the GHC API, instead of needed a separate project as a language backend GHC provides an API to access the language implementation. The generic programming library that HaRe uses has changed as well. Section~\ref{genProg} describes how HaRe uses \textit{Scrap Your Boilerplate}~\citep{syb} to perform tree traversals and transformations. Section~\ref{ghcExactprint} describes the pretty-printer HaRe uses \textit{ghc-exactprint}~\citep{exactprint}. Finally the chapter will conclude with a description of the current implementation of HaRe in section~\ref{hareCurr}.
 
 \section{The original implementation of HaRe}
+\label{hareOrig}
 
-Implementing an automated refactoring system has several dependencies, a frontend for the language that you are targeting, a generic programming library, and a pretty printer. The language frontend is required for the refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs the modified AST in a form recognizable by the author of the original program. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
+Implementing an automated refactoring system has several dependencies including, a frontend for the language that is targeted, a generic programming library or some means of making generic traversals of abstract syntax trees, and a pretty printer. The language frontend is required for the refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs as source the modified AST in a form recognizable by the author of the original program. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
 
 \subsection{Programatica and Strafunski}\label{prog&Strafunski}
 
-Programatica was a project at the OGI School of Science and Engineering to build tool support for validating Haskell programs~\citep{programaticaTools}. The Programatica team open sourced their frontend so that other tools could also use it~\citep{refacWebsite}. The HaRe team chose to use Programatica over other available front ends (such as GHC's internal front end) because it was the simplest front end that supported the full Haskell 98 standard along with a number of its extensions~\citep{huiqingThesis}. Programatica's Haskell front end is broken up into multiple components including a lexer, a parser, an abstract syntax, a module system, a type checker, and a pretty printer. Programatica's frontend allows for HaRe to focus on refactoring only rather than having to build all of these components as well.
+Programatica was a project at the OGI School of Science and Engineering to build tool support for validating Haskell programs~\citep{programaticaTools}. The Programatica team open sourced their frontend so that other tools could also use it~\citep{refacWebsite}. At the time there was no API to access the internals of GHC so the HaRe team chose to use Programatica over other available front ends because it was the simplest front end that supported the full Haskell 98 standard along with a number of its extensions~\citep{huiqingThesis}. Programatica's Haskell front end is broken up into multiple components including a lexer, a parser, an abstract syntax tree data type, a module system, a type checker, and a pretty printer. Programatica's frontend allows for the implementers of HaRe to focus on refactoring only rather than having to build all of these components as well.
 
 Programatica's abstract syntax contains 20 data types with 110 data constructors in total. Working with the syntax directly would introduce a large amount of "boilerplate" code into HaRe that would make maintenance and reusability of much more difficult~\citep{huiqingThesis}. Instead HaRe used Strafunski-StrategyLib, a combinator library for generic programming, to traverse the abstract syntax tree (AST) of the source code~\citep{strafunski}. 
 
-Commonly transforming a program only modifies small sections of the source program's AST. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used; all other sections of the AST remain unmodified. A commonly used operation in Strafunski takes a function that works on a particular data type (or types)\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replacing it with the new name.} and extends it to work on all types by leaving all other types unmodified. Strafunski also provides "strategies" that define how that extended function will be applied to the syntax tree~\citep{strafunski}\footnote{e.g. top-down or bottom-up}. The using Strafunski will be discussed in more detail in section~\ref{genProg}.
+Commonly transforming a program only modifies small sections of the source program's AST. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used; all other sections of the AST remain unmodified. A commonly used operation in Strafunski takes a function that works on a particular data type (or types)\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replaces it with the new name.} and extends it to work on all types by leaving all other types unmodified. Strafunski also provides "strategies" that define how that extended function will be applied to the syntax tree as a traversal of the tree~\citep{strafunski}\footnote{e.g. top-down or bottom-up}. Using Strafunski will be discussed in more detail in section~\ref{genProg}.
 
-These two dependencies allowed the original implementation of HaRe to obtain the abstract syntax tree of source code to be refactored, traverse and transform that AST, and output the modified program. All these tasks are things that the current implementation of HaRe needs to do but the dependencies that it relies on have changed somewhat. The Haskell standard was updated in 2010~\citep{haskell2010} and GHC continues to expand the number of language extensions it supports. Unfortunately Programatica has not kept up with these changes and does not support anything beyond Haskell 98. At the same time GHC's own API has matured so that it can replace Programatica as HaRe's front end. HaRe now relies on this and a few other projects for its language frontend. For generic traversals "Scrap Your Boilerplate" has been added as a dependency though Strafunski-StrategyLib is still used~\citep{syb}.
+These two dependencies allowed the original implementation of HaRe to obtain the abstract syntax tree of source code to be refactored, traverse and transform that AST, and output the modified program. All these tasks are things that the current implementation of HaRe needs to do but the dependencies that it relies on have changed somewhat. The Haskell standard was updated in 2010~\citep{haskell2010} and GHC continues to expand the number of language extensions it supports. Unfortunately Programatica has not kept up with these changes and does not support anything beyond Haskell 98. At the same time GHC's own API has been defined and matured so that it can replace Programatica as HaRe's front end. HaRe now relies on this and a few other projects for its language frontend. For generic traversals "Scrap Your Boilerplate" has been added as a dependency though Strafunski-StrategyLib is still used in HaRe~\citep{syb}.
  
 \subsection{HaRe's original refactorings}\label{origRefactorings}
 
@@ -306,26 +322,28 @@ HaRe's original refactorings fall into three categories, structural, module, and
 
 \subsubsection{Structural Refactorings}
 
-Structural refactorings principally concern the name and scope of entities defined in a program~\citep{huiqingThesis}. These refactorings modify functions, and smaller sections of code. A traditional example of this is the renaming refactoring. 
+Structural refactorings principally concern the name and scope of entities defined in a program~\citep{huiqingThesis}. These refactorings target functions, and smaller sections of code.  A traditional example of this is the renaming refactoring. 
 
-Renaming is one of the most basic refactorings. The purpose of renaming is to change the name of a given identifier. A renaming refactoring could target a variable, function name, type, or any other piece of syntax that a programmer can name. This allows for the way in which you refer to your code to easily stay up to date with what your code actually does. 
+Renaming is one of the most basic refactorings. The purpose of renaming is to change the name of a given identifier. A renaming refactoring could target a variable, function name, type, or any other piece of syntax that a programmer can name. This allows for the names in code to be in sync with the purpose of that code. 
+
+Though the target of these refactorings are small pieces of code the changes made to the code base can affect modules throughout the codebase. The renaming refactoring, for example, can affect any other module that uses the renamed object.
 
 Other examples of structural refactorings include deleting a definition, duplicating a function, and adding an argument~\citep{huiqingThesis}.
 
 \subsubsection{Module Refactorings}
 
-Module refactorings concern the imports and exports of an individual module, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be "clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the "move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another and fixes the imports and exports of any affected modules. For example if we were moving some function \texttt{foo} from module \texttt{A} to module \texttt{B} any external dependencies of \texttt{foo} need to be imported into \texttt{B} and if those dependencies are no longer used in \texttt{A} the import relevant statements should be removed. If \texttt{foo} is still being used in \texttt{A} then \texttt{A} needs to import \texttt{B} (if it does not already do so). Finally any other modules that currently depend on \texttt{foo} need to now import \texttt{B} (if it's not already imported) and remove the import of \texttt{A} (assuming none of \texttt{A}'s other definitions are used).
+Module refactorings concern the imports and exports of an individual module, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be "clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the "move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another and fixes the imports and exports of any affected modules. For example if we were moving some function \texttt{foo} from module \texttt{A} to module \texttt{B} any external dependencies of \texttt{foo} need to be imported into \texttt{B} and if those dependencies are no longer used in \texttt{A} the relevant import statements should be removed. If \texttt{foo} is still being used in \texttt{A} then \texttt{A} needs to import \texttt{B} (if it does not already do so). Finally any other modules that currently depend on \texttt{foo} need to now import \texttt{B} (if it's not already imported) and remove the import of \texttt{A} (assuming none of \texttt{A}'s other definitions are used).
 
 \subsubsection{Data Type Based Refactorings}
 
 The third category of refactorings are those that are associated with data type definitions~\citep{huiqingThesis}. "Add field names" is a good example of a data-oriented refactoring.  The add field names refactoring will add field names to a data type. These names can then be used as selector functions that make extraction of a particular part of a type a simple function call. The new field names are generated by HaRe but can be renamed by the user~\citep{huiqingThesis}.
 
-These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers an API was exposed so that other developers could implement their own refactorings~\citep{hareApi}.
+These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers an API was exposed so that other developers could implement their own refactorings which will be discussed in more detail in the next section~\citep{hareApi}.
 
 
 \subsection{The HaRe API}\label{hareApi}
 
-Early in the development cycle of HaRe it was restructured to expose an API for implementing refactorings and general Haskell program transformations~\citep{hareApi}. The HaRe API contains a collection of functions for program analysis and transformation of Haskell 98 programs. These functions along with the functionality provided by Strafunski and Programatica form the basis for implementing basic refactorings~\citep{hareApi}.
+Early in the development cycle of HaRe it was restructured to expose an API for implementing refactorings and general Haskell program transformations~\citep{hareApi}. The HaRe API contains a collection of functions for program analysis and transformation of Haskell 98 programs. These functions, along with the functionality provided by Strafunski and Programatica, form the basis for implementing basic refactorings~\citep{hareApi}.
 
 The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the user but because of generic programming with Strafunski only the to be transformed parts of the AST have to be explicitly referenced in a refactoring~\citep{hareApi}. Another key feature of the API was to hide layout and comment preservation allowing the programmer to focus on program transformation instead. Each subtree in the AST is tagged with its absolute location in the source file. Any modifications to the AST will change the location of all elements that occur after the change. The API abstracts over this cascade of changes that follows even the simplest of changes. The HaRe API transformation functions modify the token stream and the AST simultaneously which keeps refactoring definitions free of this location bookkeeping ~\citep{hareApi}. 
 
@@ -333,9 +351,10 @@ The overall goal of the HaRe API is to help ensure the correctness of new refact
  
 \section{Underlying technologies}
 
-As was mentioned in Section~\ref{prog&Strafunski}, HaRe's dependencies have changed somewhat in its current implementation. HaRe originally used Programatica as its front end, now the language front end is composed of several projects now, the GHC API, ghc-mod, and ghc-exactprint~\citep{ghcApi}, \citep{ghcMod}, and \citep{exactprint}. The following sections will describe these dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
+As was mentioned in Section~\ref{prog&Strafunski}, HaRe's dependencies have changed somewhat in its current implementation. HaRe originally used Programatica as its front end, now the language front end is composed of several projects now, the GHC API~\citep{ghcApi}, ghc-mod~\citep{ghcMod}, and ghc-exactprint~\citep{exactprint}. The following sections will describe these dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
 
 \section{The GHC API}
+\label{ghcApi}
 
 Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is composed of several smaller components that each correspond to a separate compiler stage. GHC's executable consists of a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
 
@@ -348,7 +367,7 @@ Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is
 	\caption{GHC Compiler stages.}
 \end{figure}
 
-Some of the major components and the order that GHC uses them are shown in figure~\ref{compilerStages} which has been adapted from~\citep{ghcDesign}. This figure is not a complete list of all the components GHC uses just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
+Some of the major components and the order in which they are used in GHC are shown in figure~\ref{compilerStages} which has been adapted from~\citep{ghcDesign}. This figure is not a complete list of all the components GHC uses, just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
 
 The top level datatype for all of the GHC abstract syntax is \texttt{HsSyn} ~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier type; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
 
@@ -358,51 +377,89 @@ There are five name types that GHC uses, they are:
 
 \begin{itemize}
 	\item \texttt{OccName} is the simplest type of name. It is just a wrapper around a \texttt{FastString} and an optional \texttt{NameSpace}. An \texttt{OccName} is contained in each of the other four identifier types.
-	\item \texttt{RdrName} names are produced by GHC's parser. \texttt{RdrName}s aren't much more that an \texttt{OccName} with optional module information if the source name has been qualified. 
-	\item \texttt{Name}s are produced by the renamer. A \texttt{Name} contains an \texttt{OccName} and a \texttt{Unique} that differentiates \texttt{Name}s that have the \texttt{OccName}. They have also had their scoping and binding resolved.
-	\item \texttt{Id} \& \texttt{Var} are the identifiers produced by the typechecker.\footnote{\texttt{Id} is just a synonym for \texttt{Var}.} These identifiers both contain a \texttt{Name}, a \texttt{Unique}, and a \texttt{Type} or \texttt{Kind}. An \texttt{Id} has a definite type whereas a \texttt{Var} may contain type variables that only have a kind.   
+	\item \texttt{RdrName} names are produced by GHC's parser. \texttt{RdrName}s are essentially just an \texttt{OccName} with optional module information if the source name has been qualified. 
+	\item \texttt{Name}s are produced by the renamer. A \texttt{Name} contains an \texttt{OccName} and a \texttt{Unique} that differentiates \texttt{Name}s that have the same \texttt{OccName}. They have also had their scoping and binding resolved. Each name contains the source span where the name was defined and a data type that describes what type of \texttt{Name} it is (e.g. a name defined internally to the module or a name from another module).
+	\item \texttt{Id} \& \texttt{Var} are the identifiers produced by the typechecker.\footnote{\texttt{Id} is just a synonym for \texttt{Var}.} These identifiers contain a \texttt{Name}, and a \texttt{Unique}. They also contain type information but the type of \texttt{Var}s may contain type variables that have a kind rather than a type whereas the type of an \texttt{Id} will be a monotype. 
 \end{itemize}
 
-These identifier types change throughout the compilation process but these names only parameterise the syntax tree, the shape of the tree itself stays the same through compilation. 
+These identifier types change throughout the compilation process but these names only parameterise the syntax tree, the shape of the tree itself stays the same throughout compilation. 
 
 \subsection{GHC's syntax tree}
-GHC's abstract syntax is currently made up of over 90 data types. Many of those types has multiple constructors, the expression data type \texttt{HsExpr} for example has over 40 constructors. This section will briefly introduce the structure of GHC's abstract syntax tree.
+GHC's abstract syntax is currently made up of over 90 data types. Many of those types have multiple constructors, the expression data type \texttt{HsExpr} for example has over 40 constructors. This section will briefly introduce the structure of GHC's abstract syntax tree.
 
 \subsubsection{Common syntax types}
 
-The most common type in any given piece of GHC abstract syntax would be a \texttt{Located} as seen in listing~\ref{located}.
+The most common type in any given piece of GHC abstract syntax would be a \texttt{Located} as seen in figure~\ref{located}.
 
-\begin{lstlisting}[caption={The \texttt{located} type.},label=located]
+\begin{figure}[t]
+\begin{lstlisting}
 
 type Located e = GenLocated SrcSpan e
 
 \end{lstlisting}
+\caption{The \texttt{located} type.}
+\label{located}
+\end{figure}
 
-\texttt{Located} is used to tag syntax elements with their original position in a source file. The \texttt{SrcSpan} contains the filename that the span comes from and then the start and end columns and start and end lines that the span covers.\footnote{GHC has small optimisation where if a span exists entirely on a single line it only stores the single line number and the start and end column, instead of storing the same line number twice.} 
+\texttt{Located} is used to tag syntax elements with their position in a source file. The \texttt{SrcSpan} contains the filename that the span comes from and then the start and end columns and start and end lines that the span covers.\footnote{GHC has small optimisation where if a span exists entirely on a single line it only stores the single line number and the start and end column, instead of storing the same line number twice.} 
 
-There are located versions of many of the AST types. For example, \texttt{HsExpr} is the type that represents expressions there is a related type \texttt{LHsExpr} that represents a located expression.
+There are located versions of many of the AST types. For example, \texttt{HsExpr} is the type that represents expressions, and there is a related type \texttt{LHsExpr} that represents a located expression whose definition is shown in figure~\ref{lhsexpr}.
 
-\begin{lstlisting}[caption={The located expression}]
+\begin{figure}[t]
+\begin{lstlisting}
 type LHsExpr id = Located (HsExpr id)
 \end{lstlisting}
+\caption{The located expression}
+\label{lhsexpr}
+\end{figure}
 
-The \texttt{HsExpr} type represents much of the Haskell language such as function application, lambdas, if and case statements. Pattern matching is handled by a \texttt{MatchGroup} type. Each \texttt{MatchGroup} contains a list of \texttt{Match}es and some typing information. Consider the following case statement
+The \texttt{HsExpr} type represents much of the Haskell language such as function application, lambdas, if and case statements. Pattern matching is handled by a \texttt{MatchGroup} type. Each \texttt{MatchGroup} contains a list of \texttt{Match}es and some typing information. Consider the case statement in figure~\ref{caseStmt}.
 
-\begin{lstlisting}[caption={A case statement}, label=caseStmt]
+\begin{figure}[t]
+\begin{lstlisting}
 case (x, y) of
 	(Just i, Just j) -> Just (i+j)	
 	(Just _, Nothing) -> x
 	(Nothing, Just _) -> y
 	(Nothing, Nothing) -> Nothing
 \end{lstlisting}
+\caption{A case statement}
+\label{caseStmt}
+\end{figure}
 
-This would be parsed into the \texttt{HsCase} constructor of \texttt{HsExpr}. This constructor is seen in listing~\ref{hscase}, the first constructor argument represents the expression that the patterns are matched against, (the tuple \texttt{(x,y)} in this case). The second argument to \texttt{HsCase} represents all four of the matches in the case statement. \texttt{MatchGroup}s are used to represent any code that associates some patterns with a right hand side expression. Function bindings, lambda expression, and case statements all use \texttt{MatchGroup}s. 
+This would be parsed into the \texttt{HsCase} constructor of \texttt{HsExpr}. This constructor is seen in figure~\ref{hscase}, the first constructor argument represents the expression that the patterns are matched against, (the tuple \texttt{(x,y)} in this case). The abstract syntax tree of this expression is shown in figure~\ref{caseAST}. The second argument to \texttt{HsCase} represents all four of the matches in the case statement. \texttt{MatchGroup}s are used to represent any code that associates some patterns with a right hand side expression. Function bindings, lambda expression, and case statements all use \texttt{MatchGroup}s. 
 
-\begin{lstlisting}[caption={The \texttt{HsCase} constructor}, label=hscase]
+\begin{figure}[t]
+\begin{lstlisting}
 HsCase (LHsExpr id) (MatchGroup id (LHsExpr id))	
 \end{lstlisting}
+\caption{The \texttt{HsCase} constructor}
+\label{hscase}
+\end{figure}
 
-In the case expression from listing~\ref{caseStmt} each of the four pattern matches is a \texttt{Match} in the expressions \texttt{MatchGroup}. Each \texttt{Match} associates a left hand side pattern with the appropriate right hand side expression.
+\begin{figure}[t]
+\begin{lstlisting}
+(L {case.hs:(3,11)-(7,31)} 
+                 (HsCase 
+                  (L {case.hs:3:16-21} 
+                   (ExplicitTuple 
+                    [
+                     (L {case.hs:3:17} 
+                      (Present 
+                       (L {case.hs:3:17} 
+                        (HsVar 
+                         (Unqual {OccName: x}))))),
+                     (L {case.hs:3:20} 
+                      (Present 
+                       (L {case.hs:3:20} 
+                        (HsVar 
+                         (Unqual {OccName: y})))))]))
+\end{lstlisting}
+\caption{The fragment of parsed abstract syntax representing the expression being pattern matched in figure~\ref{caseStmt}.}
+\label{caseAST}
+\end{figure}
+
+In the case expression from figure~\ref{caseStmt} each of the four pattern matches is a \texttt{Match} in the expressions \texttt{MatchGroup}. Each \texttt{Match} associates a left hand side pattern with the appropriate right hand side expression. 
 
 \subsubsection{The syntax tree}
 The previous section gave a brief overview of GHC's identifiers and its representation of expressions. This section describes the broader picture, the representation of whole Haskell programs.  
@@ -418,20 +475,30 @@ data HsDecl id =
 	| ValD  (HsBind id)
 \end{lstlisting}
 
-\texttt{HsDecl} is only provides a single type that describes what sort of declaration it is. There is very little information stored at this level, the inner type is the "payload" of the declaration (e.g. \texttt{HsBind} or \texttt{TyClDecl}). These payload types are what store the type and expression level abstract syntax of Haskell that was described in the previous section.
+\texttt{HsDecl} only provides a high level categorisation of what type it is. There is very little information stored at this level, the inner type is the "payload" of the declaration (e.g. \texttt{HsBind} or \texttt{TyClDecl}). These payload types are what store the type and expression level abstract syntax of Haskell that was described in the previous section.
 
+Some notable payload types are \texttt{TyClDecl}, \texttt{InstDecl}, \texttt{HsBind}, and \texttt{Sig}. \texttt{TyClDecl} represents a family, type synonym, data, or type class declaration. The \texttt{InstDecl} is used to represent the instance declarations for type classes, and data or type families. The real workhorse of the language is \texttt{HsBind}. \texttt{HsBind} represents functions and pattern bindings (e.g. \texttt{(x,y) = (1,2)}). The \texttt{HsBind} type also has constructors that are introduced by the type checker such as dictionary binding. Finally \texttt{Sig} is the data type that represents type signatures. 
 
-\section{Generic programming}\label{genProg}
-The need for a generic programming library, as previously discussed in section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}.
+\section{Generic programming}
+\label{genProg}
+
+The need for a generic programming library, as previously discussed in section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}. 
+
+SYB is included with GHC and has become the Haskell community's standard generic traversal library, however HaRe still uses Strafunski because it provides ``stop'' traversals. These traversals (stop top down type preserving and type unifying) descend the tree until the strategy ``succeeds'' (that is the extended function can be applied) and then stops. Essentially it cuts a line across the abstract syntax tree where everything below the line is unvisited. This traversal is useful when refactoring because of how the ASTs types are nested within each other. For example, a refactoring commonly wants to modify the body of a function and the stop traversals ensure that when the extended function is applied it is applied with the expression representing the whole binding rather than sub-expressions.
+
 \subsection{Generic Traversals}
 The Stratego/XT library was one of first systems for programming tree transformations in a systematic way~\citep{stratego}. Stratego developed the idea of a transformation strategy. A strategy is the combination of a term rewriting function and a traversal function that describes how that rewriting function should be applied to a tree of terms. Stratego provides combinators that help construct term rewriting functions and tree traversal functions \citep{stratego}.
 
-Stratego is an untyped transformation system and so was unsuitable for working with the statically typed Haskell.  
+Stratego is an untyped transformation system and so was unsuitable for working with the statically typed Haskell. Strafunski was ``largely inspired'' by Stratego, but for a statically typed context~\citep{strafunski}.
+  
 \subsection{Scrap Your Boilerplate}\label{syb}
 
-	Suppose there was a simple expression language that contained integers, integer addition, assignment, and variables. This language is represented by the type defined below.
+	Scrap Your Boilerplate (SYB) is a generic traversal library for Haskell that was inspired by Strafunski~\citep{syb}. SYB comes with GHC and has become the most used generic programming library in the Haskell community.\footnote{According to \url{http://packdeps.haskellers.com/reverse}} 
+
+	Suppose there was a simple expression language that contained integers, integer addition, assignment, and variables. This language is represented by the type defined in figure~\ref{expression} and a function that works over this type to rename a variable "x" to "a" is defined in figure~\ref{renamexvar}.
 	
-	\begin{lstlisting}[caption={A simple expression type.},label=expression]
+	\begin{figure}[t]
+	\begin{lstlisting}
 type Name = String
 
 data Expr =
@@ -441,9 +508,11 @@ data Expr =
    | Assign Name Expr
       deriving(Data,Typeable)
 	\end{lstlisting}
+	\caption{A simple expression type.}
+	\label{expression}
+	\end{figure}
 	
-	A function to rename a variable "x" to "a" is defined below:
-	
+	\begin{figure}[t]
 	\begin{lstlisting}
 renameXVar :: Expr -> Expr
 renameXVar (Var "x") = Var "a"
@@ -453,12 +522,18 @@ renameXVar (Assign c e) =
 renameXVar (Add e1 e2) = Add (renameXVar e1) (renameXVar e2)
 renameXVar v = v
 	\end{lstlisting}
+	\caption{A function to rename the "x" variable.}
+	\label{renamexvar}
+	\end{figure}
 	
-	This is fairly straightforward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what is known as "boilerplate" code~\citep{syb}. Boilerplate code is highly repetitive, verbose, and difficult to debug and maintain.  In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} become much more time-consuming and a nightmare to maintain. 
+	There are four cases to the \texttt{renameXVar} function. The first case matches when \texttt{renameXVar} is called with a \texttt{(Var "x")} value. This is one of the cases that the function will replace the "x" name with an "a" name. The second case matches an assignment and is the other case when actual ``work'' happens. In this case the function needs to check if the variable being assigned is an "x" or not, if it is then the name being assigned is replaced with "a" otherwise the name remains the same. Then there is a recursive call replace the name in the right hand side of the assignment. The other two cases will not directly modify an expression. In the \texttt{Add} case there is just a recursive call to perform replacements in its sub-expressions. The final case is just a catch-all term that returns its parameter. This will be called when \texttt{renameXVar} is called with a \texttt{Value} or a \texttt{Var} that isn't \texttt{"x"}.
 	
-	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as:
+	This is fairly straightforward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what is known as "boilerplate" code~\citep{syb}. Boilerplate code is highly repetitive, verbose, and difficult to debug and maintain.  In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} would become much more time-consuming and a nightmare to maintain. 
 	
-	\begin{verbatim}
+	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as shown in figure~\ref{renameSYB}.
+	
+	\begin{figure}[t]
+	\begin{lstlisting}
 import Data.Generics	
 	
 rename :: Name -> Name
@@ -467,7 +542,10 @@ rename n = n
 
 renameXVar :: Expr -> Expr
 renameXVar = everywhere (mkT rename)
-	\end{verbatim} 
+	\end{lstlisting}
+	\caption{\texttt{renameXVar} written using SYB}
+	\label{renameSYB}
+	\end{figure} 
 	
 	This example nicely illustrates the four key components of an SYB traversal~\citep{syb}.
 
@@ -478,15 +556,15 @@ renameXVar = everywhere (mkT rename)
 		\item The data type to be traversed must be an instance of the \texttt{Typeable} and \texttt{Data} classes (as explained below)
 	\end{itemize}
 	
-	From the example mentioned previously the "interesting" part of this traversal is the rename function because this function contains the code that actually changes the name "x" to the name "a." The \texttt{mkT} function extends the type of the \texttt{rename} function to \texttt{Typeable~a = > a~ -> a}. 
+	From the example mentioned previously the "interesting" part of this traversal is the rename function, because this function contains the code that actually changes the name "x" to the name "a." The \texttt{mkT} function extends the type of the \texttt{rename} function to \texttt{Typeable~a = > a~ -> a}. 
 	
-	Type extension allows for the \texttt{rename} function to work over any members of the \texttt{Typeable} class rather than just \texttt{Name}s. The extended version of \texttt{rename} will work as expected when provided with an argument of type \texttt{Name}, and will act as the identity function if an argument of any other type is provided.
+	Type extension allows for the \texttt{rename} function to work over any members of the \texttt{Typeable} class rather than just \texttt{Name}s. The extended version of \texttt{rename} will work as expected when provided with an argument of type \texttt{Name}, and if an argument of any other type is provided the traversal will continue onto the arguments component parts if it has any and returns the argument unchanged otherwise.
 	
-	The \texttt{everywhere} function is this traversal's generic combinator, \texttt{everywhere} applies a generic function to every node in the tree. Finally as you can see in the declaration of \texttt{Expr} derives both the Typeable and Data classes so it can be traversed by \texttt{everywhere}. A member of the Typeable class has defined a generic representation of itself and members of the Data class implement generic folding operations. Put together these two classes are what allow a data type to be generically traversed. 
+	The \texttt{everywhere} function is this traversal's generic combinator, \texttt{everywhere} applies a generic function to every node in the tree in a bottom-up manner. Finally as you can see in the declaration of \texttt{Expr} derives both the \texttt{Typeable} and \texttt{Data} classes so it can be traversed by \texttt{everywhere}. A member of the \texttt{Typeable} class has defined a generic representation of itself and members of the \texttt{Data} class implement generic folding operations. Put together these two classes are what allow a data type to be generically traversed. 
 	
 \subsubsection{Types of Generic Algorithms}
 
-SYB defines three types of generic algorithms, transformations, queries, and monadic transformations. The \texttt{rename} example from the previous section is an example of a transformation. Transformations preserve the type of the structure that is traversed. Queries, on the other hand, are "type unifying" algorithms. Queries are good for summarizing information contained in a data structure. You would use a query, for example, to traverse an expression and collect all of it's the bound variables. Using the same expression type (listing~\ref{expression}) from the previous section the following function extracts all bound variables from a given expression.
+SYB defines three types of generic algorithms, transformations, queries, and monadic transformations. The \texttt{rename} example from the previous section is an example of a transformation. Transformations preserve the type of the structure that is traversed. Queries, on the other hand, are "type unifying" algorithms. Queries are good for summarizing information contained in a data structure. You would use a query, for example, to traverse an expression and collect all of its bound variables. Using the same expression type (listing~\ref{expression}) from the previous section the following function extracts all bound variables from a given expression.
 
 \begin{lstlisting}[caption={A generic function that collects all bound variables from an expression.}]
 bVars :: Expr -> [Name]
@@ -497,7 +575,7 @@ bVars e = everything (++) ([] `mkQ` f) e
 
 \texttt{everything}, as seen in the \texttt{bVars} function from the previous listing, is the generic query combinator that summarises all nodes, top down from left to right~\citep{sybDocs}. The first argument to \texttt{everything} is the function it uses to combine separate results from the query. In this case all the lists of names will be appended together. The "interesting" function \texttt{f} that actually returns a \texttt{Name} when one is being bound is extended via the \texttt{mkQ} function. \texttt{mkQ} will apply \texttt{f} when possible otherwise it will just return the empty list.
 
-It is also useful a lot of the time to do transformations from within some monadic context. A simple example of this would be to rewrite the finding bound variables example from previously but instead the list of found results is stored as a piece of state.
+It is also useful to do transformations from within some monadic context. A simple example of this would be to rewrite the finding bound variables example from previously but instead the list of found results is stored as a piece of state.
 
 \begin{lstlisting}[caption={Finding bound variables using the state monad}]
 type TransformState = State [Name]
@@ -525,19 +603,20 @@ renameVars e = everywhereM (mkM f) e
           f e = return e
 \end{lstlisting}
  
-This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by a \texttt{GhcMonad} all while modifying the abstract syntax.   
+This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by an instance of \texttt{GhcMonad} all while modifying the abstract syntax. The GHC API's operations all work within the \texttt{GhcMonad} that provides the features GHC needs to compile a single Haskell source file such as IO, logging warning, exception handling, and keeping track of the compilation session~\citep{ghcApi}.   
 	 
 \section{ghc-exactprint}
+\label{ghcExactprint}
 
-After using generic programming to transform the parsed abstract syntax, HaRe needs to be able to print the modified code. A challenging part of building a refactoring tool is that a user wont want non refactored parts of their code to change at all. HaRe needs to preserve the user's comments and spacing from the source file.
+After using generic programming to transform the abstract syntax, HaRe needs to be able to print the modified code. A challenging part of building a refactoring tool is that a user will not want non-refactored parts of their code to change at all. HaRe needs to preserve the user's comments and spacing from the source file.
 
-Prior to GHC version 7.10.1 the location of certain keywords and punctuation (such as \texttt{do} and \texttt{let}) and user comments were lost after parsing. This made parsing and then printing an exact copy of a GHC Haskell file impossible. GHC's 7.10.1 release added annotations for the "lost" syntax elements that had previously not been represented in the parsed abstract syntax~\citep{apiAnns}. 
+Prior to GHC version 7.10.1 the location of certain keywords and punctuation (such as \texttt{do} and \texttt{let}) and user comments were lost after parsing. This made parsing and then printing an exact copy of a GHC Haskell source file using the AST alone impossible. GHC's 7.10.1 release added annotations for the "lost" syntax elements that had previously not been represented in the parsed abstract syntax~\citep{apiAnns}. 
 
 The parser produces a map that associates the keyword and the source span that the keyword can be found in with that keywords exact location. This approach was taken to avoid littering the existing AST with functionally meaningless keyword data~\citep{apiAnns}. 
 
 Even with the position of every syntax element being recorded, printing a module after the AST has been modified is not easy. Many AST elements are "located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
 
-Ghc-exactprint simplifies this immensely by allowing us to position elements relative to their neighbours rather than absolutely~\citep{exactprint}. After parsing a source file HaRe takes the annotations GHC returns with the parsed abstract syntax and relativise them using ghc-exactprint. For each syntax element ghc-exactprint creates a new data type called an "\texttt{Annotation}" which contains an offset that indicates where this element should be positioned compared to the previous element. Take for example the following definition.
+Ghc-exactprint simplifies this immensely by allowing us to position elements relative to their neighbours rather than absolutely~\citep{exactprint}. After parsing a source file HaRe takes the annotations GHC returns with the parsed abstract syntax and relativises them using ghc-exactprint. For each syntax element ghc-exactprint creates a new data type called an "\texttt{Annotation}" which contains an offset that indicates where this element should be positioned compared to the previous element. Take for example the following definition.
 
 \begin{lstlisting} 
 f a = (a+ 1 )
@@ -545,7 +624,7 @@ f a = (a+ 1 )
 
 The absolute position of the plus sign is row one column nine (GHC's locations are one-based) but using ghc-exactprint we instead can think of the position of the plus sign using the offset \texttt{(0,0)} because there is no space between it and the previous element (the variable \texttt{a}). Using this system the number literal following the plus sign has an offset of (0,1) because of the single column of space before it. 
 
-The \texttt{Annotation}s are stored in a map that is keyed based on the parsed location of a syntax element and the string representation of the AST constructor. In the previous example the right hand side of the definition is located at the source span (1,7)-(1,13) which stands for row one columns seven through thirteen and GHC represents this expression with the \texttt{HsPar} which is a constructor for the \texttt{HsExpr} type. The source span and the constructor together can be combined to retrieve the annotation data associated with this bit of the AST. This syntax tree has two elements associated with it, the opening and closing parenthesis. Each of these keywords is given its own offset, which in this case is (0,0) for the opening parenthesis\footnote{The offset in this case is (0,0) and not (0,1) as you might expect because the space between the equals sign and the opening parenthesis is represented in the offset for the entire right hand side expression.} and (0,1) for the closing parenthesis. We could obviously infer from the use of the \texttt{HsPar} constructor that this tree is wrapped in parenthesis however the users specific spacing would be lost without the annotations.
+The \texttt{Annotation}s are stored in a map that is keyed based on the parsed location of a syntax element and the string representation of the AST constructor. In the previous example the right hand side of the definition is located at the source span (1,7)-(1,13) which stands for ``row one columns seven through thirteen'' and GHC represents this expression with the \texttt{HsPar} constructor for the \texttt{HsExpr} type. The source span and the constructor together can be combined to retrieve the annotation data associated with this fragment of the AST. This syntax tree has two elements associated with it, the opening and closing parenthesis. Each of these keywords is given its own offset, which in this case is (0,0) for the opening parenthesis\footnote{The offset in this case is (0,0) and not (0,1) as you might expect because the space between the equals sign and the opening parenthesis is represented in the offset for the entire right hand side expression.} and (0,1) for the closing parentheses. We could obviously infer from the use of the \texttt{HsPar} constructor that this tree is wrapped in parentheses however the user's specific spacing would be lost without the annotations.
 
 Comments are another element of a source file that prior to GHC 7.10.1 were "lost" after parsing. Using ghc-exactprint comments are stored in the annotations associated with the next piece of syntax. In the following code snippet the comment on line three is added to the annotations associated with the declaration of the function \texttt{f} along with a delta position that indicates the comment is a single line before this declaration starts.
 
@@ -559,21 +638,31 @@ f i = i + 1
 
 
 \section{The current implementation of HaRe}
+\label{hareCurr}
 
-We have just discussed the major components that HaRe depends on. The ghc-api give us access to the internal representation of Haskell, the generic programming libraries Scrap Your Boilerplate and Strafunski-StrategyLib allows HaRe to more easily work with that internal representation, and ghc-exactprint is how HaRe preserves the source files spacing when writing the output file. From this foundation we can make HaRe focused on refactoring rather than solving these more generic problems. This section will discuss how HaRe is implemented, what its API provides, and some general conventions that it's refactorings use.
+\begin{figure}
+	\begin{center}
+		\includegraphics[scale=.4]{graphVis/Chapter2/hareDesign.png}
+	\end{center}
+	\caption{A diagram of the components of HaRe and their dependencies.}
+	\label{design}
+\end{figure}
 
-\subsection{HaRe's inner workings}\label{hareInners}
+We have just discussed the major components that HaRe depends on. The ghc-api gives us access to the internal representation of Haskell, the generic programming libraries Scrap Your Boilerplate and Strafunski-StrategyLib allows HaRe to more easily work with that internal representation, and ghc-exactprint is how HaRe preserves the source files spacing when writing the output file. The relationship between the dependencies and HaRe's components is shown in figure~\ref{design}. From this foundation we can make HaRe focused on refactoring rather than solving these more generic problems. This section will discuss how HaRe is implemented, what its API provides, and some general conventions that its refactorings use.
 
-The GHC API work within the \texttt{GhcMonad} that provides the features GHC needs to compile a single Haskell source file such as IO, logging warning, exception handling, and keeping track of the compilation session~\citep{ghcApi}. In reality Haskell programs consist of more than just single source files without dependencies. Projects are organised using build tools such as Cabal or Stack~\citep{cabal,stack} that handle these issues for the programmer. HaRe needs to be aware of the context that these tools provide because refactorings may change multiple modules or modify modules that import modules from external dependencies. In HaRe's case ghc-mod provides a monadic context that handles these build environments and compiler setup~\citep{ghcMod}. Within ghc-mod's context HaRe keeps track of the state of the refactoring session.
+\subsection{The Internal Structure of HaRe}
+\label{hareInners}
+
+The GHC API exposes all the functionality needed to compile a set of Haskell source files. In reality Haskell programs consist of more than just single source files without dependencies. Projects are organised using build tools such as Cabal~\citep{cabal} or Stack~\citep{stack} that handle these issues for the programmer. HaRe needs to be aware of the context that these tools provide because refactorings may change multiple modules or modify modules that import modules from external dependencies. In HaRe's case ghc-mod provides a monadic context that handles these build environments and compiler setup~\citep{ghcMod}. Within ghc-mod's context HaRe keeps track of the state of the refactoring session.
 
 \begin{lstlisting}[caption={HaRe's Monad \texttt{RefactGhc}},captionpos=b, label=refactghc] 
 newtype RefactGhc a = RefactGhc
     { unRefactGhc :: GM.GhcModT (StateT RefactState IO) a}
 \end{lstlisting}
 
-Listing~\ref{refactghc} shows the definition of HaRe's monad that each refactoring runs in. \texttt{RefactState} is an ADT that keeps track of all the settings, abstract syntax, and filepath for refactoring a single file. It is possible to refactor client modules by setting the filepath in the \texttt{RefactState} to target another module. HaRe will then parse and typecheck that module's information into the state for transformation.
+Listing~\ref{refactghc} shows the definition of HaRe's monad that each refactoring runs in. \texttt{RefactState} is an algebraic data type that keeps track of all the settings, abstract syntax, and filepath for refactoring a single file. It is possible to refactor client modules by setting the filepath in the \texttt{RefactState} to target another module. HaRe will then parse and typecheck that module's information into the state for transformation.
 
-Even though there are three types of the AST, the annotations are part of the parsed AST ghc-exactprint works with the parsed AST only. Once a refactoring has finished it is expected that the parsed source and annotations will reflect all the changes that the refactoring has made. HaRe's state still contains all three of the syntax trees because the renamed and typed source are useful for the additional information they contain about the source file. 
+Even though there are three types of the AST, the annotations are only included in the parsed AST. Once a refactoring has finished all of its changes need to be reflected in the parsed abstract syntax tree and its annotations because this is the structure that ghc-exactprint works over. HaRe's state still contains all three of the syntax trees because the renamed and typed source are useful for the additional type and scope information they contain about the source file. 
 
 \subsection{HaRe's API}
 
@@ -588,10 +677,20 @@ HaRe's dependencies help abstract away the low-level\footnote{Low level from the
 
 \subsection{Implementing Refactorings in HaRe}
 
-HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad who's state is where the abstract syntax of a target module is stored. A refactoring is also expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows programmers to check the result of a refactoring before overwriting the existing module.}  
+HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad whose state is where the abstract syntax of a target module is stored. A refactoring is also expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows programmers to check the result of a refactoring before overwriting the existing module.}  
+
+Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that checking \textit{pre}conditions would be the first thing the implementation of that refactoring computes. A more efficient implementation checks preconditions throughout computation alongside the AST transformation. For example, the renaming refactoring doesn't check for name clashes in client modules until after the source module has been modified. If a name clash is found in a client module then an error is thrown at that point and the whole refactoring is rolled back. Though this slows down the time to failure somewhat it saves HaRe from traversing every client module twice, once for preconditions and a second time for rewriting.
+
+Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times, for example, the renaming refactoring checks for name conflicts while it descends the AST replacing the old name with the new one. Obviously this strategy only works for certain preconditions the only precondition for deleting a definition is that the target definition isn't used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not.
 
 
-Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that checking \textit{pre}conditions would be the first thing the implementation of that refactoring computes. A more efficient implementation checks preconditions throughout computation alongside the AST transformation. Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times, for example, the renaming refactoring checks for name conflicts while it descends the AST replacing the old name with the new one. Obviously this strategy only works for certain preconditions the only precondition for deleting a definition is that the target definition isn't used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not. 
+\subsection{The Development Process of HaRe}
+
+Very little, if any, of the code from the original implementation of HaRe is used today. Development of HaRe has been coordinated through GitHub\footnote{\url{https://github.com/RefactoringTools/HaRe}} since 2011. When I began working on HaRe in 2013 Alan Zimmerman had upgraded much of the internal structure of HaRe to use the GHC API. 
+
+The internal structure of HaRe is mostly the work of Alan however a description of the current implementation has not appeared in the literature yet and so it has been described in some detail here. My contributions to HaRe are in the development of the refactorings described in this thesis and in the creation of a high level api for program analysis, synthesis, and transformation.
+
+
 
 \chapter{Data-driven refactorings}
 \label{chp:ddRefs}
@@ -970,7 +1069,7 @@ When passed the abstraction function \texttt{printResult} just converts the now 
 
 In general this refactoring case doesn't do much. This is because its difficult to ``consume'' a more general type due to argument types being contravariant under the function type constructor.
  
-\section{``Lists to Hughes List'' Refactoring}\label{listToDlist}
+\section{``List to Hughes List'' Refactoring}\label{listToDlist}
 
 The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. As a project develops more and more decisions must be made about how data is represented and processed. Mid-development it may become necessary to change which data structures the program uses in order to facilitate adding additional features or for performance reasons.
 
@@ -1352,19 +1451,19 @@ This chapter has introduced the concept of data-driven refactorings for the obje
 
 The following chapters will expand on some of these ideas. The next chapter will describe another form of generalisation that rewrites monadic code into its equivalent applicative functor code. The applicative code can be much cleaner and descriptive in certain cases. It can also allow programmers to take advantage of a different way of executing their programs. Chapter~\ref{chap:monadification} discusses introducing effectful abstractions into pure code. This process helps a code base add additional features, such as shared state, mid-development.
 
-\if{FALSE}
-\chapter{Implementing Data-Driven refactorings}\label{implementation}
+\chapter{Implementing Data-Driven Refactorings in HaRe}
+\label{generalImp}
 
 Implementing Data-Driven refactorings have unique challenges. This chapter will discuss the implementation of the refactoring from the previous chapter.
 
 Outline
 
 \begin{itemize}
-\item Implementation of Introduce Type Synonym
-\item Implementation of Maybe to MonadPlus
-\item Implementation of "Isomorphic" refactoring with a focus on the generalisability of the approach.
+\item Implementation of ``Maybe to MonadPlus''
+\item Implementation of  ``List to Hughes List'' refactoring with a focus on the generalisability of the approach and the API created to support other refactorings between ``reversably embeddable'' types.
+\item Details of the contributions made to HaRe's API. The high level transformation and query functions, and functions to simplify working with the annotations and ghc-exactprint.
 \end{itemize}
-\fi
+
 
 \chapter{Generalising Monads to Applicative}
 \label{chp:applicative}
@@ -3030,14 +3129,14 @@ The primary artifacts of this work are my contributions to HaRe and its API. In 
 \begin{itemize}
 \item The design and implementation of a set of data-driven refactorings in HaRe. These refactorings are:
 	\begin{itemize}
-		\item Introduce a Type Synonym
-		\item Generalise Maybe to MonadPlus/Monad
-		\item List to Hughes List
-		\item Generalise Monad to Applicative 
-		\item Monadification		
+		\item Introduce a Type Synonym, section~\ref{introSyn}
+		\item Generalise Maybe to MonadPlus/Monad, section~\ref{maybeMonadPlus} and chapter~\ref{generalImp}
+		\item List to Hughes List, section~\ref{listToDlist} and chapter~\ref{generalImp}
+		\item Generalise Monad to Applicative, chapter~\ref{chp:applicative}
+		\item Monadification	, chapter~\ref{chp:monadification}	
 	\end{itemize}
-\item An API for the creation of embeddable types refactorings
-\item Enhancements and additions to HaRe's API. The API was extended while developing the refactorings mentioned above.
+\item An API for the creation of embeddable types refactorings, chapter~\ref{generalImp}
+\item Enhancements and additions to HaRe's API, see chapter~\ref{generalImp}. The API was extended while developing the refactorings mentioned above.
 \begin{itemize}
 	\item Functions that perform high level, common transformations, that many refactorings must do (e.g. wrapping a syntax element in parenthesis)
 	\item Functions for retrieving particular syntax elements from the tree of an entire module such as getting the body of a function based on a position.

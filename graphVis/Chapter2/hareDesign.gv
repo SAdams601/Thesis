@@ -1,0 +1,48 @@
+digraph G {
+ subgraph cluster_hare {
+	  label= "HaRe";
+	  api[label="API", shape=box3d];
+	  refs[label="Refactorings", shape=box3d]
+	  ints[label="HaRe Internals", shape=box3d]
+ }
+
+ subgraph cluster_deps {
+ 	  label="Dependencies";
+	  syb[label="SYB", shape=box3d];
+	  straf[label="Strafunski", shape=box3d];
+	  ghcapi[label="GHC API", shape=box3d];
+	  exactP[label="ghc-exactprint", shape=box3d];
+	  ghcmod[label="ghc-mod", shape=box3d];
+}
+syb -> api
+syb -> refs
+
+straf -> api
+straf -> refs
+
+ghcapi -> api
+ghcapi -> refs
+ghcapi -> ints
+
+exactP -> ints
+
+ghcmod -> ints
+
+}
+
+
+
+/*
+rankdir=LR;
+parse[label="Parser",shape="box"];
+rename[label="Renamer",shape="box"];
+typecheck[label="Typechecker",shape="box"];
+desugar[label="Desugarer",shape="box"];
+core[label="Rest of compilation...",shape="box"];
+
+parse-> rename  [label="HsSyn\nRdrName",fontname="Courier"];
+rename -> typecheck [label="HsSyn\nName",fontname="Courier"];
+typecheck -> desugar [label="HsSyn\nId",fontname="Courier"];
+desugar -> core [label="CoreExpr",fontname="Courier"];
+
+}*/
