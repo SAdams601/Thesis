@@ -1522,11 +1522,10 @@ doRewriteAsBind fileName pos funNm = do
     lam <- wrapInLambda newPat rhs
     let newNm = case newPat of
                      (GHC.L _ (GHC.VarPat nm)) -> mkNewNm nm
-                     _ -> mkRdrName "m_value"
+                     _ -> mkRdrName $ "m_value_" ++ funNm
     new_rhs <- createBindGRHS newNm lam
     replaceGRHS funNm new_rhs newNm
     fixType funNm
-    addMonadImport
       where mkNewNm rdr = let str = GHC.occNameString $ GHC.rdrNameOcc rdr in
               GHC.Unqual $ GHC.mkVarOcc ("m_" ++ str)
 \end{lstlisting}
@@ -1551,7 +1550,9 @@ last (x:xs) = last xs
 
 After checking that there is only a single match in the AST of the target function \texttt{doRewriteAsBind} can start modifying that function. The rest of \texttt{doRewriteAsBind} (line 10 and after in figure~\ref{doRewriteAsBind}) constructs a lambda expression and variable to make up the new right hand side of the target function. 
 
-This is done by taking the right hand side expression from the target function's match and replacing any calls to \texttt{Just} with \texttt{return}. Once this ``sanitised'' version of the 
+This is done by taking the right hand side expression from the target function's match and replacing any calls to \texttt{Just} with \texttt{return}. This generalised version of the the right hand side expression can then be wrapped in a lamdba expression with the original pattern being the binding for this expression (line 14's call to \texttt{wrapInLambda}). This new lambda expression can be bound to the newly created variable \texttt{newNm}. This new variable keeps the name given to the original pattern if it was just a simple name (e.g. ``\texttt{x}'') and prepends this name with ``\texttt{_m}'' to prevent a naming conflict with the variable inside of the lambda expression. In the case that the pattern was more complex like when matching a data type constructor (e.g. \texttt{Just x}) or a list (\texttt{(x:xs)} then a generic variable name is created using the target function's name.\footnote{The user of the refactoring will most likely want to apply the renaming refactoring to this variable to give it a more appropriate name.}
+
+The new name is then bound to the lambda expression (line 18) and the target function's body is replaced with this bind expression. The last two step of the rewriting generalises the type signature to be \texttt{Monad} instead of \texttt{Maybe}.
 
 \subsection{Generalising to \texttt{MonadPlus}} 
 
