@@ -1554,7 +1554,9 @@ This is done by taking the right hand side expression from the target function's
 
 The new name is then bound to the lambda expression (line 18) and the target function's body is replaced with this bind expression. The last two step of the rewriting generalises the type signature to be \texttt{Monad} instead of \texttt{Maybe}.
 
-\subsection{Generalising to \texttt{MonadPlus}} 
+\subsection{Generalising to \texttt{MonadPlus}}
+
+If the target function cannot be generalised to \texttt{Monad} then the refactoring will try to generalise the function to \texttt{MonadPlus} instead. The \texttt{MonadPlus} typeclass describes a Monad that also supports the concepts of choice and failure.
 
 \section{Implementation of the ``List to Hughes List" refactoring}
 
