@@ -1,0 +1,15 @@
+digraph G {
+	topApp [label="HsApp"]
+	topApp -> lApp
+	subgraph left {
+		lApp [label="HsApp"]
+		replicate [label="HsVar: replicate"]
+		n [label="HsVar: n"]
+		lApp -> replicate
+		lApp -> n
+	}
+	
+	lst [label="HsVar: c"]
+	topApp -> lst
+
+}

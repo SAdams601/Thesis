@@ -1211,7 +1211,7 @@ Fortunately different versions of the refactoring can be made by defining separa
 
 The obvious choice for the set is to just include every possible pairing. However, it may be beneficial to limit which functions can be replaced based on the motivation for the refactoring and what list functions are being used in the source program. In the list to Hughes list case this refactoring is performed to increase the performance of append operations. In this case it may be beneficial to only allow append to be swapped for the DList append. Another possibility in this case would be to only allow the \texttt{DList} functions that run in constant time to be introduced.\footnote{\texttt{empty}, \texttt{cons}, and \texttt{append}}. 
 
-The composition of the set of functions is highly dependent on the relationship between the source and target types and which functions the source program is using. For this reason the implementation of this refactoring in HaRe is as adaptable as possible so that users can customize the set for their own needs (see Chapter~\ref{implementation}).
+The composition of the set of functions is highly dependent on the relationship between the source and target types and which functions the source program is using. For this reason the implementation of this refactoring in HaRe is as adaptable as possible so that users can customize the set for their own needs (see Chapter~\ref{generalImp}).
 
 \subsubsection{Transforming functions}
 
@@ -1563,7 +1563,7 @@ This structure is defined by an associative operator \texttt{mplus} and its iden
 In \texttt{Maybe}'s case \texttt{mzero} is defined as \texttt{Nothing} and \texttt{Maybe}'s other constructor, \texttt{Just}, is the value of \texttt{Maybe}'s definition \texttt{return}.
 This case of the refactoring just replaces instances of \texttt{Just} with \texttt{return} and \texttt{Nothing} with \texttt{mzero}. 
 
-\begin{figure}[t]
+\begin{figure}[h]
 \begin{lstlisting}
 replaceConstructors :: SimpPos -> String -> Int -> RefactGhc ()
 replaceConstructors pos funNm argNum = do
@@ -1594,11 +1594,175 @@ replaceConstructors pos funNm argNum = do
 \label{replaceConstructors}
 \end{figure}
 
-Figure~\ref{replaceConstructors} shows the top level function \texttt{replaceConstructors} that modifies a target function to replace the \texttt{Maybe} specific values with \texttt{mzero} and \texttt{return}. 
+Figure~\ref{replaceConstructors} shows the top level function \texttt{replaceConstructors} that modifies a target function to replace the \texttt{Maybe} specific values with \texttt{mzero} and \texttt{return}. This function primarily consists of two traversal patterns, the stop top down traversal in \texttt{applyInGRHSs} and the \texttt{everywhereM} in \texttt{runGRHSFun}. The only parts of the function that need to be changed are in the right hand side of the target function, the first traversal (from \texttt{applyInGRHSs}) descends to this level and then stops when the guarded right hand side type is found. From there the other traversal continues down the tree replacing the instances \texttt{Just} and \texttt{Nothing}.
+
+After the right hand side binding has been rewritten, the target function's original binding is replaced with the new binding in the call to \texttt{replaceBind} on line six of figure~\ref{replaceConstructors}. Replacing the original binding of a function with a refactoring one is a common operation that many refactorings need to perform. Due to its re-usability \texttt{replaceBind} is a function from HaRe's API and will be discussed in section~\ref{hareAPI}. 
+
+The final step of this refactoring changes the type signature of the target function. The instances of \texttt{Maybe} in the type signature need to be replaced with a type variable that is bound to the \texttt{MonadPlus} typeclass. The \texttt{fixType'} function performs this rewriting. The definition of \texttt{fixType'} is shown in figure~\ref{fixTypePrime}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+fixType' :: String -> Int -> RefactGhc ()
+fixType' funNm argPos = do
+  logm "Fixing type"
+  parsed <- getRefactParsed
+  let m_sig = getSigD funNm parsed
+      (GHC.L sigL (GHC.SigD sig)) = gfromJust "fixType'" m_sig
+  fixedClass <- fixTypeClass sig
+  replacedMaybe <- replaceMaybeWithVariable fixedClass
+  newSig <- locate (GHC.SigD replacedMaybe)
+  addNewKeyword ((G GHC.AnnDcolon), DP (0,1)) newSig
+  synthesizeAnns newSig
+  addNewLines 2 newSig
+  newParsed <- replaceAtLocation sigL newSig
+  anns <- liftT getAnnsT
+  putRefactParsed newParsed anns         
+\end{lstlisting}
+\caption{\texttt{fixType'} is a function that fixes the type signature of a function that is being generalised from \texttt{Maybe} to \texttt{MonadPlus}.}
+\label{fixTypePrime}
+\end{figure}
+
+The definition of \texttt{fixType'} is shown in figure~\ref{fixTypePrime}. This functions follows the following steps:
+
+\begin{itemize}
+\item \textit{Line 5:} Retrieve the signature from the parsed abstract syntax
+\item \textit{Line 7:} Insert the binding of the variable ``\texttt{m}'' to the \texttt{MonadPlus} typeclass
+\item \textit{Line 8:} Replace the instances of \texttt{Maybe} with the type variable
+\item \textit{Lines 9 - 12:} Handle the appearance of the new syntax elements
+\item \textit{Line 13:} Replaces the old type signature in the parsed source
+\item \textit{Line 15:} Updates the refactoring state with the modified parsed source
+\end{itemize}
+
+The \texttt{fixTypeClass} and \texttt{replaceMaybeWithVariable} functions transform the abstract syntax of the type signature and the rest of \texttt{fixType'} creates and modifies the associated annotations so that all of its elements appear in the target program and are well formatted. For example, the call to \texttt{addNewKeyword} on line 10 of figure~\ref{fixTypePrime} associates the \texttt{AnnDcolon} annotation with the new type signature. This annotation represents the ``\texttt{::}'' operator that is otherwise not represented in the abstract syntax tree.
+
+This section has covered the implementation of the generalising \texttt{Maybe} refactoring. This is a fairly straightforward refactoring implementation, the preconditions are checked up front and depending on the structure of the target function the correct transformation is chosen. The type stack is initialised with just a single value ``\texttt{Just (DList a)}'' this is because the entire 
 
 \section{Implementation of the ``List to Hughes List" refactoring}
 
+The list to Hughes List refactoring was first described in section~\ref{listToDlist}. This section will describe the implementation of that refactoring in HaRe. Section~\ref{listToDlist} also introduced the concept of a type that can be ``embedded'' into another. This means that the source type, which in this particular case is \texttt{[a]}, can be transformed into the target type (\texttt{DList a}) and the original value of the object can be retrieved from the target type.
+
+Though list to Hughes list is the specific refactoring outlined in this thesis and implemented in HaRe. This sort of refactoring can be applied to any pair of types that hold the properties described in section~\ref{listToDlist}. HaRe's implementation of the list to Hughes list refactoring keeps this in mind and efforts were made to build reusable components so that similar refactorings can be easily implemented for different types.
+
+The \texttt{doHughesList} function shown in figure~\ref{doHughesList} is main function that performs the list to Hughes List refactoring. This function performs four primary tasks, adding the import declaration for the difference list library, transforming the function definition, replacing the existing function definition, and wrap the call points of the target function with the abstraction function.
+
+\begin{figure}[t]
+\begin{lstlisting}
+doHughesList :: FilePath -> String -> SimpPos -> Int -> EmbFuncStrings -> RefactGhc ()
+doHughesList fileName funNm pos argNum fStrs = do
+  let mqual = Just "DList"
+  addSimpleImportDecl "Data.DList" mqual
+  ty <- getDListTy mqual
+  parsed <- getRefactParsed
+  let
+    (Just lrdr) = locToRdrName pos parsed
+    rdr = GHC.unLoc lrdr
+    dlistCon = getTyCon ty
+    newFType = resultTypeToDList dlistCon 
+    (Just funBind) = getHsBind rdr parsed
+    (Just tySig) = getTypeSig pos funNm parsed
+    newResTy = getResultType ty
+  iDecl <- dlistImportDecl mqual
+  iSt <- getInitState iDecl fStrs "toList" "fromList" mqual newResTy
+  bind' <- embRefact argNum mqual rdr ty iSt funBind
+  replaceFunBind pos bind'
+  newTySig <- fixTypeSig argNum tySig
+  replaceTypeSig pos newTySig
+  let modQual = case mqual of
+                  (Just s) -> s ++ "."
+                  Nothing -> ""
+  fixClientFunctions modQual (numTypesOfBind funBind) argNum rdr
+  addConstructorImport
+\end{lstlisting}
+\caption{\texttt{doHughesList} is the top level function of the Hughes list refactoring.}
+\label{doHughesList}
+\end{figure}
+
+The most interesting part of this refactoring is the transformation of the function definition. The other steps are handled by HaRe's API which is discussed in section~\ref{hareAPI}. The transformation occurs on lines 16 and 17 of figure~\ref{doHughesList}. The transformation runs within its own state and line 16 creates the initial value of this state while line 17 actually runs the stateful computation. The state's type is shown in figure~\ref{embState}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+data EmbRefactState = EmbState {
+  funcs :: EmbeddableFuncs,
+  typeStack :: [Maybe GHC.Type],
+  insertAbs :: Bool
+                               }
+                               
+data EmbeddableFuncs = IF {
+  projFun :: GHC.RdrName,
+  absFun :: GHC.RdrName,
+  eqFuns :: M.Map String (GHC.RdrName, GHC.Type)
+  }
+\end{lstlisting}
+\caption{The type of the state that the refactoring runs in.}
+\label{embState}.
+\end{figure}
+
+The state consists of three fields, \texttt{funcs} keeps track of the functions that operate over the source type and their equivalent functions that operate on the target type and the names of the projection and abstraction functions. The \texttt{typeStack} field is a stack that keeps track of what changes need to be made further down the abstract syntax tree. Finally, the \texttt{insertAbs} field keeps track of when the abstraction function needs to be applied to certain values.
+
+The call to \texttt{getInitState} on line 16 of figure~\ref{doHughesList} takes in the import declaration of the target type, a list of pairs of strings that represent the equivalent functions over the source and target types, the names of the projection and abstraction functions, the target type's import qualifier if it exists, and the final result type of the target function. 
+
+Once the initial state has been created the transformation is performed in a top down, left to right manner with the call to \texttt{embRefact} on line 17 of figure~\ref{doHughesList}. As seen in figure~\ref{embRefact} the definition of \texttt{embRefact} simply calls the API function \texttt{modMGAltsRHS} which simply applies a function that modifies an expression to each of the right hand side values of the given function binding. The ``real'' work of the transformation occurs in \texttt{doEmbRefact} which is defined in figure~\ref{doEmbRefact}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+embRefact :: Int -> Maybe String -> GHC.RdrName -> GHC.Type -> EmbRefactState -> ParsedBind -> RefactGhc ParsedBind
+embRefact _ mqual funNm newFTy iST bnd = modMGAltsRHS (\e -> runEmbRefact (doEmbRefact e) iST) bnd
+\end{lstlisting}
+\caption{The definition of \texttt{embRefact}}
+\label{embRefact}
+\end{figure}
+
+\begin{figure}[t]
+\begin{lstlisting}
+doEmbRefact :: ParsedLExpr -> EmbRefact ParsedLExpr
+doEmbRefact expr = do
+  b1 <- embDone
+  b2 <- skipCurrent
+  if b1 || b2
+    then do
+    lift $ logm "Skipping this expr: "
+    lift $ logm (SYB.showData SYB.Parser 3 expr)
+    return expr
+    else doEmbRefact' expr
+  where doEmbRefact' ....
+\end{lstlisting}
+\caption{\texttt{doEmbRefact} is the function that transforms a given expression to use the target type.}
+\label{doEmbRefact}
+\end{figure}
+
+The top level, \texttt{doEmbRefact}, function controls when the traversal stops, the helper function \texttt{doEmbRefact'} is what actually transforms the given expression based on its constructor. The two stop conditions, \texttt{b1} and \texttt{b2} from figure~\ref{doEmbRefact} lines three and four, are determined by the state of the ``type stack''.
+
+\subsection{The type stack}
+
+The type stack is part of the refactoring's state and is of type \texttt{[Maybe GHC.Type]} each member of the stack represents the type that a sub tree must be changed to. The stack will be initialised with a single value ``\texttt{Just (DList a)}'' where \texttt{a} is the type of list from the source function this is because the result type of the entire syntax tree needs to be changed to \texttt{Just (DList a)}. The stack keeps track the ``goal types'' of each sub-tree. As an example of this process look to the simple abstract syntax tree that represents a call to the \texttt{replicate} function with the variables \texttt{n :: Int} and \texttt{x :: Char}. 
+
+If the goal was to transform this tree to be of type \texttt{DList Char} the stack would be initialised to be \texttt{Just (DList Char)} because this is the goal result type of the entire syntax tree. The tree's type is determined by the result type of the left most leaf of the tree so the transformation will descend there and replace the call to \texttt{replicate} with one to \texttt{DList.replicate}. After this replacement is made the transformation may have caused a type error in the program because \texttt{replicate}'s arguments are not necessarily the same type as \texttt{DList.replicate}'s. The argument types of the two functions are compared and the results of the comparison are pushed onto the stack. In this case the arguments for both versions of replicate are actually the same type so \texttt{[Nothing, Nothing]} is pushed onto the stack. When the transformation gets to the \texttt{HsVar} leaves for \texttt{n} and \texttt{x} respectively it pops the top of the stack off but since there is just a \texttt{Nothing} no more changes are needed in that subtree.
+
+
+
+\begin{figure}[t]
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/Chapter4/simple.png}
+	\end{center}
+	\caption{A simplified syntax tree of a call to \texttt{replicate :: Int -> Char -> [Char]}.}
+	\label{replicateAST}
+\end{figure}
+
+In the case that there is a \texttt{Just} value at the top of the stack then the transformation will attempt to change the leftmost leaf so that the subtree's result type matches the type on the top of the stack.
+
+\subsection{Traversing an expression, the implementation of \texttt{doEmbRefact'}}
+
+Though the top level \texttt{doEmbRefact} function determines if a subtree should be changed at all \texttt{doEmbRefact'} determines how the transformation travels through the subtree and the changes that occur based on the type of the current abstract syntax node.
+
+\begin{enumerate}
+\item Explain cases of \texttt{doEmbRefact'}
+\item Explain todo work
+\end{enumerate}
+
+\subsection{Future work in the embeddable type refactoring system}
+
 \section{Enhancements made to HaRe's API}
+\label{hareAPI}
 
 
 \chapter{Generalising Monads to Applicative}
