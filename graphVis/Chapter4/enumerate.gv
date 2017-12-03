@@ -1,0 +1,84 @@
+digraph G {
+//enumerate -> lApp;
+
+	subgraph left {
+		lApp [label=<OpApp: ++<SUP>1</SUP>>];
+		lApp -> lPar;	
+		lApp -> rApp;
+	}
+
+	subgraph lPar {
+		lPar [label="HsPar"];
+		lEnum [label="HsVar: enumerate"];
+		left [label="HsVar: left"];
+		pApp1 [label="HsApp"];
+		lPar -> pApp1;
+		pApp1 -> lEnum;
+		pApp1 -> left;
+	}
+
+	subgraph right {
+		lst [label="ExplicitList: [x]"];
+		rApp [label="OpApp: ++"];
+		rApp -> lst;
+		rApp -> rPar;
+	}
+	
+	subgraph rPar {
+		rPar [label="HsPar"];
+		rEApp [label="HsApp"];
+		rEnum [label="HsVar: enumerate"];
+		right [label="HsVar: right"];
+		rPar -> rEApp;
+		rEApp -> rEnum;
+		rEApp -> right;
+	}
+
+}
+
+//enumerate (Node left x right) = (enumerate left) ++ [x] ++ (enumerate right)
+
+/*
+(L {test/testdata/HughesList/HList2.hs:8:33-76} 
+                 (OpApp 
+                  (L {test/testdata/HughesList/HList2.hs:8:33-55} 
+                   (OpApp 
+                    (L {test/testdata/HughesList/HList2.hs:8:33-48} 
+                     (HsPar 
+                      (L {test/testdata/HughesList/HList2.hs:8:34-47} 
+                       (HsApp 
+                        (L {test/testdata/HughesList/HList2.hs:8:34-42} 
+                         (HsVar 
+                          (Unqual {OccName: enumerate}))) 
+                        (L {test/testdata/HughesList/HList2.hs:8:44-47} 
+                         (HsVar 
+                          (Unqual {OccName: left}))))))) 
+                    (L {test/testdata/HughesList/HList2.hs:8:50-51} 
+                     (HsVar 
+                      (Unqual {OccName: ++}))) 
+                    (PlaceHolder) 
+                    (L {test/testdata/HughesList/HList2.hs:8:53-55} 
+                     (ExplicitList 
+                      (PlaceHolder) 
+                      (Nothing) 
+                      [
+                       (L {test/testdata/HughesList/HList2.hs:8:54} 
+                        (HsVar 
+                         (Unqual {OccName: x})))])))) 
+
+                         (L {test/testdata/HughesList/HList2.hs:8:57-58} 
+                   (HsVar 
+                    (Unqual {OccName: ++}))) 
+                  (PlaceHolder) 
+                  (L {test/testdata/HughesList/HList2.hs:8:60-76} 
+                   (HsPar 
+                    (L {test/testdata/HughesList/HList2.hs:8:61-75} 
+                     (HsApp 
+                      (L {test/testdata/HughesList/HList2.hs:8:61-69} 
+                       (HsVar 
+                        (Unqual {OccName: enumerate}))) 
+                      (L {test/testdata/HughesList/HList2.hs:8:71-75} 
+                       (HsVar 
+                        (Unqual {OccName: right})))))))))
+
+*/
