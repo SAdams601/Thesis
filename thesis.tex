@@ -208,7 +208,7 @@ First class functions mean that functions are allowed to be treated like any oth
   
 \section{Haskell}
 \label{haskell}
-Haskell is a statically typed, lazily evaluated, pure functional language. Haskell is strongly and statically typed, and supports Hindley-Milner type inference(\cite{hindley},\cite{milner}). Type inference means that Haskell programs do not need every type to be explicitly listed in the source code. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
+Haskell is a statically typed, lazily evaluated, pure functional language. Haskell is strongly and statically typed, and supports Hindley-Milner type inference(\cite{hindley};\cite{milner}). Type inference means that Haskell programs do not need every type to be explicitly listed in the source code. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
 
 Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is a list containing all of the natural numbers. 
 
@@ -225,7 +225,7 @@ False -> x + 1
 Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads represent computations, which when run will have effects as well as producing a result. A principle topic of this thesis is refactoring to support patterns of computation related to Monads and other related structures. 
 
 \section{Refactoring} 
-Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was first coined in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}, \cite{performanceRestructuring}). Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}.
+Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was first coined in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}; \cite{performanceRestructuring}). Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}.
 
 Behaviour preservation is what separates refactoring from other types of program manipulation. This idea of functionality preservation means that refactoring will not introduce new bugs or eliminate old ones. To prevent semantic changes after refactoring, many refactorings have non-trivial preconditions~\citep{mens2002formalising}. For example, the renaming refactoring should check that the new name being introduced does not cause a name clash with a name already used in the source program.
 
@@ -239,7 +239,7 @@ It is also not unusual for functional refactorings to be substantially different
 
 \section{Summary}
 
-One of the most widely accepted best practices in software development is the concept of incremental change, an essential concept of both the extreme programming and agile software development philosophies (\cite{extremeProg} and \cite{agileManifesto}). Refactoring remains a key step in this incremental development process to preventing technical debt from causing development to slow to a crawl.
+One of the most widely accepted best practices in software development is the concept of incremental change, an essential concept of both the extreme programming and agile software development philosophies (\cite{extremeProg}; \cite{agileManifesto}). Refactoring remains a key step in this incremental development process to preventing technical debt from causing development to slow to a crawl.
 
 Much of the refactoring literature focuses on changes that need to be made to the structure of programs. The structure of a program is very important and structural refactorings can maintain the ``separation of concerns'' by extracting functions from existing definitions or ensuring that a program's names reflect what the program currently does. This thesis argues that it is just as important to maintain the ways that a program structures and evaluates the data it computes.
 
@@ -253,7 +253,7 @@ This thesis will proceed as follows:
 
 \textbf{Chapter~\ref{chp:hare}: Background: Refactoring Haskell in HaRe}
 
-This chapter covers the history of HaRe (the \textbf{Ha}skell \textbf{Re}factorer), the technologies it depends on, and the current implementation of HaRe. Specifically there is an overview of the~\cite{ghcApi}, the generic traversal library Scrap Your Boilerplate~\citep{syb}, and ghc-exactprint~\citep{exactprint}. This chapter also describes how the inner workings of HaRe are implemented and the functions that compose its API. Finally it discuses the design and development process of implementing refactorings for HaRe.
+This chapter covers the history of HaRe (the \textbf{Ha}skell \textbf{Re}factorer), the technologies it depends on, and the current implementation of HaRe. Specifically there is an overview of the~\citep{ghcApi}, the generic traversal library Scrap Your Boilerplate~\citep{syb}, and ghc-exactprint~\citep{exactprint}. This chapter also describes how the inner workings of HaRe are implemented and the functions that compose its API. Finally it discuses the design and development process of implementing refactorings for HaRe.
 
 \textbf{Chapter~\ref{chp:ddRefs}: Data-Driven Refactorings}
 
@@ -298,14 +298,14 @@ The work in this thesis was carried out in HaRe. This study focused on adding ad
 \label{chp:hare}
 
 
-Work on HaRe started in early 2003 at the University of Kent. HaRe was originally created by Huiqing Li, Claus Reinke, and Simon Thompson~\citep{refacWebsite}. The first implementation of HaRe supported the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is the current formal language standard but the Glasgow Haskell Compiler (GHC) has become the de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that do everything from changing the type system to adding new syntax features~\citep{langExts}.
+Work on HaRe was initiated at the University of Kent. HaRe was started by Huiqing Li, Claus Reinke, and Simon Thompson in early 2003~\citep{refacWebsite}. The first implementation of HaRe supported the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is now the formal language standard but the Glasgow Haskell Compiler (GHC) has become a de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that can do everything from changing the type system to adding new syntax features~\citep{langExts}.
 
-This chapter begins, in section~\ref{hareOrig}, with a brief discussion of the original implementation of HaRe. This section includes a description of programmatica~\citep{programatica}, HaRe's first language backend, and Strafunski-StrategyLib~\citep{strafunski}, the generic programming library that assisted HaRe in transforming the abstract syntax tree of source programs. Next the chapter describes the current libraries that HaRe depends on. Section~\ref{ghcApi} describes the GHC API, instead of needed a separate project as a language backend GHC provides an API to access the language implementation. The generic programming library that HaRe uses has changed as well. Section~\ref{genProg} describes how HaRe uses \textit{Scrap Your Boilerplate}~\citep{syb} to perform tree traversals and transformations. Section~\ref{ghcExactprint} describes the pretty-printer HaRe uses \textit{ghc-exactprint}~\citep{exactprint}. Finally the chapter will conclude with a description of the current implementation of HaRe in section~\ref{hareCurr}.
+This chapter begins, in Section~\ref{hareOrig}, with a brief discussion of the original implementation of HaRe, and its dependencies such as Programatica~\citep{programatica}, a language frontend for Haskell 98, and Strafunski-StrategyLib~\citep{strafunski} a generic programming library. Next the chapter describes the current dependencies of HaRe beginning with Section~\ref{ghcApi}. This section describes the GHC API, the language frontend that is included with the GHC. HaRe now uses the GHC API for access to the internal representation of Haskell rather than a third-party library like Programmtica. In addition to Strafunski-StrategyLib HaRe also uses another generic programming library, \textit{Scrap Your Boilerplate} (SYB)~\citep{syb}. Section~\ref{genProg} describes how HaRe uses SYB to perform abstract syntax tree traversals and transformations. Section~\ref{ghcExactprint} describes, \textit{ghc-exactprint}, the pretty-printer HaRe uses to output the modified program~\citep{exactprint}. Finally the chapter will conclude with a description of the current implementation of HaRe in Section~\ref{hareCurr}.
 
 \section{The original implementation of HaRe}
 \label{hareOrig}
 
-Implementing an automated refactoring system has several dependencies including, a frontend for the language that is targeted, a generic programming library or some means of making generic traversals of abstract syntax trees, and a pretty printer. The language frontend is required for the refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs as source the modified AST in a form recognizable by the author of the original program. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
+Implementing an automated refactoring system has several dependencies including a frontend for the language that is targeted, a generic programming library or some means of making generic traversals of abstract syntax trees, and a pretty printer. The language frontend is required for the refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs as source the modified AST in a form recognizable by the author of the original program. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
 
 \subsection{Programatica and Strafunski}\label{prog&Strafunski}
 
@@ -313,7 +313,7 @@ Programatica was a project at the OGI School of Science and Engineering to build
 
 Programatica's abstract syntax contains 20 data types with 110 data constructors in total. Working with the syntax directly would introduce a large amount of "boilerplate" code into HaRe that would make maintenance and reusability of much more difficult~\citep{huiqingThesis}. Instead HaRe used Strafunski-StrategyLib, a combinator library for generic programming, to traverse the abstract syntax tree (AST) of the source code~\citep{strafunski}. 
 
-Commonly transforming a program only modifies small sections of the source program's AST. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used; all other sections of the AST remain unmodified. A commonly used operation in Strafunski takes a function that works on a particular data type (or types)\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replaces it with the new name.} and extends it to work on all types by leaving all other types unmodified. Strafunski also provides "strategies" that define how that extended function will be applied to the syntax tree as a traversal of the tree~\citep{strafunski}\footnote{e.g. top-down or bottom-up}. Using Strafunski will be discussed in more detail in section~\ref{genProg}.
+Commonly transforming a program only modifies small sections of the source program's AST. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used; all other sections of the AST remain unmodified. A commonly used operation in Strafunski takes a function that works on a particular data type (or types)\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replaces it with the new name.} and extends it to work on all types by leaving all other types unmodified. Strafunski also provides "strategies" that define how that extended function will be applied to the syntax tree as a traversal of the tree~\citep{strafunski}\footnote{E.g. top-down or bottom-up.}. Using Strafunski will be discussed in more detail in Section~\ref{genProg}.
 
 These two dependencies allowed the original implementation of HaRe to obtain the abstract syntax tree of source code to be refactored, traverse and transform that AST, and output the modified program. All these tasks are things that the current implementation of HaRe needs to do but the dependencies that it relies on have changed somewhat. The Haskell standard was updated in 2010~\citep{haskell2010} and GHC continues to expand the number of language extensions it supports. Unfortunately Programatica has not kept up with these changes and does not support anything beyond Haskell 98. At the same time GHC's own API has been defined and matured so that it can replace Programatica as HaRe's front end. HaRe now relies on this and a few other projects for its language frontend. For generic traversals "Scrap Your Boilerplate" has been added as a dependency though Strafunski-StrategyLib is still used in HaRe~\citep{syb}.
  
@@ -323,13 +323,11 @@ HaRe's original refactorings fall into three categories, structural, module, and
 
 \subsubsection{Structural Refactorings}
 
-Structural refactorings principally concern the name and scope of entities defined in a program~\citep{huiqingThesis}. These refactorings target functions, and smaller sections of code.  A traditional example of this is the renaming refactoring. 
+Structural refactorings principally concern the name and scope of entities defined in a program~\citep{huiqingThesis}. These refactorings target functions, and smaller sections of code.  A traditional example of this is the renaming refactoring. Renaming is the most basic refactoring. The purpose of renaming is to change the name of a given identifier. A renaming refactoring could target a variable, function name, type, or any other piece of syntax that a programmer can assign a name to. This refactoring allows for the names used in a program to truly reflect what the pieces of that program are actually doing. 
 
-Renaming is one of the most basic refactorings. The purpose of renaming is to change the name of a given identifier. A renaming refactoring could target a variable, function name, type, or any other piece of syntax that a programmer can name. This allows for the names in code to be in sync with the purpose of that code. 
+Though these refactorings target small pieces of code, the changes made to the code base can affect modules throughout the codebase. The renaming refactoring, for example, can affect any other module that uses the renamed object.
 
-Though the target of these refactorings are small pieces of code the changes made to the code base can affect modules throughout the codebase. The renaming refactoring, for example, can affect any other module that uses the renamed object.
-
-Other examples of structural refactorings include deleting a definition, duplicating a function, and adding an argument~\citep{huiqingThesis}.
+Other examples of structural refactorings include Deleting a Definition, Duplicating a Function, and Adding an Argument~\citep{huiqingThesis}.
 
 \subsubsection{Module Refactorings}
 
@@ -339,12 +337,12 @@ Module refactorings concern the imports and exports of an individual module, or 
 
 The third category of refactorings are those that are associated with data type definitions~\citep{huiqingThesis}. "Add field names" is a good example of a data-oriented refactoring.  The add field names refactoring will add field names to a data type. These names can then be used as selector functions that make extraction of a particular part of a type a simple function call. The new field names are generated by HaRe but can be renamed by the user~\citep{huiqingThesis}.
 
-These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers an API was exposed so that other developers could implement their own refactorings which will be discussed in more detail in the next section~\citep{hareApi}.
+These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers, an API was exposed so that other developers could implement their own refactorings which will be discussed in more detail in the next Section~\citep{hareApi}.
 
 
 \subsection{The HaRe API}\label{hareApi}
 
-Early in the development cycle of HaRe it was restructured to expose an API for implementing refactorings and general Haskell program transformations~\citep{hareApi}. The HaRe API contains a collection of functions for program analysis and transformation of Haskell 98 programs. These functions, along with the functionality provided by Strafunski and Programatica, form the basis for implementing basic refactorings~\citep{hareApi}.
+Early in the development cycle of HaRe, it was restructured to expose an API for implementing refactorings and general Haskell program transformations~\citep{hareApi}. The HaRe API contains a collection of functions for program analysis and transformation of Haskell 98 programs. These functions, along with the functionality provided by Strafunski and Programatica, form the basis for implementing basic refactorings~\citep{hareApi}.
 
 The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the user but because of generic programming with Strafunski only the to be transformed parts of the AST have to be explicitly referenced in a refactoring~\citep{hareApi}. Another key feature of the API was to hide layout and comment preservation allowing the programmer to focus on program transformation instead. Each subtree in the AST is tagged with its absolute location in the source file. Any modifications to the AST will change the location of all elements that occur after the change. The API abstracts over this cascade of changes that follows even the simplest of changes. The HaRe API transformation functions modify the token stream and the AST simultaneously which keeps refactoring definitions free of this location bookkeeping ~\citep{hareApi}. 
 
@@ -369,7 +367,7 @@ Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is
 	\label{compilerStages}
 \end{figure}
 
-Some of the major components and the order in which they are used in GHC are shown in figure~\ref{compilerStages} which has been adapted from~\citep{ghcDesign}. This figure is not a complete list of all the components GHC uses, just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
+Some of the major components and the order in which they are used in GHC are shown in Figure~\ref{compilerStages} which has been adapted from~\citep{ghcDesign}. This figure is not a complete list of all the components GHC uses, just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
 
 The top level datatype for all of the GHC abstract syntax is \texttt{HsSyn} ~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier type; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
 
@@ -378,20 +376,20 @@ The top level datatype for all of the GHC abstract syntax is \texttt{HsSyn} ~\ci
 There are five name types that GHC uses, they are:
 
 \begin{itemize}
-	\item \texttt{OccName} is the simplest type of name. It is just a wrapper around a \texttt{FastString} and an optional \texttt{NameSpace}. An \texttt{OccName} is contained in each of the other four identifier types.
+	\item \texttt{OccName} is the simplest type of name. It is just a wrapper around a \texttt{FastString}, which is an array of bytes, and an optional \texttt{NameSpace}. An \texttt{OccName} is contained in each of the other four identifier types.
 	\item \texttt{RdrName} names are produced by GHC's parser. \texttt{RdrName}s are essentially just an \texttt{OccName} with optional module information if the source name has been qualified. 
-	\item \texttt{Name}s are produced by the renamer. A \texttt{Name} contains an \texttt{OccName} and a \texttt{Unique} that differentiates \texttt{Name}s that have the same \texttt{OccName}. They have also had their scoping and binding resolved. Each name contains the source span where the name was defined and a data type that describes what type of \texttt{Name} it is (e.g. a name defined internally to the module or a name from another module).
-	\item \texttt{Id} \& \texttt{Var} are the identifiers produced by the typechecker.\footnote{\texttt{Id} is just a synonym for \texttt{Var}.} These identifiers contain a \texttt{Name}, and a \texttt{Unique}. They also contain type information but the type of \texttt{Var}s may contain type variables that have a kind rather than a type whereas the type of an \texttt{Id} will be a monotype. 
+	\item \texttt{Name}s are produced by the renamer. A \texttt{Name} contains an \texttt{OccName} and a \texttt{Unique} that differentiates \texttt{Name}s that have the same \texttt{OccName}. A \texttt{Unique} is just an integer but it is generated by the GHC in such a way so that it is guaranteed to be unique. They have also had their scoping and binding resolved, so each \texttt{Name} contains the source span where that name was defined and a data type that describes what type of \texttt{Name} it is (e.g. a name defined internally in the module or a name from another module).
+	\item \texttt{Id} \& \texttt{Var} are the identifiers produced by the typechecker.\footnote{\texttt{Id} is just a synonym for \texttt{Var}.} These identifiers contain a \texttt{Name}, and a \texttt{Unique}. Finally these names also contain the type of the variable they represent. 
 \end{itemize}
 
 These identifier types change throughout the compilation process but these names only parameterise the syntax tree, the shape of the tree itself stays the same throughout compilation. 
 
 \subsection{GHC's syntax tree}
-GHC's abstract syntax is currently made up of over 90 data types. Many of those types have multiple constructors, the expression data type \texttt{HsExpr} for example has over 40 constructors. This section will briefly introduce the structure of GHC's abstract syntax tree.
+GHC's abstract syntax is currently made up of over 90 data types. Many of those types have multiple constructors; the expression data type \texttt{HsExpr} for example has over 40 constructors. This section will briefly introduce the structure of GHC's abstract syntax tree.
 
 \subsubsection{Common syntax types}
 
-The most common type in any given piece of GHC abstract syntax would be a \texttt{Located} as seen in figure~\ref{located}.
+The most common type in any given piece of GHC abstract syntax would be a \texttt{Located} as seen in Figure~\ref{located}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -405,7 +403,7 @@ type Located e = GenLocated SrcSpan e
 
 \texttt{Located} is used to tag syntax elements with their position in a source file. The \texttt{SrcSpan} contains the filename that the span comes from and then the start and end columns and start and end lines that the span covers.\footnote{GHC has small optimisation where if a span exists entirely on a single line it only stores the single line number and the start and end column, instead of storing the same line number twice.} 
 
-There are located versions of many of the AST types. For example, \texttt{HsExpr} is the type that represents expressions, and there is a related type \texttt{LHsExpr} that represents a located expression whose definition is shown in figure~\ref{lhsexpr}.
+There are located versions of many of the AST types. For example, \texttt{HsExpr} is the type that represents expressions, and there is a related type \texttt{LHsExpr} that represents a located expression whose definition is shown in Figure~\ref{lhsexpr}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -415,7 +413,7 @@ type LHsExpr id = Located (HsExpr id)
 \label{lhsexpr}
 \end{figure}
 
-The \texttt{HsExpr} type represents much of the Haskell language such as function application, lambdas, if and case statements. Pattern matching is handled by a \texttt{MatchGroup} type. Each \texttt{MatchGroup} contains a list of \texttt{Match}es and some typing information. Consider the case statement in figure~\ref{caseStmt}.
+The \texttt{HsExpr} type represents much of the Haskell language such as function application, lambdas, if and case statements. Pattern matching is handled by a \texttt{MatchGroup} type. Each \texttt{MatchGroup} contains a list of \texttt{Match}es and some typing information. Consider the case statement in Figure~\ref{caseStmt}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -429,7 +427,7 @@ case (x, y) of
 \label{caseStmt}
 \end{figure}
 
-This would be parsed into the \texttt{HsCase} constructor of \texttt{HsExpr}. This constructor is seen in figure~\ref{hscase}, the first constructor argument represents the expression that the patterns are matched against, (the tuple \texttt{(x,y)} in this case). The abstract syntax tree of this expression is shown in figure~\ref{caseAST}. The second argument to \texttt{HsCase} represents all four of the matches in the case statement. \texttt{MatchGroup}s are used to represent any code that associates some patterns with a right hand side expression. Function bindings, lambda expression, and case statements all use \texttt{MatchGroup}s. 
+This would be parsed into the \texttt{HsCase} constructor of \texttt{HsExpr}. This constructor is seen in Figure~\ref{hscase}. The first constructor argument represents the expression that the patterns are matched against (the tuple \texttt{(x,y)} in this case). The abstract syntax tree of this expression is shown in Figure~\ref{caseAST}. The second argument to \texttt{HsCase} represents all four of the matches in the case statement. \texttt{MatchGroup}s are used to represent any code that associates some patterns with a right hand side expression. Function bindings, lambda expression, and case statements all use \texttt{MatchGroup}s. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -457,25 +455,29 @@ HsCase (LHsExpr id) (MatchGroup id (LHsExpr id))
                         (HsVar 
                          (Unqual {OccName: y})))))]))
 \end{lstlisting}
-\caption{The fragment of parsed abstract syntax representing the expression being pattern matched in figure~\ref{caseStmt}.}
+\caption{The fragment of parsed abstract syntax representing the expression being pattern matched in Figure~\ref{caseStmt}.}
 \label{caseAST}
 \end{figure}
 
-In the case expression from figure~\ref{caseStmt} each of the four pattern matches is a \texttt{Match} in the expressions \texttt{MatchGroup}. Each \texttt{Match} associates a left hand side pattern with the appropriate right hand side expression. 
+In the case expression from Figure~\ref{caseStmt} each of the four pattern matches is a \texttt{Match} in the expressions \texttt{MatchGroup}. Each \texttt{Match} associates a left hand side pattern with the appropriate right hand side expression. 
 
 \subsubsection{The syntax tree}
 The previous section gave a brief overview of GHC's identifiers and its representation of expressions. This section describes the broader picture, the representation of whole Haskell programs.  
 
-According to the GHC a Haskell program is simply a list of modules.\footnote{This is a very simple view and additional tools are needed to properly represent "projects" which is the context that most Haskell programs exist inside of. This is discussed further in section~\ref{hareInners}.} Inside of GHC each module is represented by an \texttt{HsModule}. This top level structure keeps track of everything that module imports, exports, and a list of all the declarations that the module defines. Declarations (of type \texttt{HsDecl}) are what represent everything that can be defined in Haskell. 
+According to the GHC a Haskell program is simply a list of modules.\footnote{This is a very simple view and additional tools are needed to properly represent "projects" which is the context that most Haskell programs exist inside of. This is discussed further in Section~\ref{hareInners}.} Inside of GHC each module is represented by an \texttt{HsModule}. This top level structure keeps track of everything that the module imports, exports, and a list of all the declarations that the module defines. Declarations (of type \texttt{HsDecl}) are what represent everything that can be defined in Haskell. 
 
-The \texttt{HsDecl} type is only used as a wrapper around other types. Bindings (of functions and/or values), instance, and type class declaration are differentiated by \texttt{HsDecl}'s constructors. 
+The \texttt{HsDecl} type is only used as a wrapper around other types. Bindings (of functions and/or values), instance, and type class declaration are differentiated by \texttt{HsDecl}'s constructors. A few of the more common \texttt{HsDecl} constructors are shown in Figure~\ref{hsdecl}. 
 
-\begin{lstlisting}[caption={A subset of \texttt{HsDecl constructors}}]
+\begin{figure}
+\begin{lstlisting}
 data HsDecl id =
 	   TyClD (TyClDecl id)
 	| InstD (InstDecl id)
 	| ValD  (HsBind id)
 \end{lstlisting}
+\caption{A subset of \texttt{HsDecl constructors}}
+\label{hsdecl}
+\end{figure}
 
 \texttt{HsDecl} only provides a high level categorisation of what type it is. There is very little information stored at this level, the inner type is the "payload" of the declaration (e.g. \texttt{HsBind} or \texttt{TyClDecl}). These payload types are what store the type and expression level abstract syntax of Haskell that was described in the previous section.
 
@@ -484,9 +486,9 @@ Some notable payload types are \texttt{TyClDecl}, \texttt{InstDecl}, \texttt{HsB
 \section{Generic programming}
 \label{genProg}
 
-The need for a generic programming library, as previously discussed in section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}. 
+The need for a generic programming library, as previously discussed in Section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}. 
 
-SYB is included with GHC and has become the Haskell community's standard generic traversal library, however HaRe still uses Strafunski because it provides ``stop'' traversals. These traversals (stop top down type preserving and type unifying) descend the tree until the strategy ``succeeds'' (that is the extended function can be applied) and then stops. Essentially it cuts a line across the abstract syntax tree where everything below the line is unvisited. This traversal is useful when refactoring because of how the ASTs types are nested within each other. For example, a refactoring commonly wants to modify the body of a function and the stop traversals ensure that when the extended function is applied it is applied with the expression representing the whole binding rather than sub-expressions.
+SYB is included with GHC and has become the Haskell community's standard generic traversal library, however HaRe still uses Strafunski because it provides ``stop'' traversals. These traversals (stop-top-down, type preserving, and type unifying) descend the tree until the strategy ``succeeds'' (that is, the extended function can be applied) and then stops. Essentially it cuts a line across the abstract syntax tree where everything below the line is unvisited. This traversal is useful when refactoring because of how the ASTs types are nested within each other. For example, a refactoring commonly wants to modify the body of a function and the stop traversals ensure that when the extended function is applied, it is applied with the expression representing the whole binding rather than sub-expressions.
 
 \subsection{Generic Traversals}
 The Stratego/XT library was one of first systems for programming tree transformations in a systematic way~\citep{stratego}. Stratego developed the idea of a transformation strategy. A strategy is the combination of a term rewriting function and a traversal function that describes how that rewriting function should be applied to a tree of terms. Stratego provides combinators that help construct term rewriting functions and tree traversal functions \citep{stratego}.
@@ -497,7 +499,7 @@ Stratego is an untyped transformation system and so was unsuitable for working w
 
 	Scrap Your Boilerplate (SYB) is a generic traversal library for Haskell that was inspired by Strafunski~\citep{syb}. SYB comes with GHC and has become the most used generic programming library in the Haskell community.\footnote{According to \url{http://packdeps.haskellers.com/reverse}} 
 
-	Suppose there was a simple expression language that contained integers, integer addition, assignment, and variables. This language is represented by the type defined in figure~\ref{expression} and a function that works over this type to rename a variable "x" to "a" is defined in figure~\ref{renamexvar}.
+	Suppose there was a simple expression language that contained integers, integer addition, assignment, and variables. This language is represented by the type defined in Figure~\ref{expression} and a function that works over this type to rename a variable "x" to "a" is defined in Figure~\ref{renamexvar}.
 	
 	\begin{figure}[t]
 	\begin{lstlisting}
@@ -532,7 +534,7 @@ renameXVar v = v
 	
 	This is fairly straightforward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what is known as "boilerplate" code~\citep{syb}. Boilerplate code is highly repetitive, verbose, and difficult to debug and maintain.  In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} would become much more time-consuming and a nightmare to maintain. 
 	
-	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as shown in figure~\ref{renameSYB}.
+	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as shown in Figure~\ref{renameSYB}.
 	
 	\begin{figure}[t]
 	\begin{lstlisting}
@@ -560,13 +562,13 @@ This example nicely illustrates the four key components of an SYB traversal~\cit
 	
 	From the example mentioned previously the "interesting" part of this traversal is the rename function, because this function contains the code that actually changes the name "x" to the name "a." The \texttt{mkT} function extends the type of the \texttt{rename} function to \texttt{Typeable~a = > a~ -> a}. 
 	
-	Type extension allows for the \texttt{rename} function to work over any members of the \texttt{Typeable} class rather than just \texttt{Name}s. The extended version of \texttt{rename} will work as expected when provided with an argument of type \texttt{Name}, and if an argument of any other type is provided the traversal will continue onto the arguments component parts if it has any and returns the argument unchanged otherwise.
+	Type extension allows for the \texttt{rename} function to work over any members of the \texttt{Typeable} class rather than just \texttt{Name}s. The extended version of \texttt{rename} will work as expected when provided with an argument of type \texttt{Name}, and if an argument of any other type is provided the traversal will continue onto the argument's component parts if it has any and returns the argument unchanged otherwise.
 	
-	The \texttt{everywhere} function is this traversal's generic combinator, \texttt{everywhere} applies a generic function to every node in the tree in a bottom-up manner. Finally as you can see in the declaration of \texttt{Expr} derives both the \texttt{Typeable} and \texttt{Data} classes so it can be traversed by \texttt{everywhere}. A member of the \texttt{Typeable} class has defined a generic representation of itself and members of the \texttt{Data} class implement generic folding operations. Put together these two classes are what allow a data type to be generically traversed. 
+	The \texttt{everywhere} function is this traversal's generic combinator. \texttt{everywhere} can apply a generic function to every node in a tree in a bottom-up manner, as long as that tree is of type \texttt{Data} and \texttt{Typeable}. A member of the \texttt{Typeable} class has defined a generic representation of itself and members of the \texttt{Data} class implement generic folding operations.	As you can see that the \texttt{Expr} data type, from Figure~\ref{expression}, derives both the \texttt{Typeable} and \texttt{Data} classes so it can be traversed by \texttt{everywhere}.  
 	
 \subsubsection{Types of Generic Algorithms}
 
-SYB defines three types of generic algorithms, transformations, queries, and monadic transformations. The \texttt{rename} example from the previous section is an example of a transformation. Transformations preserve the type of the structure that is traversed. Queries, on the other hand, are "type unifying" algorithms. Queries are good for summarizing information contained in a data structure. You would use a query, for example, to traverse an expression and collect all of its bound variables. Using the same expression type (Figure~\ref{expression}) from the previous section the following function extracts all bound variables from a given expression.
+SYB defines three types of generic algorithms: transformations, queries, and monadic transformations. The \texttt{rename} example from the previous section is an example of a transformation. Transformations preserve the type of the structure that is traversed. Queries, on the other hand, are "type unifying" algorithms. Queries are good for summarizing information contained in a data structure. You would use a query, for example, to traverse an expression and collect all of its bound variables. Using the same expression type (Figure~\ref{expression}) from the previous section, the following function extracts all bound variables from a given expression.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -578,7 +580,7 @@ bVars e = everything (++) ([] `mkQ` f) e
 \caption{A generic function that collects all bound variables from an expression.}
 \end{figure}
 
-\texttt{everything}, as seen in the \texttt{bVars} function from the previous listing, is the generic query combinator that summarises all nodes, top down from left to right~\citep{sybDocs}. The first argument to \texttt{everything} is the function it uses to combine separate results from the query. In this case all the lists of names will be appended together. The "interesting" function \texttt{f} that actually returns a \texttt{Name} when one is being bound is extended via the \texttt{mkQ} function. \texttt{mkQ} will apply \texttt{f} when possible otherwise it will just return the empty list.
+\texttt{everything}, as seen in the \texttt{bVars} function from the previous listing, is the generic query combinator that summarises all nodes, top down from left to right~\citep{sybDocs}. The first argument to \texttt{everything} is the function it uses to combine separate results from the query. In this case, all the lists of names will be appended together. The "interesting" function \texttt{f} that actually returns a \texttt{Name} when one is being bound is extended via the \texttt{mkQ} function. \texttt{mkQ} will apply \texttt{f} when possible otherwise it will just return the empty list.
 
 It is also useful to do transformations from within some monadic context. A simple example of this would be to rewrite the finding bound variables example from previously but instead the list of found results is stored as a piece of state.
 
@@ -598,7 +600,7 @@ bVars e = execState findVars []
 \caption{Finding bound variables using the state monad}
 \end{figure}
 
-A big advantage of monadic traversals is that both querying and transformations can happen in a single pass. The example in Figure~\ref{renameVars} renames every \texttt{Name} in an expression by add \texttt{"\_old"} as a suffix and stores the original names in a list. 
+A big advantage of monadic traversals is that both querying and transformations can happen in a single pass. The example in Figure~\ref{renameVars} renames every \texttt{Name} in an expression by adding \texttt{"\_old"} as a suffix and stores the original names in a list. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -615,20 +617,20 @@ renameVars e = everywhereM (mkM f) e
 \label{renameVars}
 \end{figure}
  
-This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by an instance of \texttt{GhcMonad} all while modifying the abstract syntax. The GHC API's operations all work within the \texttt{GhcMonad} that provides the features GHC needs to compile a single Haskell source file such as IO, logging warning, exception handling, and keeping track of the compilation session~\citep{ghcApi}.   
+This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by an instance of \texttt{GhcMonad}, all while modifying the abstract syntax. The GHC API's operations all work within the \texttt{GhcMonad} that provides the features GHC needs to compile a single Haskell source file such as IO, logging warning, exception handling, and keeping track of the compilation session~\citep{ghcApi}.   
 	 
 \section{ghc-exactprint}
 \label{ghcExactprint}
 
 After using generic programming to transform the abstract syntax, HaRe needs to be able to print the modified code. A challenging part of building a refactoring tool is that a user will not want non-refactored parts of their code to change at all. HaRe needs to preserve the user's comments and spacing from the source file.
 
-Prior to GHC version 7.10.1 the location of certain keywords and punctuation (such as \texttt{do} and \texttt{let}) and user comments were lost after parsing. This made parsing and then printing an exact copy of a GHC Haskell source file using the AST alone impossible. GHC's 7.10.1 release added annotations for the "lost" syntax elements that had previously not been represented in the parsed abstract syntax~\citep{apiAnns}. 
+Prior to GHC version 7.10.1, the location of certain keywords and punctuation (such as \texttt{do} and \texttt{let}) and user comments were lost after parsing. This made parsing and then printing an exact copy of a GHC Haskell source file impossible if you only had a copy of its AST. GHC's 7.10.1 release added annotations for the "lost" syntax elements that had previously not been represented in the parsed abstract syntax~\citep{apiAnns}. 
 
-The parser produces a map that associates the keyword and the source span that the keyword can be found in with that keywords exact location. This approach was taken to avoid littering the existing AST with functionally meaningless keyword data~\citep{apiAnns}. 
+The parsed source now includes a map that associates each ``lost'' keyword with the source span that the keyword can be found in, and that keyword's exact location. This approach was taken to avoid littering the existing AST with functionally meaningless keyword data~\citep{apiAnns}. 
 
 Even with the position of every syntax element being recorded, printing a module after the AST has been modified is not easy. Many AST elements are "located" with a source span that indicates that element's exact position in the file. This means that any change to the AST will require updating the location of all the syntax elements that occur later in the line at least for single line changes and, in the case of changes that modify entire lines, every element after that change will need its location to be updated.
 
-Ghc-exactprint simplifies this immensely by allowing us to position elements relative to their neighbours rather than absolutely~\citep{exactprint}. After parsing a source file HaRe takes the annotations GHC returns with the parsed abstract syntax and relativises them using ghc-exactprint. For each syntax element ghc-exactprint creates a new data type called an "\texttt{Annotation}" which contains an offset that indicates where this element should be positioned compared to the previous element. Take for example the definition in Figure~\ref{strangeSpacing}.
+Ghc-exactprint simplifies this immensely by allowing us to position elements relative to their neighbours rather than absolutely~\citep{exactprint}. After parsing a source file, HaRe takes the annotations GHC returns with the parsed abstract syntax and relativises them using ghc-exactprint. For each syntax element ghc-exactprint creates a new data type called an "\texttt{Annotation}" which contains an offset that indicates where this element should be positioned compared to the previous element. Take for example the definition in Figure~\ref{strangeSpacing}.
 
 \begin{figure}[t]
 \begin{lstlisting} 
@@ -670,12 +672,12 @@ f i = i + 1
 	\label{design}
 \end{figure}
 
-We have just discussed the major components that HaRe depends on. The ghc-api gives us access to the internal representation of Haskell, the generic programming libraries Scrap Your Boilerplate and Strafunski-StrategyLib allows HaRe to more easily work with that internal representation, and ghc-exactprint is how HaRe preserves the source files spacing when writing the output file. The relationship between the dependencies and HaRe's components is shown in figure~\ref{design}. From this foundation we can make HaRe focused on refactoring rather than solving these more generic problems. This section will discuss how HaRe is implemented, what its API provides, and some general conventions that its refactorings use.
+We have just discussed the major components that HaRe depends on. The ghc-api gives us access to the internal representation of Haskell, the generic programming libraries Scrap Your Boilerplate and Strafunski-StrategyLib allow HaRe to work more easily with that internal representation, and ghc-exactprint is how HaRe preserves the source files spacing when writing the output file. The relationship between the dependencies and HaRe's components is shown in Figure~\ref{design}. From this foundation we can make HaRe focused on refactoring rather than solving these more generic problems. This section will discuss how HaRe is implemented, what its API provides, and some general conventions that its refactorings use.
 
 \subsection{The Internal Structure of HaRe}
 \label{hareInners}
 
-The GHC API exposes all the functionality needed to compile a set of Haskell source files. In reality Haskell programs consist of more than just single source files without dependencies. Projects are organised using build tools such as Cabal~\citep{cabal} or Stack~\citep{stack} that handle these issues for the programmer. HaRe needs to be aware of the context that these tools provide because refactorings may change multiple modules or modify modules that import modules from external dependencies. In HaRe's case ghc-mod provides a monadic context that handles these build environments and compiler setup~\citep{ghcMod}. Within ghc-mod's context HaRe keeps track of the state of the refactoring session.
+The GHC API exposes all the functionality needed to compile a set of Haskell source files. In reality Haskell programs consist of more than just single source files without dependencies. Projects are organised using build tools such as Cabal~\citep{cabal} or Stack~\citep{stack} that handle these issues for the programmer. HaRe needs to be aware of the context that these tools provide because refactorings may change multiple modules or modify modules that import modules from external dependencies. In HaRe's case, ghc-mod provides a monadic context that handles these build environments and compiler setup~\citep{ghcMod}. Within ghc-mod's context, HaRe keeps track of the state of the refactoring session.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -688,11 +690,11 @@ newtype RefactGhc a = RefactGhc
 
 Figure~\ref{refactghc} shows the definition of HaRe's monad that each refactoring runs in. \texttt{RefactState} is an algebraic data type that keeps track of all the settings, abstract syntax, and filepath for refactoring a single file. It is possible to refactor client modules by setting the filepath in the \texttt{RefactState} to target another module. HaRe will then parse and typecheck that module's information into the state for transformation.
 
-Even though there are three types of the AST, the annotations are only included in the parsed AST. Once a refactoring has finished all of its changes need to be reflected in the parsed abstract syntax tree and its annotations because this is the structure that ghc-exactprint works over. HaRe's state still contains all three of the syntax trees because the renamed and typed source are useful for the additional type and scope information they contain about the source file. 
+Even though there are three types of the AST, the annotations are only included in the parsed AST. Once a refactoring has finished, all of its changes need to be reflected in the parsed abstract syntax tree and its annotations because this is the structure that ghc-exactprint works over. HaRe's state still contains all three of the syntax trees because the renamed and typed sources are useful for the additional type and scope information they contain about a source file. 
 
 \subsection{HaRe's API}
 
-Modifying and reasoning about GHC's abstract syntax and maintaining the associated annotations is still a complex task even with help from HaRe's dependencies. HaRe defines its own API to help fill this gap between its dependencies and its refactorings. In addition to the obvious functions that are required for running a refactoring within the \texttt{RefactGhc} monad the API also includes helper functions that make working with the state easier. 
+Modifying and reasoning about GHC's abstract syntax and maintaining the associated annotations is still a complex task, even with help from HaRe's dependencies. HaRe defines its own API to help fill this gap between its dependencies and its refactorings. In addition to the obvious functions that are required for running a refactoring within the \texttt{RefactGhc} monad, the API also includes helper functions that make working with the state easier. 
 
 HaRe also defines a large collection of program analysis and transformation functions. For example, pulling the binding of a top level variable from a module's entire abstract syntax tree is a task that many refactorings have to do so this functionality is part of HaRe's API. There are also small program transformations that are not in and of themselves refactorings but common low level modifications that are useful to several refactorings, such as adding a new import declaration or making a function infix by wrapping it in back quotes (the \texttt{`} character).
 
@@ -703,11 +705,11 @@ HaRe's dependencies help abstract away the low-level\footnote{Low level from the
 
 \subsection{Implementing Refactorings in HaRe}
 
-HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in section~\ref{hareInners} everything must run inside of the \texttt{RefactGhc} monad whose state is where the abstract syntax of a target module is stored. A refactoring is also expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows programmers to check the result of a refactoring before overwriting the existing module.}  
+HaRe actually requires very few things from a refactoring implementation. As was mentioned previously in Section~\ref{hareInners}, everything must run inside the \texttt{RefactGhc} monad whose state is where the abstract syntax of a target module is stored. A refactoring is also expected to return a list of  "\texttt{ApplyRefacResult}s" which contains an updated parsed AST and annotations along with the filepath the AST originated from; this updated AST is what HaRe writes out as the result of the refactoring\footnote{HaRe actually outputs to a temporary file. When refactoring "file.hs" HaRe produces "file.refactored.hs." This allows programmers to check the result of a refactoring before overwriting the existing module.}  
 
-Beyond those two features refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that checking \textit{pre}conditions would be the first thing the implementation of that refactoring computes. A more efficient implementation checks preconditions throughout computation alongside the AST transformation. For example, the renaming refactoring doesn't check for name clashes in client modules until after the source module has been modified. If a name clash is found in a client module then an error is thrown at that point and the whole refactoring is rolled back. Though this slows down the time to failure somewhat it saves HaRe from traversing every client module twice, once for preconditions and a second time for rewriting.
+Beyond those two features, refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that checking \textit{pre}conditions would be the first thing the implementation of that refactoring computes. A more efficient implementation checks preconditions throughout computation alongside the AST transformation. For example, the renaming refactoring doesn't check for name clashes in client modules until after the source module has been modified. If a name clash is found in a client module then an error is thrown at that point and the whole refactoring is rolled back. Though this slows down the time to failure somewhat, it saves HaRe from traversing every client module twice, once for preconditions and a second time for rewriting.
 
-Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times, for example, the renaming refactoring checks for name conflicts while it descends the AST replacing the old name with the new one. Obviously this strategy only works for certain preconditions the only precondition for deleting a definition is that the target definition isn't used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not.
+Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times. For example, the renaming refactoring checks for name conflicts while it descends the AST, replacing the old name with the new one. Obviously this strategy only works for certain preconditions: the only precondition for deleting a definition is that the target definition isn't used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not.
 
 \subsection{Using the GHC's Abstract Syntax Trees}
 Each stage of the compiler takes the previous stage's output and creates it's own version of the tree decorated with some additional information. This provides a challenge when writing refactorings because all of the changes made to the source needs to be reflected in the parsed syntax tree. The additional name and type information can be retrieved from the other trees but they will have to be traversed from the top down to where the refactoring is taking place.
@@ -724,26 +726,28 @@ In general most of the time the parsed syntax contains enough information to per
 
 \subsection{The Development Process of HaRe}
 
-Very little, if any, of the code from the original implementation of HaRe is used today. Development of HaRe has been coordinated through GitHub\footnote{\url{https://github.com/RefactoringTools/HaRe}} since 2011. When I began working on HaRe in 2013 Alan Zimmerman had upgraded much of the internal structure of HaRe to use the GHC API. 
+Very little, if any, of the code from the original implementation of HaRe is used today. Development of HaRe has been coordinated through GitHub\footnote{\url{https://github.com/RefactoringTools/HaRe}} since 2011. When I began working on HaRe in 2013, Alan Zimmerman had upgraded much of the internal structure of HaRe to use the GHC API. 
 
-The internal structure of HaRe is mostly the work of Alan however a description of the current implementation has not appeared in the literature yet and so it has been described in some detail here. My contributions to HaRe are in the development of the refactorings described throughout this thesis and in the creation of a high level api for program analysis, synthesis, and transformation which is described in Section~\ref{hareAPI}.
+The internal structure of HaRe is mostly the work of Alan, however a description of the current implementation has not appeared in the literature yet and so it has been described in some detail here. My contributions to HaRe are in the development of the refactorings described throughout this thesis and in the creation of a high level API for program analysis, synthesis, and transformation which is described in Section~\ref{hareAPI}.
 
 
 
 \chapter{Data-driven refactorings}
 \label{chp:ddRefs}
 
-Some refactorings focus on rewriting the structure of a program (e.g. refactoring an \texttt{if} to \texttt{case} statement) a data-driven refactoring focuses on the types that a program works over and \textit{how} that program manipulates those types. Any changes that a data-driven refactoring makes to the structure of the program are \textit{driven} by the data types of that program rather than being the main motivation of performing the refactoring.
+Some refactorings focus on rewriting the structure of a program (e.g. refactoring an \texttt{if} to \texttt{case} statement), but a data-driven refactoring focuses on the types that a program works over and \textit{how} that program manipulates those types. Any changes that a data-driven refactoring makes to the structure of the program are \textit{driven} by the data types of that program rather than being the main motivation of performing the refactoring. 
 
-This chapter will begins in section~\ref{ooRefs} with a discussion of data-driven refactorings for imperative object-oriented languages. Imperative programs are written as a sequence of steps that modify an object to the desired output state. Types in an object-oriented also exist in a strict hierarchy. These two factors mean that object-oriented data-driven refactorings modify the hierarchy while leaving the structure of the code mostly intact. The rest of this chapter will describe data-driven refactorings for functional programs.
+Consider the introducing a type synonym refactoring that is described in Section~\ref{introSyn}, this refactoring adds a type synonym for some type. The motivation behind this is keeping the types of your program up to date with what they are meant to represent. For example, if some strings are used to represent customer names in a program, introducing a synonym for strings called \texttt{Name} helps clarify what data certain strings are supposed to represent. In this way the refactoring's changes to the source program are motivated by the data in that program and the desire for the program's types to better communicate the nature of that data.
 
-In comparison to the imperative way of constructing programs, functional programs tend to describe the relationship between the input and output data. Functional programming languages also tend to offer a much richer type system than object-oriented languages where data types are typically either objects or a set of non-user expandable primitive types. These two facts mean that the structure of a functional program can be determined by the types it works over to a much greater degree than in imperative languages. 
+This chapter begins with a discussion of data-driven refactorings for imperative object-oriented languages in Section~\ref{ooRefs}. Imperative programs are written as a sequence of steps that modify an object to the desired output state. Types in an object-oriented program also exist in a strict hierarchy. These two factors mean that object-oriented data-driven refactorings modify the hierarchy while leaving the structure of the code mostly intact. The rest of this chapter will describe data-driven refactorings for functional programs.
 
-Section~\ref{introSyn} describes the introduce type synonym refactoring. This is the renaming of data-driven refactorings, neither the structure nor the type of the target program changes just how the program refers to the types it works over. Next, section~\ref{genMaybe} describes a generalisation refactoring. This thesis outlines two generalisations, one (described in section~\ref{genMaybe}) makes code of a specific type (\texttt{Maybe}) work over a type class (\texttt{MonadPlus} or \texttt{Monad}) instead. The other generalises code of one type class to use a class higher the hierarchy(covered in chapter~\ref{chp:applicative}). Finally section~\ref{listToDlist} describes a refactoring that tranforms programs that work over lists to instead use an alternate implementation of lists. The refactoring method described in this chapter could be applied to refactor between types that can be projected onto another type.
+In comparison to the imperative way of constructing programs, functional programs describe the relationship between the input and output data. Functional programming languages also tend to offer a much richer type system than object-oriented languages where data types are typically either objects or a non-user expandable set of primitive types. These two facts mean that the structure of a functional program can be determined by the types it works over to a much greater degree than in imperative languages. 
+
+Section~\ref{introSyn} describes the ``introducing a type synonym'' refactoring. This is the renaming of data-driven refactorings: neither the structure nor the type of the target program changes, just how the program refers to the types it works over. Next, Section~\ref{genMaybe} describes a generalisation refactoring. This thesis outlines two generalisations, one (described in Section~\ref{genMaybe}) makes code of a specific type (\texttt{Maybe}) work over a type class (\texttt{MonadPlus} or \texttt{Monad}) instead. The other generalises code of one type class to use a class higher the hierarchy (covered in Chapter~\ref{chp:applicative}). Finally Section~\ref{listToDlist} describes a refactoring that tranforms programs that work over lists to instead use an alternate implementation of lists. The refactoring method described in this chapter could be applied to refactor between any types that can be projected onto another type.
 
 \section{Object-Oriented Data Refactorings}\label{ooRefs}
 
-The origins of refactoring are deeply rooted in the object-oriented world~(\cite{programRestructuring},~\cite{refactOOFrameworks}). Though it traces its origins to work on transforming Algol~\citep{recursiveTransformation}. The canonical catalogue of refactorings remains Martin Fowler's \emph{Refactoring: Improving the Design of Existing Code} ~\citep{fowler}. Fowler's catalogue of refactorings are all written in Java though he purposefully avoided using any features that were unique to Java, so that the refactorings could be applicable in many different programming languages.
+The origins of refactoring are deeply rooted in the object-oriented world~(\cite{programRestructuring};~\cite{refactOOFrameworks}), though Though it traces its origins to work on transforming Algol~\citep{recursiveTransformation}. The canonical catalogue of refactorings remains Martin Fowler's \emph{Refactoring: Improving the Design of Existing Code} ~\citep{fowler}. Fowler's catalogue of refactorings are all written in Java though he purposefully avoided using any features that were unique to Java, so that the refactorings could be applicable in many different programming languages.
 
 As a functional programmer when going through this catalogue of refactorings there seem to be three types of refactorings.
 
@@ -753,9 +757,9 @@ As a functional programmer when going through this catalogue of refactorings the
 	\item Refactorings not applicable to a functional language
 \end{itemize}
 
-That first type of refactorings' are structural refactorings and their usefulness to a functional program is easily understood. Refactorings like renaming or adding a parameter don't depend on object-oriented features existing in the target language.
+That first type of refactorings are structural refactorings and their usefulness to a functional program is easily understood. Refactorings like renaming or adding a parameter don't depend on object-oriented features existing in the target language.
 
-The third type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or have no equivalent in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, is not as ubiquitous in functional languages because most do not support objects and immutability makes a "setter" function irrelevant. OCaml would be a notable exception to this rule: OCaml supports objects and allows the programmer to mark variables as mutable, and so getter and setter methods are possible.
+The third type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or have no equivalent in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, is not as ubiquitous in functional languages because most do not support objects, and immutability makes a "setter" function irrelevant. OCaml would be a notable exception to this rule: OCaml supports objects and allows the programmer to mark variables as mutable, and so getter and setter methods are possible.
 
 \begin{figure}[t]
 \begin{lstlisting}[language=caml, morekeywords={object,method}]
@@ -771,7 +775,7 @@ let mInt init_i = object
 \label{ocamlObj}
 \end{figure}
 
-The OCaml object from figure~\ref{ocamlObj} would be a valid target for this refactoring. However these methods are not as common as they are in imperative object-oriented languages with mutable data as the default, so a refactoring to remove a setter method is of limited value even for OCaml.
+The OCaml object from Figure~\ref{ocamlObj} would be a valid target for this refactoring. However these methods are not as common as they are in imperative object-oriented languages with mutable data as the default, so a refactoring to remove a setter method is of limited value even for OCaml.
 
 The second type of refactoring found in~\citep{fowler} is much more interesting to a functional programmer. The specifics of these refactorings are not directly applicable to functional programs but the underlying motivations are relevant to any programming paradigm. 
 
@@ -804,7 +808,7 @@ class Order {
 \caption{The Order class}
 \end{figure}
 
-The refactoring creates a new customer class that has a string field with a getter method as seen in figure~\ref{custCls}. The customer class doesn't add any additional features but the extra layer of abstraction sets up the code base for further development. The customer object could have fields added that represent contact info or further demographic information without polluting the order class with order-irrelevant data.
+The refactoring creates a new customer class that has a string field with a getter method as seen in Figure~\ref{custCls}. The customer class doesn't add any additional features but the extra layer of abstraction sets up the code base for further development. The customer object could have fields added that represent contact info or further demographic information without polluting the order class with order-irrelevant data.
 
 \begin{figure}[t]
 \begin{lstlisting}[language = java,tabsize=4]
@@ -842,32 +846,32 @@ class Customer {
 
 Functional programmers have to make similar data representation decisions as the object-oriented programmer. At the start of a project representing a customer just by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction is required. 
 
-This section introduced how object-oriented refactorings help build up the data model over the lifetime of a project. In an object-oriented language the primary abstraction method is to introduce additional objects. These sorts of refactorings for a language with a rich type system like Haskell offer many more choices for evolving the data model of a system. An equivalent, but simpler refactoring, in the Haskell case would replace the string type synonym with the abstract data type in figure~\ref{custData}. The rest of this chapter will describe refactorings for Haskell that support data model evolution.  
+This section introduced how object-oriented refactorings help build up the data model over the lifetime of a project. These sorts of refactorings for a language with a rich type system like Haskell offer many more choices for evolving the data model of a system. Though a Haskell programmer can take inspiration or directly reimplement several of the canonical Fowler refactorings there may be additional refactorings that are completely functional with no OO counterparts. The rest of this chapter will describe refactorings for Haskell that support data model evolution.  
 
-\begin{figure}[t]
-\begin{lstlisting}
-data Customer = Customer {name :: String}
-\end{lstlisting}
-\caption{The algebraic data type for \texttt{Customer}.}
-\label{custData}
-\end{figure}
+%\begin{figure}[t]
+%\begin{lstlisting}
+%data Customer = Customer {name :: String}
+%\end{lstlisting}
+%\caption{The algebraic data type for \texttt{Customer}.}
+%\label{custData}
+%\end{figure}
 \section{Data-Driven Refactorings in Haskell}
 
-Haskell offers a rich environment for data representation. The Haskell 2010 standard defines several types that are included in the prelude, including tuples, lists, characters, strings (which are just lists of characters), several types of numbers, and the function type. Additionally programmers can construct new types with algebraic and abstract data types or rename existing types with type synonyms. Type classes support overloading as well. The standard library of GHC comes with many type classes that can help produce powerful abstractions~\citep{typeclassopedia}. Contrast this with how most object-oriented type systems are either unified where every type is a subclass of some top level \texttt{Object} class (e.g. C\# or Ruby) or there are is a fixed set of predefined primitive types as well as the object hierarchy (e.g. C++ and Java's type systems). 
+Haskell offers a rich environment for data representation. The Haskell 2010 standard defines several types that are included in the prelude, including tuples, lists, characters, strings (which are just lists of characters), several types of numbers, and the function type. Additionally, programmers can construct new types with algebraic and abstract data types or rename existing types with type synonyms. Type classes support overloading as well. The standard library of GHC comes with many type classes that can help produce powerful abstractions~\citep{typeclassopedia}. Contrast this with how most object-oriented type systems are either unified, where every type is a subclass of some top level \texttt{Object} class, (e.g. C\# or Ruby) or there are a fixed set of predefined primitive types as well as the object hierarchy (e.g. C++ and Java's type systems). 
 
-These two different approaches to type systems both have pros and cons which has sparked a vigorous (and quite possibly eternal) debate. The goal of this thesis is not to add to this debate, instead to build from a number of general principles that transcend the debate.
+These two different approaches to type systems both have pros and cons, which have sparked a vigorous (and quite possibly eternal) debate. The goal of this thesis is not to add to this debate, instead it is to build from a number of general principles that transcend the debate.
 
 \begin{itemize}
 	\item Data representation is a language independent problem that must be answered in every project.
 	\item The way a project manages and represents its data is very likely to evolve over a project's lifetime and this is indeed desirable.
 	\item Refactoring is a structured way to support this evolution.
 		\item Refactorings for a language like Haskell need to take a different approach than those for object-oriented languages, particularly when refactorings are data-driven rather than ``structural.''  
-	\item Data representation in a rich type system like Haskell's in some sense determines the structure of the program.
+	\item Data representation in a rich type system like Haskell's, in some sense, determines the structure of the program.
 \end{itemize} 
 
 \subsection{Introducing a Type Synonym}\label{introSyn}
 
-Type synonyms in Haskell, as mentioned previously, are a way to name an existing type. A simple example can be seen in figure~\ref{fooSyn}. 
+Type synonyms in Haskell, as mentioned previously, are a way to name an existing type. A simple example can be seen in Figure~\ref{fooSyn}. 
 
 \begin{figure}[t]
 	\begin{lstlisting}
@@ -882,7 +886,7 @@ f (str, i) = (tail str, i-1)
 
 Any place that where the \texttt{Foo} synonym is in scope the new name can be used to refer to any value of type \texttt{(String, Int)}. In fact "\texttt{Foo}s" and "\texttt{(String, Int)}s" are completely interchangeable. Introducing a synonym is a good way to quickly and simply name types to suggest their specific use in the current application.
 
-Returning to the example from~\citep{fowler} of an order type that keeps track of the customer who placed the order used in section~\ref{ooRefs}, see figure~\ref{haskellOrder} for a Haskell implementation of this type and a function that counts how many orders a particular customer has placed in a list of orders.
+Returning to the example from~\citep{fowler} of an order type that keeps track of the customer who placed the order used in Section~\ref{ooRefs}, see Figure~\ref{haskellOrder} for a Haskell implementation of this type and a function that counts how many orders a particular customer has placed in a list of orders.
 
 \begin{figure}
 	\begin{lstlisting}
@@ -891,12 +895,13 @@ data Order = Order {customer :: String}
 numberOfOrdersFor :: [Order] -> String -> Int
 numberOfOrdersFor orders name = length (filter (\ord -> name == (customer ord)) orders)
 	\end{lstlisting}
-	\caption{Using an algebraic data type for \texttt{order}.}\label{haskellOrder}
+	\caption{Using an algebraic data type for \texttt{order}.}
+	\label{haskellOrder}
 \end{figure}
 
 The current representation of a customer as just a \texttt{String} is underdeveloped. Introducing a customer synonym is a simple step that sets up the code base for further development. The synonym will clearly mark which strings in the program stand for customers and which do not.
 
-The introduce a type synonym refactoring works by taking a type and a valid synonym name (as per the Haskell 2010 standard~\citep{haskell2010}) and creates a new synonym. In this case the type is \texttt{String} and the synonym name should be something like "\texttt{Customer}." The only precondition of the refactoring is that the new synonym name cannot cause a name clash with any other variables in the same module and if the synonym is exported in any client modules that define something of the same name will need to qualify the import of the synonym. 
+The ``introducing a type synonym'' refactoring works by taking a type and a valid synonym name (as per the Haskell 2010 standard~\citep{haskell2010}) and creates a new synonym. In this case the type is \texttt{String} and the synonym name should be something like "\texttt{Customer}." The only precondition of the refactoring is that the new synonym's name cannot cause a name clash with any other variables in the same module. Also if the synonym is exported in any client modules that define something with the same name, these modules will need to qualify the import of the synonym. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -905,7 +910,7 @@ type Customer = String
 \caption{The customer synonym}
 \end{figure}
 
-After this the next part of the refactoring involves replacing the appropriate uses of the type with the new synonym. This part of the refactoring is difficult to automate and needs to be interactive\footnote{This is not a feature of HaRe yet.}. There is no way to infer which instances of \texttt{String} (in the case of this example) should be replaced with the \texttt{Customer} synonym. The code from listing~\ref{haskellOrder} can have all of the string instances replaced by \texttt{Customer} because all the strings are being used to represent a customer. If there were a second function \texttt{printThankYou} which has type \texttt{String -> Order -> IO ()} which prints out a customized ``thank you'' message to the customer for their order. 
+After this, the next part of the refactoring involves replacing the appropriate uses of the type with the new synonym. This part of the refactoring is difficult to automate and needs to be interactive\footnote{This is not a feature of HaRe yet.}. There is no way to infer which instances of \texttt{String} (in the case of this example) should be replaced with the \texttt{Customer} synonym. The code from listing~\ref{haskellOrder} can have all of the string instances replaced by \texttt{Customer} because all the strings are being used to represent a customer. However, consider the \texttt{printThankYou} function in Figure~\ref{printTY} which has type \texttt{String -> Order -> IO ()} and prints out a customized ``thank you'' message to the customer for their order. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -915,9 +920,10 @@ printThankYou businessName order = do
 	putStrLn (businessName ++ " hopes to see you again soon!")
 \end{lstlisting}
 \caption{The \texttt{printThankYou} function}
+\label{printTY}
 \end{figure}
 
-Though the first argument to \texttt{printThankYou} is a \texttt{String} it does not represent a customer therefore should not be replaced by the new synonym. The implicit meaning of the first argument hasn't been encoded in the type system so the programmer has to make a decision during the refactoring to make their intention for each instance of \texttt{String} clear. The final result of the refactoring can be seen in figure~\ref{orderRefact}. 
+Though the first argument to \texttt{printThankYou} is a \texttt{String} it does not represent a customer therefore should not be replaced by the new synonym. The implicit meaning of the first argument hasn't been encoded in the type system so the programmer has to make a decision during the refactoring to make their intention for each instance of \texttt{String} clear. The final result of the refactoring can be seen in Figure~\ref{orderRefact}. 
 
 \begin{figure}[t]
 	\begin{lstlisting}
@@ -938,24 +944,61 @@ printThankYou businessName order = do
 
  This transformation might seem like too small of a step. Wouldn't it be preferable to introduce a more powerful abstraction such as an algebraic data type? One of the principles of the Agile Manifesto is "simplicity" which is described as "maximizing the amount of work not done is essential"~\citep{agileManifesto}. The work not done in this case is the introduction of a more complex customer representation. This small step does clearly differentiate the strings that represent customers from other strings that represent other types of data.
  
-Small refactorings are also a good practice for tool builders. Creating multiple small composable steps that can be used in multiple ways are much more flexible than large ``monolithic'' style refactorings.
+Small refactorings are also a good practice for tool builders. Creating multiple small composable steps that can be used in multiple ways is much more flexible than large ``monolithic'' style refactorings.
 
 
-\section{Generalising Maybe}\label{genMaybe}
+\section{Generalisation}
+\label{genMaybe}
 
-A common type of refactoring is generalisation. A structural generalising refactoring would be extract a method or function. It takes expressions specific to a single function and generalises them so that they are applicable to multiple functions.
+A common type of refactoring is generalisation. A generalising refactoring that is structural would be the ``generalise a definition'' refactoring from~\citep{huiqingThesis}. This refactoring takes an expression from inside of a function and refactors it so that expression is passed as a parameter instead. Figure~\ref{genOp} shows two functions, \texttt{f} and \texttt{f\_ref}, where \texttt{f\_ref} is the function \texttt{f} after the generalise a definition refactoring is performed on it. The refactored function has become more general because instead of only being used for summing two numbers, it can be reused for any binary operations on numbers. 
 
-Data-driven generalisation is taking code written for a specific type and rewriting it to use a more general type. The newly generic code is applicable in more places and can help reduce code duplication. Fowler's Refactoring dedicates an entire chapter to generalisation, cataloguing refactorings like "extract subclass" and "extract interface"~\citep[pg. 319]{fowler}. 
+\begin{figure}[t]
+\begin{lstlisting}
+f :: Num a => a -> a -> a
+f x y = x + y
 
-Generalisations for object-oriented languages either move functionality up in a hierarchy (as in "push method up") or change the hierarchy by adding classes (e.g. "extract subclass"). Object-oriented languages have a single hierarchy since every object inherits from a root class typically just called \texttt{Object}. Functional languages don't have this single unified hierarchy, but smaller hierarchies do exist because type classes can inherit from one another. 
+f_ref :: Num a => (a -> a -> a) -> a -> a -> a
+f_ref op x y = x `op` y
+\end{lstlisting}
+\caption{Generalising the \texttt{+} operator from the function f.}
+\label{genOp}
+\end{figure} 
 
-This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. 
+In an object oriented language generalisation refactorings deal mostly with either ``moving methods around a hierarchy of inheritance,'' or creating new classes that change the hierarchy~\citep{fowler}. Examples of generalising refactorings for OO languages as described in~\citep{fowler} are pull up method, push down method, extract subclass, and extract interface. Interestingly about half of the generalisation refactorings described by Fowler are better described as specialisations, such as push down method, because they make general code more specific by moving it further down the object hierarchy.
+
+In object oriented languages, moving elements ``up'' the hierarchy (as in from subclass to superclass) is a generalisation, and doing the opposite is specialisation. This should make intuitive sense; there are more fruits than just oranges, so moving a method from the orange class up to its superclass, the fruit class, makes that code more general because it can now be applied to all subclasses of fruit, not just the orange class.
+
+Code in functional languages doesn't inhabit the rigid hierarchy of objects that exists in OO languages, so what form can generalisation take in these languages? Haskell types can exist inside of small hierarchies because type classes can inherit from one another. The generalisation refactorings that are described in this thesis all work within specific types and type classes. 
+
+This section describes refactoring functions that use the concrete \texttt{Maybe} type to instead use one of the type classes it is an instance of, either \texttt{Monad} or \texttt{MonadPlus}. These refactorings will take a function of type \texttt{a -> Maybe b} and rewrite it to become either \texttt{Monad m => a -> m b} or \texttt{MonadPlus m => a -> m b}. These refactored types are a generalisation of the original function because instead of only being applicable to a single type (\texttt{Maybe} in this case) the refactored function can now be used with data of type \texttt{Monad} or \texttt{MonadPlus}.
+
+\subsection{Generalising Maybe}
+
+This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. \texttt{Maybe} is a simple data type whose declaration is shown in Figure~\ref{maybeDecl}. \texttt{Maybe} represents a computation that can fail or return a value of type \texttt{a}. When a computation has failed \texttt{Maybe} represents this ``result'' with the \texttt{Nothing} constructor. When a calculation succeeds then \texttt{Maybe} returns the result wrapped with the \texttt{Just} constructor. \texttt{Maybe} is a commonly used type in Haskell programs, it also implements many common type classes including \texttt{Monad} and \texttt{MonadPlus}.
+
+Monads are a data type used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, who's declaration is shown in Figure~\ref{monadTC}. Instances of monad only need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind takes in a monadic value and a function who's only argument is the same type as the value that is produced by the monadic value; bind returns a monadic value the same type as the result type of its second argument.  
 
 \begin{figure}[t]
 \begin{lstlisting}
 data Maybe a = Nothing
                  | Just a
-                 
+\end{lstlisting}
+\caption{The \texttt{Maybe} data type declaration.}
+\label{maybeDecl}
+\end{figure}
+
+\begin{figure}[t]
+\begin{lstlisting}
+class Applicative m => Monad m where
+	return :: a -> m a
+    (>>=)  :: forall a b. m a -> (a -> m b) -> m b
+\end{lstlisting}
+\caption{The \texttt{Monad} type class declaration}
+\label{monadTC}
+\end{figure}
+
+\begin{figure}[t]
+\begin{lstlisting}                 
 instance MonadPlus Maybe where
    mzero = Nothing
    Nothing `mplus` r = r
@@ -965,20 +1008,15 @@ class Monad m => MonadPlus m where
    mzero :: m a
    mplus :: m a -> m a -> m a
 \end{lstlisting}
-\caption{The \texttt{Maybe} data type definition and \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}
+\caption{The \texttt{Maybe} \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}
 \label{maybeMonadPlus}
 \end{figure}
- 
-Figure~\ref{maybeMonadPlus} contains the class declaration for \texttt{MonadPlus} the \texttt{Maybe} instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a typeclass for monads that also have a monoidal structure~\footnote{A monoid is a semigroup whose associative binary operation has an identity element.}. 
 
-The \texttt{MonadPlus} class helps generalise monads that contain some concept of failure and choice. The \texttt{mzero} value represents a failed computation and \texttt{mplus} represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
+Monads are a very powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, who inherit from \texttt{Monad}, that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. Figure~\ref{maybeMonadPlus} shows the class declaration for \texttt{MonadPlus} and \texttt{Maybe}'s instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a typeclass for monads that also have some concept of failure and choice. All instances of \texttt{MonadPlus} have an \texttt{mzero} value, which represents a failed computation, and an \texttt{mplus} function, which represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
 
-\begin{figure}
-\begin{lstlisting}
-class Applicative m => Monad m where
-	return :: a -> m a
-    (>>=)  :: forall a b. m a -> (a -> m b) -> m b
-    
+
+\begin{figure}[t]
+\begin{lstlisting}   
 instance Monad Maybe where
 	return = Just
 	
@@ -989,9 +1027,55 @@ instance Monad Maybe where
 \label{maybeMonad}
 \end{figure}
 
+\subsection{Refactoring Maybe to MonadPlus} 
+
+\texttt{MonadPlus} is the obvious generalisation of \texttt{Maybe}. \texttt{Maybe} encodes failure with the \texttt{Nothing} constructor and its definition of bind chooses to discard failed computations in exchange for a possibly successful one. This behaviour is exactly what \texttt{MonadPlus} is designed to encapsulate. This section will describe a refactoring for rewriting functions that use \texttt{Maybe} to instead use the \texttt{MonadPlus} type class instead.
+
+\begin{figure}[t]
+\begin{lstlisting}
+showNat :: Int -> Maybe String
+showNat i =
+  if (i >= 0)
+    then (Just (show i))
+    else Nothing
+\end{lstlisting}
+\caption{\texttt{showNat}}
+\label{mmp2}
+\end{figure}
+
+The function \texttt{showNat} takes a pure value and returns a \texttt{Maybe}, instead of taking in a \texttt{Maybe} and returning another \texttt{Maybe} as in the previous example. The more general version of \texttt{showNat} needs to be able to express the idea of failure that \texttt{MonadPlus} encodes with the \texttt{mzero} operation. 
+
+\begin{figure}[t]
+\begin{lstlisting}
+showNat :: (MonadPlus m) => Int -> m String
+showNat i =
+  if (i >= 0)
+    then (return (show i))
+    else mzero
+\end{lstlisting}
+\caption{\texttt{showNat} refactored}
+\label{mmp2Ref}
+\end{figure} 
+ 
+Figure~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. In this case the refactoring can simply replace the \texttt{Maybe}-specific calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from listing~\ref{mmp1Ref} was constructed by changing calls to \texttt{Just} to \texttt{return} and calls to \texttt{Nothing} to \texttt{mzero}. 
+
+Due to the \texttt{return} operator of \texttt{Monad} being equivalent to \texttt{Just} and \texttt{mzero} being supplied by \texttt{MonadPlus}, both of \texttt{Maybe}'s constructors can be replaced with a more general operation. Between these two type classes all of the functionality of \texttt{Maybe} can be replaced in functions that build \texttt{Maybe}s. However if a function deconstructs a \texttt{Maybe} type through pattern matching it may not be generalisable. Consider the function \texttt{printResult} in Figure~\ref{printRes}. \texttt{printResult} uses \texttt{Maybe}'s constructors for pattern matching rather than only in right hand side expressions; there is no way to generalise pattern matching on \texttt{Just}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+printResult :: (Show a) => Maybe a -> IO ()
+printResult m =
+  case m of
+     Nothing -> putStrLn "Something went wrong"
+     (Just i) -> putStrLn $ "The result is: " ++ (show i)
+\end{lstlisting}
+\caption{\texttt{printResult}}
+\label{printRes}
+\end{figure}
+
 \subsection{Refactoring Maybe to Monad}\label{genMonad}
 
-This refactoring replaces \texttt{Maybe}-specific code with the more general \texttt{Monad} and \texttt{MonadPlus} operations. This is done by recognizing when \texttt{Maybe}-specific code is structured in the same way as the more general operations. Figure~\ref{mmp1} contains a simple example of this.  
+In some special cases, when programs use the \texttt{Maybe} type in a very specific way,\footnote{It may be more appropriate to say a ``very general way'' in this context.} it is possible to generalise a \texttt{Maybe} type to become \texttt{Monad} instead.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1022,7 +1106,7 @@ f i = Just (i + 1)
 
 The new version of \texttt{inc} has been written using infix notation, to more closely match \texttt{Maybe}'s definition of bind. Also like \texttt{Maybe}'s bind when \texttt{inc}'s first argument is \texttt{Nothing} it just returns \texttt{Nothing}. Finally the right hand side of \texttt{inc}'s second case was lifted into a separate function and is passed to the new \texttt{inc} as an argument, just like \texttt{bind}.
 
-In practice the refactoring will, by default, create an anonymous function from the right hand side of the \texttt{Just} case with calls to \texttt{Just} and \texttt{Nothing} replaced with \texttt{return} and \texttt{mzero} respectively. The final refactored version of \texttt{inc} is in figure~\ref{mmp1Ref} 
+In practice the refactoring will, by default, create an anonymous function from the right hand side of the \texttt{Just} case with calls to \texttt{Just} and \texttt{Nothing} replaced with \texttt{return} and \texttt{mzero} respectively. The final refactored version of \texttt{inc} is in Figure~\ref{mmp1Ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1035,84 +1119,16 @@ inc mi = mi >>= (\i -> (return (i+1)))
 
 It is worth saying that if the right hand side of the \texttt{Just} case from the original implementation of \texttt{inc} contained calls to \texttt{Nothing} then this function could not be generalised to \texttt{Monad}. Instead, the anonymous function would replace the occurrences of \texttt{Nothing} with \texttt{mzero} instead.  
  
-\subsection{Refactoring Maybe to MonadPlus} 
-
-The first example could be rewritten using functionality provided only by the \texttt{Monad} type class. Obviously this isn't always the case. An example of a function that cannot be completely generalised to \texttt{Monad} is in listing~\ref{mmp2}.
-
-\begin{figure}[t]
-\begin{lstlisting}
-showNat :: Int -> Maybe String
-showNat i =
-  if (i <= 0)
-    then (Just (show i))
-    else Nothing
-\end{lstlisting}
-\caption{\texttt{showNat}}
-\label{mmp2}
-\end{figure}
-
-The function \texttt{showNat} takes in a pure value and returns a \texttt{Maybe}, instead of taking in a \texttt{Maybe} and returning another \texttt{Maybe} as in the previous example. The more general version of \texttt{showNat} needs to be able to express the idea of failure that \texttt{MonadPlus} encodes with the \texttt{mzero} operation. 
-
-\begin{figure}[t]
-\begin{lstlisting}
-showNat :: (MonadPlus m) => Int -> m String
-showNat i =
-  if (i <= 0)
-    then (return (show i))
-    else mzero
-\end{lstlisting}
-\caption{\texttt{showNat} refactored}
-\label{mmp2Ref}
-\end{figure} 
- 
-Figure~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. In this case the refactoring can simply replace the \texttt{Maybe}-specific calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from listing~\ref{mmp1Ref} was constructed by changing calls to \texttt{Just} to \texttt{return} and calls to \texttt{Nothing} to \texttt{mzero}. 
-
-Due to the \texttt{return} operator of \texttt{Monad} being equivalent to \texttt{Just} and \texttt{mzero}being supplied by \texttt{MonadPlus}, both of \texttt{Maybe}'s constructors can be replaced with a more general operation. Between these two type classes all of the functionality of \texttt{Maybe} can be replaced in functions that build \texttt{Maybe}s. However if a function deconstructs a \texttt{Maybe} type through pattern matching it may not be generalisable. Consider the function \texttt{printResult} in figure~\ref{printRes}.
-
-\begin{figure}[t]
-\begin{lstlisting}
-printResult :: (Show a) => Maybe a -> IO ()
-printResult m =
-  case m of
-     Nothing -> putStrLn "Something went wrong"
-     (Just i) -> putStrLn $ "The result is: " ++ (show i)
-\end{lstlisting}
-\caption{\texttt{printResult}}
-\label{printRes}
-\end{figure}
-
-\texttt{printResult} uses \texttt{Maybe}'s constructors for pattern matching rather than in expressions; there is no generic pattern match for \texttt{Just}. Refactoring \texttt{printResult} will require the programmer to provide a way to convert its argument to \texttt{Maybe}.
-
-\begin{figure}[t]
-\begin{lstlisting}
-printResult :: (Show a, MonadPlus m) => (m a -> Maybe a) -> m a -> IO ()
-printResult f = printResult_old . f
-   where
-	printResult_old :: Maybe a -> IO ()
-   	printResult_old m =
-   	  case m of
-  	  Nothing -> putStrLn "Something went wrong"
-  	  (Just i) -> putStrLn $ "The result is: " ++ (show i)
-\end{lstlisting}
-\caption{Refactored \texttt{printResult}}
- \label{printRef}
-\end{figure}
- 
-Figure~\ref{printRef} show the finished refactoring of \texttt{printResult}. The original definition of \texttt{printResult} is renamed and moved into a local definition. The new \texttt{printResult} function now takes in an additional parameter, an "abstraction function." The abstraction function abstracts the new type \texttt{m a} back to the old \texttt{Maybe a}. The inverse of the abstraction function is the projection function\footnote{In this specific case the projection function is of type: \texttt{Maybe a -> m a}}. These types of functions are used more in the next section (\ref{listToDlist}).
-
-When passed the abstraction function \texttt{printResult} just converts the now genericly typed argument to \texttt{Maybe a} and then calls the original function definition.
-
-In general this refactoring case doesn't do much. This is because its difficult to ``consume'' a more general type due to argument types being contravariant under the function type constructor.
  
 \section{``List to Hughes List'' Refactoring}\label{listToDlist}
 
 The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. As a project develops more and more decisions must be made about how data is represented and processed. Mid-development it may become necessary to change which data structures the program uses in order to facilitate adding additional features or for performance reasons.
 
-This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily to have a formal syntactic relationship from the compiler's point of view (e.g. both implement the same type class) but instead have an ad-hoc, semantic similarity. 
+This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily have a formal syntactic relationship from the compiler's point of view (e.g. both implement the same type class) but instead present a semantically similar interface. For example, a binary search tree and a list support the same basic operations, such as add, remove, and delete. Though the implementation details of lists and trees are very different, from the user's perspective all they need to know is what operations their chosen structure supports. The refactoring described in this section replaces one data type for another that supports similar operations.
 
 \subsection{Hughes Lists}
 
-Appending two lists into a single list is a fundamental operation over lists. The standard implementation of append is seen on line one in figure~\ref{append}.\footnote{The \texttt{(++)} operator is the infix definition of append.} 
+Appending two lists into a single list is a fundamental operation over lists. The standard implementation of append is seen in Figure~\ref{append}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1124,9 +1140,9 @@ Appending two lists into a single list is a fundamental operation over lists. Th
 \label{append}
 \end{figure}
 
-If the first argument to append is the empty list then append can just return the second argument. In the other case append traverses the first list popping off the head of the first list and recursively appending the tail of the first list and the second argument. The performance of append is proportional to the length of its first argument. This has the unfortunate side effect that if a program builds of a list by repeatedly appending  to the end of a list the program will spend significant amounts of time traversing the beginning of the list over and over. In total the performance of this function ends up being $O(n^2)$ where $n$ is the length of the final list.
+If the first argument to append is the empty list then append can just return the second argument. In the other case append traverses the first list popping off the head of the first list and recursively appending the tail of the first list and the second argument. The performance of append is proportional to the length of its first argument. This has the unfortunate side effect that if a program builds a list by repeatedly appending  to the end of a list, the program will spend significant amounts of time traversing the beginning of the list repeatedly. In total the performance of this function ends up being $O(n^2)$ where $n$ is the length of the final list.
 
-An example of a function that exhibits this behaviour is \texttt{countdown}, which is defined in figure~\ref{countdown}. \texttt{countdown} constructs a string that lists the numbers starting at the argument \texttt{i} down to zero. During each recursive call the previously computed result is traversed but this parameter gets larger each time which is what causes the $O(n^2)$ performance.
+An example of a function that exhibits this behaviour is \texttt{countdown}, which is defined in Figure~\ref{countdown}. \texttt{countdown} constructs a string that lists the numbers starting at the argument \texttt{i} down to zero. During each recursive call the previously computed result is traversed but this parameter gets larger each time which is what causes the $O(n^2)$ performance.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1134,7 +1150,7 @@ countdown :: Int -> String
 countdown i = f i ""
   where f 0 s = s ++ "0"
           f i s = let newS = s ++ (show i) ++ ", " in
-          f (i-1) newS
+                      f (i-1) newS
 \end{lstlisting}
 \caption{The countdown function runs in $O(n^2)$ time.}
 \label{countdown}
@@ -1142,7 +1158,7 @@ countdown i = f i ""
 
 The poor performance of \texttt{countdown} quickly becomes noticable with \texttt{countdown 10000} taking around six seconds to run.\footnote{On an Intel i5 4690k processor with 16 GB of RAM}
 
-Fortunately there is an alternative representative of lists that allows $O(n)$ time for such nested appends. This alternative representation was first described by John Hughes in~\citep{hughesList} (hence their name), they are also known as difference lists~\citep{realWorldHaskell}; difference lists is the name that they are provided by in Hackage~\citep{dlist}. In Hughes lists elements are stored as partial applications of the append function, these partial applications can then be composed together using function composition (the \texttt{(.)} operator in Haskell) to append the two lists together. 
+Fortunately there is an alternative representative of lists that allows $O(n)$ time for such nested appends. This alternative representation was first described by John Hughes in~\citep{hughesList} (hence ``Hughes-lists''), they are also known as difference lists~\citep{realWorldHaskell}; difference lists is the name that they are provided by in Hackage~\citep{dlist}. In Hughes lists elements are stored as partial applications of the append function, these partial applications can then be composed using function composition (the \texttt{(.)} operator in Haskell) to append the two lists together. 
 
 Difference lists store the values \texttt{[1,2,3]} as \texttt{([1,2,3] ++)} which is of type \texttt{Num a => [a] -> [a]}. Appending \texttt{[4,5,6]} to \texttt{([1,2,3] ++)} first involves converting it to a difference lists (\texttt{([4,5,6] ++)} in this case) then these two difference lists can be appended with function composition which results in \texttt{([1,2,3] ++) . ([4,5,6] ++)}. 
 
@@ -1158,7 +1174,7 @@ lst :: Num a => [a] -> [a]
 \label{ghciDList}
 \end{figure}
 
-As seen in figure~\ref{ghciDList}, once it comes time to retrieve the normal list the difference list is applied to an empty list. Function composition is evaluated from right to left so this keeps the left operand of \texttt{(++)} small. Internally difference lists are just a wrapper around a function from lists to lists. Figure~\ref{dlistDef} shows the definition of the \texttt{DList} new type which contains the partial application. The \texttt{unDL} function simply removes the \texttt{DL} constructor. 
+As seen in Figure~\ref{ghciDList}, once it comes time to retrieve the normal list, the difference list is applied to an empty list. Function composition is applied from right to left so this keeps the left operand of \texttt{(++)} small. Internally difference lists are just a wrapper around a function from lists to lists. Figure~\ref{dlistDef} shows the definition of the \texttt{DList} new type which contains the partial application. The \texttt{unDL} function simply removes the \texttt{DL} constructor. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1179,7 +1195,7 @@ append xs ys = DL (unDL xs . unDL ys)
 \label{dlistDef}
 \end{figure}
 
-While difference lists support fast appends there is no such thing as a free lunch, speed ups for certain functions are paid for by slowdowns in other places. Getting the head and tail of a normal list are both constant time operations but become linear time for difference lists because the difference lists will have to be converted back to normal lists. 
+While difference lists support fast appends there is no such thing as a free lunch: speedups for certain functions are paid for by slowdowns in other places. Getting the head and tail of a normal list are both constant time operations but become linear time for difference lists because the difference lists will have to be converted back to normal lists. 
 
 
 \subsection{Refactoring lists to Hughes lists}
@@ -1189,21 +1205,17 @@ For functional programmers, lists are a very familiar and versatile data structu
 \subsubsection{Embeddable Types} 
 This refactoring takes the view that a type consists of some structure and a set of functions that operate on that structure. 
 
-This refactoring requires that a source type is ``reversibly embeddable'' into the target type. If the source type is some type $A$ and the target type is some type $B$ then for $A$ to be reversibly embeddable in $B$ two functions must exist. The projection function $proj :: A \rightarrow B$ and the abstraction function $abs :: B \rightarrow A$. The property in equation~\ref{eq1} must hold for $A$ to be embeddable in $B$. However, the property in equation~\ref{eq2} does not necessarily hold.   
+This refactoring requires that a source type is ``reversibly embeddable'' into the target type. If the source type is some type $A$ and the target type is some type $B$ then for $A$ to be reversibly embeddable into $B$, two functions must exist: the projection function $proj :: A \rightarrow B$ and the abstraction function $abs :: B \rightarrow A$. The property in equation~\ref{eq1} must hold for $A$ to be embeddable in $B$. However, the reverse compositions of $proj . abs$ does not necessarily hold.   
 
 \begin{figure}[t]
 \begin{equation}\label{eq1}
 abs . proj = id
 \end{equation}
-
-\begin{equation}\label{eq2}
-proj . abs \neq id
-\end{equation}
 \end{figure}
 
 Intuitively this means that it needs to be possible to retrieve the $A$ type from a $B$ exactly as it was when it was projected into the new type. The reverse does not need to be true because any values of type $B$ were introduced by the refactoring so any information lost converting a $B$ back into an $A$ wasn't in the original program and so does not need to be preserved to preserve behaviour.
 
-In the "list to Hughes list" case the projection function is \texttt{fromList} (because it embeds lists into the new type \texttt{DList}) and the abstraction function is \texttt{toList}. How to define the set of pairs is an interesting problem with multiple solutions. The \texttt{Data.DList} module exports the following functions~\citep{dlist}.
+In the "list to Hughes list" case the projection function is \texttt{fromList} (because it embeds lists into the new type \texttt{DList}) and the abstraction function is \texttt{toList}. How to define the set of pairs is an interesting problem with multiple solutions. The \texttt{Data.DList} module exports the  functions shown in Table~\ref{dlistApi}~\citep{dlist}.
 
 
 \begin{table}
@@ -1223,10 +1235,11 @@ In the "list to Hughes list" case the projection function is \texttt{fromList} (
 \end{tabular}
 \end{center}
 \caption{The DList API}
+\label{dlistApi}
 \end{table}
 
 
-From this list the two bold functions are the only functions without normal list counterparts. In the case of \texttt{snoc}, which appends a single element to the end of a \texttt{DList}, there is no normal list equivalent presumably because Hughes lists are specifically designed for append-heavy operations so making a function specifically for appending a single element onto the end of a \texttt{DList} is useful. The \texttt{list}, shown in figure~\ref{dListList}, makes up for the lack of pattern matching over \texttt{DList}s.
+From this list the two bold functions are the only functions without normal list counterparts. In the case of \texttt{snoc}, which appends a single element to the end of a \texttt{DList}, there is no normal list equivalent presumably because Hughes lists are specifically designed for append-heavy operations so making a function specifically for appending a single element onto the end of a \texttt{DList} is not useful. The \texttt{list} function, shown in Figure~\ref{dListList}, makes up for the lack of pattern matching over \texttt{DList}s.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1240,11 +1253,11 @@ list nill consit dl =
 \label{dListList}
 \end{figure}
 
-The rest of the \texttt{DList} API could be paired with equivalent list functions. However, its not necessarily a good idea for every normal list function to be refactoring to its \texttt{DList} equivalent. As was mentioned certain \texttt{DList} functions are less efficient than the corresponding normal function, the primary purpose of this refactoring is defeated if the refactored code runs slower than the original source.
+The rest of the \texttt{DList} API could be paired with equivalent list functions. However, it's not necessarily a good idea for every normal list function to be refactoring to its \texttt{DList} equivalent. As was mentioned earlier, certain \texttt{DList} functions are less efficient than the corresponding normal function, so the primary purpose of this refactoring is defeated if the refactored code runs slower than the original source.
 
 Fortunately different versions of the refactoring can be made by defining separate sets depending on the behaviour that is desired. For example one set could only include the \texttt{DList} constant time operations (\texttt{append}, \texttt{empty}, and \texttt{cons}) and another set could include all possible pairings.
 
-The obvious choice for the set is to just include every possible pairing. However, it may be beneficial to limit which functions can be replaced based on the motivation for the refactoring and what list functions are being used in the source program. In the list to Hughes list case this refactoring is performed to increase the performance of append operations. In this case it may be beneficial to only allow append to be swapped for the DList append. Another possibility in this case would be to only allow the \texttt{DList} functions that run in constant time to be introduced.\footnote{\texttt{empty}, \texttt{cons}, and \texttt{append}}. 
+The obvious choice for the set is to just include every possible pairing. However, it may be beneficial to limit which functions can be replaced based on the motivation for the refactoring and what list functions are being used in the source program. In the list to Hughes list case, this refactoring is performed to increase the performance of append operations. In this case it may be beneficial to only allow append to be swapped for the DList append. Another possibility in this case would be to only allow the \texttt{DList} functions that run in constant time to be introduced.\footnote{\texttt{empty}, \texttt{cons}, and \texttt{append}.}. 
 
 The composition of the set of functions is highly dependent on the relationship between the source and target types and which functions the source program is using. For this reason the implementation of this refactoring in HaRe is as adaptable as possible so that users can customize the set for their own needs (see Chapter~\ref{chp:generalImp}).
 
@@ -1252,7 +1265,7 @@ The composition of the set of functions is highly dependent on the relationship 
 
 The refactoring breaks into three different cases depending on the type of the target function. 
 
-In introduce type synonym refactoring from section~\ref{introSyn} there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not, and indeed cannot, know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about what the user's intent is or to directly solicit information from them. This refactoring is no different: for any given function there are multiple possible ``correct" definitions the refactoring could produce. Take for example the function \texttt{insComma} in figure~\ref{insComma}.
+In ``introduce type synonym'' refactoring from Section~\ref{introSyn}, there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not, and indeed cannot, know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about the user's intent or to directly solicit information from them. This refactoring is no different: for any given function there are multiple possible ``correct" definitions the refactoring could produce. Take for example the function \texttt{insComma} in Figure~\ref{insComma}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1263,9 +1276,9 @@ insComma s1 s2 = s1 ++ "," ++ s2
 \label{insComma}
 \end{figure} 
 
-When refactoring both of the arguments and the result type of \texttt{insComma} to become \texttt{DList Char} there are multiple ways to refactor this function. Figure~\ref{commaRef} shows two possibilities, which one should the refactoring produce and why?
+When refactoring both of the arguments and the result type of \texttt{insComma} to become \texttt{DList Char} there are multiple ways to refactor this function. Figure~\ref{commaRef} shows two possibilities; which one should the refactoring produce and why?
 
-To make this decision, the refactoring is designed to reflect the assumption that because this function is being refactored to use the new type the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends whereas the second example converts the two arguments into lists appends everything together and then converts the result back into a \texttt{DList}. The refactoring prioritises minimising the amount of conversion introduced into the refactored program.  
+To make this decision, the refactoring is designed to reflect the assumption that because this function is being refactored to use the new type, the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends, whereas the second example converts the two arguments into lists, appends everything together and then converts the result back into a \texttt{DList}. The refactoring prioritises minimising the amount of conversion introduced into the refactored program.  
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1281,40 +1294,40 @@ insComma_2 s1 s2 = fromList ((toList s1) ++ (",") ++ (toList s2))
 
 \subsection{Modifying the Type of a Parameter}
 
-The simplest case of this refactoring is modifying the type of a parameter. Consider the example in figure~\ref{median} that calculates the median of list of numbers. 
+The simplest case of this refactoring is modifying the type of a parameter. Consider the example in Figure~\ref{mean} that calculates the mean of list of numbers. 
 
 \begin{figure}[t]
 \begin{lstlisting}
-median :: Fractional a => [a] -> a
-median lst = foldr (+) 0 lst / length lst
+mean :: Fractional a => [a] -> a
+mean lst = foldr (+) 0 lst / length lst
 \end{lstlisting} 
-\caption{Calculating a median}
-\label{median}
+\caption{Calculating the mean of a list.}
+\label{mean}
 \end{figure}
 
-Refactoring \texttt{median}'s first argument to become a Hughes list is fairly straight forward matter of wrapping the, now of type \texttt{DList}, parameter \texttt{lst} with the abstraction function \texttt{toList}. The refactored version of \texttt{median} is in figure~\ref{medianRef}. The \texttt{DList} functions have been prefaced with the \texttt{DL} qualifier to differentiate which functions come from which API. This convention will be used through the remainder of the section.  
+Refactoring \texttt{means}' first argument to become a Hughes list is fairly straight forward matter of wrapping the, now of type \texttt{DList}, parameter \texttt{lst} with the abstraction function \texttt{toList}. The refactored version of \texttt{mean} is in Figure~\ref{meanRef}. The \texttt{DList} functions have been prefaced with the ``\texttt{DL}'' qualifier, to differentiate which functions come from which API. This convention will be used through the remainder of the section. You'll also notice that \texttt{toList lst} is calculated twice; this is a good candidate for further refactoring by extracting this expression into a \texttt{let} or a \texttt{where} clause. 
 
 \begin{figure}[t]
 \begin{lstlisting}
-median :: Fractional a => DList a -> a
-median lst = foldr (+) 0 (DL.toList lst) / length (DL.toList lst)
+mean :: Fractional a => DList a -> a
+mean lst = foldr (+) 0 (DL.toList lst) / length (DL.toList lst)
 \end{lstlisting}  
-\caption{\texttt{median} refactored}
-\label{medianRef} 
+\caption{\texttt{mean} refactored}
+\label{meanRef} 
 \end{figure}
 
-This example is one of the cases where there are multiple possible refactorings. Figure~\ref{medianRef2} shows a different version of a refactored median, because \texttt{foldr} is defined both for difference lists and normal lists the abstraction function could be added around that expression instead. Which version should the refactoring produce?
+This example is one of the cases where there are multiple possible refactorings. Figure~\ref{meanRef2} shows a different version of a refactored mean. Because \texttt{foldr} is defined both for difference lists and normal lists, the abstraction function could be added around that expression instead. Which version should the refactoring produce?
 
 \begin{figure}[t]
 \begin{lstlisting}
-median :: Fractional a => DList a -> a
-median lst = DL.toList (DL.foldr (+) 0 lst) / length (DL.toList lst)
+mean :: Fractional a => DList a -> a
+mean lst = DL.toList (DL.foldr (+) 0 lst) / length (DL.toList lst)
 \end{lstlisting}  
-\caption{\texttt{median} refactored another way.}
-\label{medianRef2}
+\caption{\texttt{mean} refactored another way.}
+\label{meanRef2}
 \end{figure}  
 
-In this case where the refactoring targets a parameter and the function's result is a type other than a Hughes list the refactoring assumes that the programmer wants the Hughes list converted as soon as possible in the function. 
+In this case, where the refactoring targets a parameter and the result is a type other than a Hughes list, the refactoring assumes that the programmer wants the Hughes list converted as soon as possible in the function. 
 
 \subsection{Modifying the Result Type}
 \label{hugesListResTy}
@@ -1326,7 +1339,7 @@ This time the refactoring will affect the result type of the function. As oppose
 \begin{figure}[t]
 \begin{lstlisting}
 data Tree a = Leaf
-            | Node (Tree a) a (Tree a)
+                | Node (Tree a) a (Tree a)
 
 enumerate :: Tree a -> [a]
 enumerate Leaf = []
@@ -1344,7 +1357,7 @@ Changing the type of the AST's root requires the refactoring to traverse the tre
 
 \texttt{enumerate}'s first case is simple enough to refactor. There is only a single value in the tree the empty list literal. This node's current type is \texttt{[a]} and it needs to become \texttt{DList a}. When the refactoring reaches the \texttt{[]} value it searches to see if it is paired with some difference list operation in the set of pairs. The empty list literal is paired with the difference list operation \texttt{empty}, the refactoring sees this and replaces the empty list with \texttt{DL.empty :: DList a}.
 
-After the replacement of \texttt{[]} \texttt{enumerate}'s first case is successfully refactored. The second case of \texttt{enumerate} is more complex than the first. Figure~\ref{enumAST} shows a syntax tree for \texttt{enumerate}'s second case. 
+After the replacement of \texttt{[]}, \texttt{enumerate}'s first case is successfully refactored. The second case of \texttt{enumerate} is more complex than the first. Figure~\ref{enumAST} shows a syntax tree for \texttt{enumerate}'s second case. 
 
 \begin{figure}[h]
 	\begin{center}
@@ -1354,7 +1367,7 @@ After the replacement of \texttt{[]} \texttt{enumerate}'s first case is successf
 	\label{enumAST}
 \end{figure}
 
-The refactoring begins the traversal at the top of the syntax tree with the goal of modifying the entire tree to have a result type of \texttt{DList a}. The root node of the tree is the operator application of the left-hand append operation. This append's result type is the type that determines the whole tree's result type. The standard append operation is paired with the difference list \texttt{DL.append} operation. The refactoring checks to ensure that the difference list append has the correct result type and because it does makes the replacement.\footnote{The refactoring will automatically make \texttt{DL.append} infix by surrounding the call with backtick characters since this replacement is modifying an operator application.} After replacing \texttt{++} with \texttt{DL.append} the result type is correct but the function will no longer type check because \texttt{++} and \texttt{DL.append}'s arguments are not the same types. 
+The refactoring begins the traversal at the top of the syntax tree with the goal of modifying the entire tree to have a result type of \texttt{DList a}. The root node of the tree is the operator application of the left-hand append operation. This append's result type is the type that determines the whole tree's result type. The standard append operation is paired with the difference list \texttt{DL.append} operation. The refactoring checks to ensure that the difference list append has the correct result type and, because it does, makes the replacement.\footnote{The refactoring will automatically make \texttt{DL.append} infix by surrounding the call with backtick characters since this replacement is modifying an operator application.} After replacing \texttt{++} with \texttt{DL.append}, the result type is correct but the function will no longer type check because \texttt{++} and \texttt{DL.append}'s arguments are not the same types. 
 
 The refactoring then must recurse down both the left and right subtrees to change their types from \texttt{[a]} (the type of \texttt{(++)}'s arguments) to \texttt{DList a} (the type \texttt{append}'s arguments). 
 
@@ -1366,7 +1379,7 @@ The refactoring then must recurse down both the left and right subtrees to chang
 	\label{enumLeft}
 \end{figure}
 
-The left subtree of the root node is shown in figure~\ref{enumLeft}. The refactoring can descend through the parentheses (represented by the \texttt{HsPar} constructor); the refactoring continues down the left side of the function application (\texttt{HsApp}). When the refactoring encounters the call to \texttt{enumerate} it recognises that this is the recursive call and even though the type of \texttt{enumerate} stored in the syntax tree is \texttt{Tree a -> [a]} after the refactoring its type will be \texttt{Tree a -> DList a} which is the correct result type  for this subtree. The refactoring can now confirm that the left subtree is of type \texttt{DList a} without checking the right side of the application because the refactoring didn't change the type of \texttt{enumerate}'s arguments.
+The left subtree of the root node is shown in Figure~\ref{enumLeft}. The refactoring can descend through the parentheses (represented by the \texttt{HsPar} constructor); the refactoring continues down the left side of the function application (\texttt{HsApp}). When the refactoring encounters the call to \texttt{enumerate} it recognises that this is the recursive call and even though the type of \texttt{enumerate} stored in the syntax tree is \texttt{Tree a -> [a]} after the refactoring its type will be \texttt{Tree a -> DList a} which is the correct result type  for this subtree. The refactoring can now confirm that the left subtree is of type \texttt{DList a} without checking the right side of the application because the refactoring didn't change the type of \texttt{enumerate}'s arguments.
 
 \begin{figure}[h]
 	\begin{center}
@@ -1376,7 +1389,7 @@ The left subtree of the root node is shown in figure~\ref{enumLeft}. The refacto
 	\label{enumRight}
 \end{figure}
 
-After refactoring the left subtree the right subtree needs to be modified to be of type \texttt{DList a} as well. Shown in figure~\ref{enumRight}, the right subtree's root is the second call to \texttt{(++)}. Once again the refactoring replaces \texttt{++} with \texttt{DL.append} because \texttt{append}'s result type is also \texttt{DList a}. Doing this replacement sets off additional traversals that need to ensure that the two arguments to the root node become typed \texttt{DList a} as well. The right argument to the root of this subtree is the \texttt{(enumerate right)} expression which is handled in the same way the \texttt{(enumerate left)} call was handled. The left subtree of figure~\ref{enumRight}  is the list literal \texttt{[x]}. This can be replaced with a call to \texttt{(DL.singleton :: a -> DList a)} the equivalent difference list function. At this point the refactoring is finished modifying \texttt{enumerate} and the result can be seen in listing~\ref{enumRef}.
+After refactoring the left subtree, the right subtree needs to be modified to be of type \texttt{DList a} as well. Shown in Figure~\ref{enumRight}, the right subtree's root is the second call to \texttt{(++)}. Once again the refactoring replaces \texttt{++} with \texttt{DL.append} because \texttt{append}'s result type is also \texttt{DList a}. Doing this replacement sets off additional traversals that need to ensure that the two arguments to the root node become typed \texttt{DList a} as well. The right argument to the root of this subtree is the \texttt{(enumerate right)} expression which is handled in the same way the \texttt{(enumerate left)} call was handled. The left subtree of Figure~\ref{enumRight}  is the list literal \texttt{[x]}. This can be replaced with a call to \texttt{(DL.singleton :: a -> DList a)} the equivalent difference list function. At this point the refactoring is finished modifying \texttt{enumerate} and the result can be seen in listing~\ref{enumRef}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1388,7 +1401,7 @@ enumerate (Node left x right) = (enumerate left) `append` (singleton x) `append`
 \label{enumRef}
 \end{figure}
 
-The refactoring isn't finished yet, however. The original definition contained in figure~\ref{enumBefore} had another function \texttt{printEnumTree} that depended on \texttt{enumerate}. The final modification that needs to happen to this example is to wrap all calls to \texttt{enumerate} in \textit{non-refactored} definitions with the abstraction function to convert the result back to a list. The final product of the refactoring can be seen in figure~\ref{enumFinal}.
+The refactoring isn't finished yet, however. The original definition contained in Figure~\ref{enumBefore} had another function \texttt{printEnumTree} that depended on \texttt{enumerate}. The final modification that needs to happen to this example is to wrap all calls to \texttt{enumerate} in \textit{non-refactored} definitions with the abstraction function to convert the result back to a list. The final product of the refactoring can be seen in Figure~\ref{enumFinal}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1409,7 +1422,7 @@ printEnumTree tree = let lst = toList (enumerate tree) in
 
 \subsection{Modifying Parameter and Result Types}
 
-The final case of this refactoring involves modifying both the result type and one (or more) of the parameters of the target function. This example will use the \texttt{explode} function from figure~\ref{explode} to refactor both its argument and result type to become \texttt{DList a}.
+The final case of this refactoring involves modifying both the result type and one (or more) of the parameters of the target function. This example will use the \texttt{explode} function from Figure~\ref{explode} to refactor both its argument and result type to become \texttt{DList a}. \texttt{explode} is a silly function that replicates each of its elements the number of the length of the list, for example, \texttt{explode [1,2,3]} returns \texttt{[1,1,1,2,2,2,3,3,3}. This is an odd function but is has two characteristics we are interested in both its parameter and result type are of type list and it uses the \texttt{map} higher ordered function which is an interesting case for this refactoring. The abstract syntax tree of \texttt{explode} is in Figure~\ref{explode}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1420,7 +1433,6 @@ explode lst = concat (map (\x -> replicate (length lst) x) lst)
 \label{explode}
 \end{figure}
 
-The abstract syntax tree of \texttt{explode} is in figure~\ref{explode}.
 
 \begin{figure}[h!]
 	\begin{center}
@@ -1430,13 +1442,13 @@ The abstract syntax tree of \texttt{explode} is in figure~\ref{explode}.
 	\label{explode}
 \end{figure}
 
-Much like the previous case where just the result type was modified, the refactoring will start working on the syntax tree in a top-down manner modifying the function definition to have the correct result type. This case could also be implemented in a bottom-up manner the top-down method allows for more code reuse from the implementation of the case when the result type is modified.
+Much like the previous case where just the result type was modified, the refactoring will start working on the syntax tree in a top-down manner modifying the function definition to have the correct result type. This case could also be implemented in a bottom-up manner but the top-down method allows for more code reuse from the implementation of the case when the result type is modified.
 
 The refactoring starts on the left subtree with the call to \texttt{concat :: Foldable t => t [a] -> [a]}. The equivalent difference list function is \texttt{DL.concat :: Foldable t => t (DList a) -> DList a} since the result type of this version of \texttt{DL.concat} is \texttt{DList a} the refactoring performs the switch between which function to use. 
 
-After the change on the left subtree the refactoring needs to modify the right subtree so that it is of type \texttt{Foldable t => t (DList a)} rather than its current type of \texttt{Foldable t => t [a]}. The leftmost child of the right subtree is the call to \texttt{map :: (a -> b) -> [a] -> [b]}. The difference list equivalent map is appropriately typed \texttt{DL.map :: (a -> b) -> DList a -> DList b}. Should the refactoring change this node to the difference list version? And if so what changes will be need to made to other subtrees?
+After the change on the left subtree, the refactoring needs to modify the right subtree so that it is of type \texttt{Foldable t => t (DList a)} rather than its current type of \texttt{Foldable t => t [a]}. The leftmost child of the right subtree is the call to \texttt{map :: (a -> b) -> [a] -> [b]}. The difference list equivalent map is appropriately typed \texttt{DL.map :: (a -> b) -> DList a -> DList b}. Should the refactoring change this node to the difference list version? And if so what changes will be need to made to other subtrees?
 
-The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (the type of \texttt{DL.concat}'s parameter) can be the same type as \texttt{DList b} (\texttt{DL.map}'s result type); since \texttt{DList} is a member of the \texttt{Foldable} type class the swap can happen as long as the \texttt{b} type variable in \texttt{map}'s type is equal to \texttt{DList a}. This node's type after the swap and filling in the known type variables is: \texttt{DL.map :: (a -> DList b) -> DList a -> DList (DList b)} this new type's arguments' types are both different from the original types so the refactoring will need to check both of these subtrees as well. 
+The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (the type of \texttt{DL.concat}'s parameter) can be the same type as \texttt{DList b}~(\texttt{DL.map}'s result type); since \texttt{DList} is a member of the \texttt{Foldable} type class, the swap can happen as long as the \texttt{b} type variable in \texttt{map}'s type is equal to \texttt{DList a}. This node's type after the swap and filling in the known type variables is: \texttt{DL.map :: (a -> DList b) -> DList a -> DList (DList b)}. This new type's arguments' types are both different from the original types so the refactoring will need to check both of these subtrees as well. 
 
 \begin{figure}[h]
 	\begin{center}
@@ -1445,24 +1457,24 @@ The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (t
 	\caption{The syntax tree of the lambda expression in \texttt{explode}.}\label{explodeLam}
 \end{figure}
 
-Starting with the lambda expression (the syntax tree in figure~\ref{explodeLam}) the refactoring needs to modify it's type to become \texttt{a -> DList b}\footnote{\texttt{a} and \texttt{b} could be the same type.}. The current type of the lambda expression is \texttt{a -> [a]} so the refactoring only needs to modify its result type. The refactoring can then proceed to the left-most child of this expression, the call to \texttt{replicate :: Int -> a -> [a]}. The refactoring swaps this call for the difference list version of \texttt{DL.replicate :: Int -> a -> DList a}. 
+Starting with the lambda expression (the syntax tree in Figure~\ref{explodeLam}) the refactoring needs to modify its type to become \texttt{a -> DList b}\footnote{\texttt{a} and \texttt{b} could be the same type.}. The current type of the lambda expression is \texttt{a -> [a]} so the refactoring only needs to modify its result type. The refactoring can then proceed to the left-most child of this expression, the call to \texttt{replicate :: Int -> a -> [a]}. The refactoring swaps this call for the difference list version of \texttt{DL.replicate :: Int -> a -> DList a}. 
 
-If this refactoring were only modifying the result type of \texttt{explode} the refactoring would be done modifying the lambda expression because the type change affects the syntax tree in a top down manner. In this case, however, because  the type of \texttt{explode}'s argument was also changed so leaves of the syntax tree can also have changed type. This means that every subtree needs to be checked to ensure that it still type checks.
+If this refactoring were only modifying the result type of \texttt{explode}, the refactoring would be done modifying the lambda expression because the type change affects the syntax tree in a top down manner. In this case, however, because  the type of \texttt{explode}'s argument was also changed so leaves of the syntax tree can also have changed type. This means that every subtree needs to be checked to ensure that it still type checks.
 
 The untouched sections of this expression's syntax tree are \texttt{replicate}'s arguments. The second argument is just the variable \texttt{x} which hasn't changed type. The first argument on the other hand is the expression \texttt{(length lst)} and \texttt{lst} is the argument of \texttt{explode} that is now a difference list rather than a normal list. Ideally the refactoring would rewrite this expression by replacing the normal list functions (\texttt{length} in this case) with difference list equivalents. Unfortunately there is no difference list version of \texttt{length} so the refactoring will have to introduce the abstraction function to convert back to a normal list to calculate its length. 
 
-The lambda expression has now been successfully refactored. The rewritten lambda expression is in figure~\ref{lamRef}.\footnote{To help clarify which functions are for lists and which are the difference list versions, all difference list functions have been qualified with the \texttt{DList} identifier.}
+The lambda expression has now been successfully refactored. The rewritten lambda expression is in Figure~\ref{lamRef}.\footnote{To help clarify which functions are for lists and which are the difference list versions, all difference list functions have been qualified with the \texttt{DL} identifier.}
 
 \begin{figure}[t]
 \begin{lstlisting}
-(\x -> DList.replicate (length (DList.toList lst)) x)
+(\x -> DL.replicate (length (DL.toList lst)) x)
 \end{lstlisting}
 \caption{The refactored lambda expression.}
 \label{lamRef}
 \end{figure}
 
 
-Once refactoring the lambda expression is finished there is only a single node of \texttt{explode} that the refactoring hasn't touched yet, the use of \texttt{lst} as the second argument of \texttt{map}. When the refactoring swapped \texttt{map} for its difference list version it was able to determine the new type of both its arguments, \texttt{(a -> DList b)} for the first argument (the lambda expression) and \texttt{DList a} (\texttt{lst}). Fortunately because \texttt{lst} is a target of the refactoring its new type is \texttt{DList a} so this node can remain unchanged.
+Once refactoring the lambda expression is finished there is only a single node of \texttt{explode} that the refactoring hasn't touched yet, the use of \texttt{lst} as the second argument of \texttt{map}. When the refactoring swapped \texttt{map} for its difference list version it was able to determine the new type of both its arguments, \texttt{(a -> DList b)} for the first argument (the lambda expression) and \texttt{DList a} (\texttt{lst}). Fortunately because \texttt{lst} is a target of the refactoring, its new type is \texttt{DList a} so this node can remain unchanged.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1483,7 +1495,7 @@ The final result of this case of the Hughes list refactoring is in listing~\ref{
 
 \section{Summary}
 
-This chapter has introduced the concept of data-driven refactorings for the object-oriented programming paradigm and described three of the data-driven refactorings developed for this thesis. The first, introducing a type signature, creates additional abstraction to better describe what types are representing. Generalise Maybe takes code written for a specific type and generalises it so that it is applicable to more types. Finally the list to Hughes list refactoring replaces one type with another equivalent type. This refactoring allows a project to be retyped mid-development because it's not always clear from the beginning of a project what the correct data representation should be.
+This chapter has introduced the concept of data-driven refactorings for the object-oriented programming paradigm and described three of the data-driven refactorings developed for this thesis. The first, ``introducing a type signature'', creates an additional abstraction to better describe what types are representing. ``Generalising Maybe'' takes code written for a specific type and generalises it so that it is applicable to more types. Finally the ``list to Hughes list'' refactoring replaces one type with another equivalent type. This refactoring allows a project to be retyped mid-development because it's not always clear from the beginning of a project what the correct data representation should be.
 
 The following chapters will expand on some of these ideas. The next chapter will describe another form of generalisation that rewrites monadic code into its equivalent applicative functor code. The applicative code can be much cleaner and descriptive in certain cases. It can also allow programmers to take advantage of a different way of executing their programs. Chapter~\ref{chp:monadification} discusses introducing effectful abstractions into pure code. This process helps a code base add additional features, such as shared state, mid-development.
 
@@ -1493,12 +1505,12 @@ The following chapters will expand on some of these ideas. The next chapter will
 \renewcommand{\topfraction}{1}
 \renewcommand{\floatpagefraction}{1}
 
-The previous chapter described two refactorings, generalising \texttt{Maybe} and the list to Hughes list refactorings. This chapter will describe how refactorings are implemented in HaRe. Section~\ref{sec:genMaybeImp} describes the implementation of the generalising \texttt{Maybe} refactoring which was first covered in section~\ref{genMaybe}. Section~\ref{sec:hughesListImp} covers the implementation of the list to Hughes list refactoring (see section~\ref{listToDlist}) and the embeddable type refactoring system that it is made with. The chapter also covers the enhancements that HaRe's API has undergone while developing the refactorings discussed in this thesis. Section~\ref{hareAPI} discusses the enhancements I made to HaRe's API.
+The previous chapter described two refactorings, generalising \texttt{Maybe} and the list to Hughes list refactorings. This chapter will describe how refactorings are implemented in HaRe. Section~\ref{sec:genMaybeImp} describes the implementation of the generalising \texttt{Maybe} refactoring which was first covered in Section~\ref{genMaybe}. Section~\ref{sec:hughesListImp} covers the implementation of the list to Hughes list refactoring (see Section~\ref{listToDlist}) and the embeddable type refactoring system that it is made with. The chapter also covers the enhancements that HaRe's API has undergone while developing the refactorings discussed in this thesis. Section~\ref{hareAPI} discusses the enhancements I made to HaRe's API.
 
 \section{Implementation of the ``Generalising Maybe" refactoring}
 \label{sec:genMaybeImp}
 
-The design of the generalising \texttt{Maybe} refactoring was discussed in the previous chapter (see section~\ref{genMaybe}). This section will describe its implementation in the HaRe refactoring tool. 
+The design of the generalising \texttt{Maybe} refactoring was discussed in the previous chapter (see Section~\ref{genMaybe}). This section will describe its implementation in the HaRe refactoring tool. 
 
 This refactoring tries to generalise something of type \texttt{Maybe} to become either of type \texttt{Monad} or \texttt{MonadPlus}. The implementation of this refactoring attempts to produce the ``most general" version of the source program. This means that when possible the refactoring will replace the targetted \texttt{Maybe} type with a value of type \texttt{Monad}, if this is not possible the value will be of type \texttt{MonadPlus}, and finally if that also isn't possible the refactoring cannot continue and the source and target programs of the refactoring are identical.
 
@@ -2025,7 +2037,7 @@ doEmbRefact' ex = gmapM (SYB.mkM doEmbRefact) ex
 \section{Other enhancements made to HaRe}
 \label{hareAPI}
 
-Another contribution that was made in the process of creating the refactorings described in this thesis were many enhancements to HaRe's API. With the switch to the GHC API and the introduction of ghc-exactprint a large part of HaRe's original API was reimplemented but the functionality it provided was designed for aiding the development of refactorings that used Programmatica's abstract syntax tree instead of GHC's. Additionally ghc-exactprint has a very different way of formatting source code and the current API did not help refactoring developers use this library. This section will describe contributions I made to the HaRe's API that help working with both GHC's abstract syntax and ghc-exactprint.
+Another contribution that was made in the process of creating the refactorings described in this thesis were many enhancements to HaRe's API. With the switch to the GHC API and the introduction of ghc-exactprint a large part of HaRe's original API was reimplemented but the functionality it provided was designed for aiding the development of refactorings that used Programatica's abstract syntax tree instead of GHC's. Additionally ghc-exactprint has a very different way of formatting source code and the current API did not help refactoring developers use this library. This section will describe contributions I made to the HaRe's API that help working with both GHC's abstract syntax and ghc-exactprint.
 
 These contributions took two forms ``queries'' and ``transformations.'' Queries extract parts or determine properties of an AST, whereas transformations are small modifications to source code that are useful to many refactorings. This section will briefly describe some of the functionality provided by HaRe's API that I implemented while developing the refactorings described in this thesis. 
 
@@ -2101,22 +2113,22 @@ This chapter has described two of the data driven refactorings were developed fo
 The next chapters will continue to introduce more complex data driven refactorings, starting with the ``generalising Monads to Applicative'' refactoring.
 
 
-\renewcommand{\floatpagefraction}{.66}
+%\renewcommand{\floatpagefraction}{.66}
 
-\chapter{Generalising Monads to Applicative}
+\chapter{Generalising Monadic Code to Applicative Functors}
 \label{chp:applicative}
 
-The previous chapter introduced the concept of a functional data refactoring and gave two examples, introducing a type synonym and generalising Maybe to MonadPlus. This chapter will cover another generalising refactoring in more depth, rewriting monadic functions to use applicative functors. 
+The previous chapter introduced the concept of a functional data refactoring and gave three examples of data driven refactorings: introducing a type synonym, generalising Maybe to MonadPlus, and list to Hughes lists. This chapter will cover another generalising refactoring in more depth, rewriting monadic functions to use applicative functors. 
 
-In their 2008 functional pearl "Applicative programming with effects" Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are also known as Applicative Functors~\citep{mcbrideIdioms}. Idioms provide a way to run effectful computations and collect them in some way. They are more expressive than functors but more general than Monads, further work was done in~\citep{arrowsAndIdioms} to prove that Idioms are also less powerful than Arrows.
+In their 2008 functional pearl "Applicative programming with effects," Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are more commonly known as Applicative Functors~\citep{mcbrideIdioms}. Applicative functors provide a way to run effectful computations and collect their results. They are more expressive than functors but more general than monads. Further work was done in~\citep{arrowsAndIdioms} to prove that applicative functors are also less powerful than Arrows.\footnote{Arrows are another abstraction for evaluating computations within a context.} 
 
-Applicative functors were implemented in GHC as the typeclass \texttt{Applicative}. An interesting part of the history of GHC is that despite McBride and Paterson proving in their original functional pearl that all monads are also applicative functors, however,  GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
+Applicative functors were implemented in GHC as the typeclass \texttt{Applicative}. An interesting part of the history of GHC is that despite McBride and Paterson proving in their original functional pearl~\citep{mcbrideIdioms} that all monads are also applicative functors, but  GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
 
-This chapter will discuss the design and implementation of a refactoring which will automatically refactor code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the \texttt{Applicative} typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators, next, section~\ref{sec:appInPractice} describes how the Haskell community uses the applicative typeclass. Then section~\ref{sec:appRefact} describes in detail the refactoring. Section~\ref{sec:refacImp} discusses the refactorings implementation in HaRe and some additional refactorings that can be used to get around the preconditions. Finally some applications that are good candidates for this refactoring are discussed in section~\ref{sec:appApps}.
+This chapter will discuss the design and implementation of a refactoring which will automatically refactor code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the \texttt{Applicative} typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators. Next, section~\ref{sec:appInPractice} describes how the Haskell community uses the applicative typeclass. Then section~\ref{sec:appRefact} describes in detail the refactoring. Section~\ref{sec:refacImp} discusses the refactorings implementation in HaRe and some additional refactorings that can be used to get around the preconditions. Finally some applications that are good candidates for this refactoring are discussed in section~\ref{sec:appApps}.
 
-\section{The applicative Typeclass}
+\section{The Applicative type class}
 \label{sec:appOverview}
-This section will be a quick introduction to the \texttt{Applicative} typeclass and some other functions that are commonly used to write functions in an applicative style. 
+This section is a quick introduction to the \texttt{Applicative} typeclass and some other functions that are commonly used to write functions in an applicative style. 
 We begin by discussing a superclass of \texttt{Applicative}, \texttt{Functor}, shown in figure~\ref{functor}. The \texttt{Functor} typeclass defines a single function that must be implemented, \texttt{fmap}.
 
 \begin{figure}
@@ -2128,8 +2140,8 @@ class Functor f where
 \label{functor}
 \end{figure}
 
-The \texttt{fmap} function allows for a function to be applied to the contents of the Functor f. The functor could be considered as a context and \texttt{fmap} as a function that allows other functions to run within the \texttt{Functor}'s context. Consider the function \texttt{g}
-and the two values \texttt{x} and \texttt{y} whose types are shown in figure~\ref{gxy}, where \texttt{f} is some functor. With these three things its simple to imagine a situation where its desirable to compute a value of type \texttt{f c}. When \texttt{g} is ``fmapped'' over   \texttt{x} a value of \texttt{(f (b -> c))} is returned.
+The \texttt{fmap} function allows for a function to be applied to the contents of the Functor \texttt{f}. The functor could be considered as a context and \texttt{fmap} as a function that allows other functions to run within the \texttt{Functor}'s context. Consider the function \texttt{g}
+and the two values \texttt{x} and \texttt{y} whose types are shown in figure~\ref{gxy}, where \texttt{f} is some functor. With these three things it's simple to envision a situation where its desirable to compute a value of type \texttt{f c}. When \texttt{g} is ``fmapped'' over   \texttt{x}, a value of \texttt{(f (b -> c))} is returned.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2141,7 +2153,7 @@ y :: f b
 \label{gxy}
 \end{figure}
 
-Unfortunately there is no way to either extract the function of type \texttt{(b -> c)} from the functor or apply the \texttt{(f b)} value to the \texttt{(f (b -> c))} value using the \texttt{Functor} typeclass alone. Sequencing commands in this way requires a more powerful abstraction, applicative functors~\cite{realWorldHaskell}. 
+Unfortunately there is no way to either extract the function of type \texttt{(b -> c)} from the functor or apply the \texttt{(f b)} value to the \texttt{(f (b -> c))} value using the \texttt{Functor} typeclass alone. Sequencing commands in this way requires a more powerful abstraction. These are what is known as applicative functors~\citep{realWorldHaskell}. 
 
 In Haskell applicative functors are implemented by the \texttt{Applicative} typeclass. \texttt{Applicative} declares two functions, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in figure~\ref{appTypes} where \texttt{f} is the applicative functor. 
 
@@ -2155,11 +2167,11 @@ pure :: a -> f a
 \label{appTypes}
 \end{figure}
 
-The \texttt{pure} function is the equivalent of monad's \texttt{return}, it simply lifts a value into the applicative context. The other function \texttt{(<*>)} (which is typically pronounced "applied over" or just "apply"). Apply take in two arguments, both of which are applicative values. The first argument is a function, from types \texttt{a} to \texttt{b}, within the applicative context, and the second argument is an \texttt{Applicative} over type \texttt{a}. Apply will return an \texttt{Applicative} over \texttt{b}.
+The \texttt{pure} function is the equivalent of monad's \texttt{return}: it simply lifts a value into the applicative context. The other function \texttt{(<*>)}, which is typically pronounced "applied over" or just "apply", takes in two arguments, both of which are applicative values. The first argument is a function, from types \texttt{a} to \texttt{b}, within the applicative context, and the second argument is an \texttt{Applicative} over type \texttt{a}. Apply will return an \texttt{Applicative} over \texttt{b}.
 
 \subsection{Other useful functions}
 \label{sec:useful}
-Though \texttt{pure} and apply are the only two functions that are required to be defined to declare an instance of applicative there are several other useful functions that can either be derived from these two functions or come from other typeclasses which will be briefly covered here. First there are two variations of apply, whose types are listed in figure~\ref{appVars}.
+Though \texttt{pure} and apply are the only two functions that are required to be defined to declare an instance of \texttt{Applicative} there are several other useful functions that can either be derived from these two functions or come from other typeclasses which will be briefly covered here. First, there are two variations of apply, whose types are listed in figure~\ref{appVars}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2170,7 +2182,7 @@ Though \texttt{pure} and apply are the only two functions that are required to b
 \label{appVars}
 \end{figure}
 
-These functions sequence actions and still perform the contextual effects of both of their arguments but discard the value of the first and second argument respectively. These functions are used when some operation affects the applicative context but their result will not affect the overall result of the applicative expression. 
+These functions sequence actions and still perform the contextual effects of both of their arguments but discard the value of the first and second argument respectively. These functions are used when an operation affects the applicative context but their result will not affect the overall result of the applicative expression. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2183,7 +2195,7 @@ f id = writeToLog id *> getCustomerById id
 
 The function \texttt{f}, from figure~\ref{logApp}, looks up a customer datatype from the \texttt{IO} context and logs all of the customer ids that are looked up. We don't really care what \texttt{writeToLog} returns but we do want the effects that it causes (writing a log file) so we compose the calls to \texttt{writeToLog} and \texttt{getCustomerById} with the \texttt{*>} operator to cause both of the functions' effects to happen but only return the value of \texttt{getCustomerById}.
 
-Another useful function is the infix version of \texttt{fmap}, \texttt{(<\$>)}. A consequence of the applicative laws is that every applicative's functor instance will satisfy the equation in figure~\ref{fmapLaw}~\cite{control.applicative}. This means that instead of explicitly lifting every pure function the infix version of \texttt{fmap} can be used instead. The next section will cover how these functions can be used in an applicative style of programming.
+Another useful function is the infix version of \texttt{fmap}, \texttt{(<\$>)}. A consequence of the applicative laws is functor instance of every \texttt{Applicative} will satisfy the equation in figure~\ref{fmapLaw}~\citep{control.applicative}. This means that instead of explicitly lifting every pure function, the infix version of \texttt{fmap} can be used instead. The next section will cover how these functions can be used in an applicative style of programming.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2207,9 +2219,9 @@ pure f <*> is_1 <*> ... <*> is_n
 \label{canonForm}
 \end{figure}
 
-McBride and Paterson proved that any expression built from the applicative combinators can take the following canonical form in figure~\ref{canonForm}~\cite{mcbrideIdioms}:\footnote{This notation is taken from~\cite{mcbrideIdioms} where applicatives were called "idioms", hence the use of "\texttt{is}"} Where the \texttt{is}'s are computations within the applicative context applied to some pure function \texttt{f} which has been lifted into the context. 
+McBride and Paterson proved that any expression built from the applicative combinators can take the following canonical form in figure~\ref{canonForm}~\citep{mcbrideIdioms}:\footnote{This notation is taken from~\citep{mcbrideIdioms} where applicatives were called "idioms", hence the use of "\texttt{is}".} The \texttt{is}'s in Figure~\ref{canonForm} are computations within the applicative context. These computations are applied to some pure function ``\texttt{f}'' which has been lifted into the context with the \texttt{pure} function. 
 
- Context-free parsing is a good use case of the applicative style and many examples in this chapter are taken from parsers defined using the parsec library~\cite{parsec}. The first example of the applicative programming style is a function, from figure~\ref{parseMoney}, that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>}. This parser would recognise "\$4.59" or "\textsterling64.56" and parse it into the  data type in figure~\ref{parseMoney}. The \texttt{parseMoney} function is in the canonical form as defined by~\cite{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount respectively. 
+ Context-free parsing is a good ``use case'' of the applicative style and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function, from figure~\ref{parseMoney}, that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>}. This parser would recognise "\$4.59" or "\textsterling64.56" and parse it into the  data type in figure~\ref{parseMoney}. The \texttt{parseMoney} function is in the canonical form as defined by~\citep{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount respectively. 
 
 
 \begin{figure}[t]
@@ -2228,7 +2240,7 @@ parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
  \label{parseMoney}
  \end{figure}
  
-The only difference between the \texttt{readWhole} and \texttt{readDecimal} is that \texttt{readDecimal} has to consume the decimal point before reading the number. Instead of duplicating that number code a small refactoring that lifts the parsing of the decimal into the \texttt{parseMoney} function which will allow us to reuse the \texttt{readWhole} function as seen in figure~\ref{altParseMoney}. In this definition of \texttt{parseMoney} the parsed decimal character is discarded because of the use of \texttt{<*} rather than the normal apply.
+The only difference between the \texttt{readWhole} and \texttt{readDecimal} is that \texttt{readDecimal} has to consume the decimal point before reading the number. Instead of duplicating that number code, a small refactoring that lifts the parsing of the decimal into the \texttt{parseMoney} function will allow us to reuse the \texttt{readWhole} function, as seen in figure~\ref{altParseMoney}. In this definition of \texttt{parseMoney} the parsed decimal character is discarded because of the use of \texttt{<*} rather than the normal apply.
 
 \begin{figure}[t]
  \begin{lstlisting}
@@ -2251,7 +2263,7 @@ parseMoney = M <$> parseCurrency <*> readWhole <*> char '.' *> readWhole
  
 All of the variations of apply\footnote{As in \texttt{(<*>)}, \texttt{(<*)}, and \texttt{(*>)}.} are left associative so the definition of \texttt{parseMoney} in figure~\ref{typeParseErr} causes a type error. This error can be corrected by parenthesising the subexpression\\ "\texttt{char \textquotesingle.\textquotesingle~*> readWhole}".
  
-The canonical style of applicative functions may not be the most idiomatic way to define things. The function from figure~\ref{strParse} parses strings surrounded by double quotes. \texttt{parseStr} does not match the canonical form because no lifted pure function is applied to the rest of the applicative chain. This function could be transformed to canonical form by prepending "\texttt{id <\$>}."
+The canonical style of applicative functions, as defined by~\citep{mcbrideIdioms}, may not be the most idiomatic way to define things. The function from figure~\ref{strParse} parses strings surrounded by double quotes. \texttt{parseStr} does not match the canonical form because no lifted pure function is applied to the rest of the applicative chain. This function could be transformed to canonical form by prepending "\texttt{id <\$>}."
 
 
 \begin{figure}[t]
@@ -2269,7 +2281,7 @@ The examples covered in this section give a basic introduction to programming in
 \section{Applicative in practice}
 \label{sec:appInPractice}
 
-To inform the development of this refactoring, is is helpful to understand how the Haskell community has adopted and used the applicative interface. The simplest question we wanted to answer was how many projects are actually taking advantage of the \texttt{Applicative} interface versus using the suggested implementation. When \texttt{Applicative} was made a superclass of \texttt{Monad} an implementation of the \texttt{Applicative} interface was suggested, which allowed programmers to get their existing \texttt{Monad} instances to re-compile successfully with minimum effort. We are interested in how many instances use this suggested implementation which is defined in figure~\ref{appSugImp}.
+To inform the development of this refactoring, it is helpful to understand how the Haskell community has adopted and used the applicative interface. The simplest question we wanted to answer was how many projects are actually taking advantage of the \texttt{Applicative} interface versus using the suggested implementation. When \texttt{Applicative} was made a superclass of \texttt{Monad} an implementation of the \texttt{Applicative} interface was suggested, which allowed programmers to get their existing \texttt{Monad} instances to re-compile successfully with minimum effort. We are interested in how many instances use this suggested implementation, which is defined in figure~\ref{appSugImp}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2282,7 +2294,7 @@ pure = return
 
 \subsection{Methodology}
 
-Hackage is the main package repository for open source Haskell code~\cite{hackage}. The code in Hackage is broken up into 10,203 packages\footnote{As of 10 September 2016.} and within these packages there are 102,597 Haskell source files. We made a local mirror of all of these Hackage packages so that the source files could be easily searched.
+Hackage is the main package repository for open source Haskell code~\citep{hackage}. The code in Hackage is broken up into 10,203 packages\footnote{As of 10 September 2016.} and within these packages there are 102,597 Haskell source files. We made a local mirror of all of these Hackage packages so that the source files could be easily searched.
 
 We searched each package in parallel. Within each package every "\texttt{.hs}" file was parsed using the \textit{ghc-exactprint} library.\footnote{Unfortunately \textit{ghc-exactprint} cannot parse literate Haskell ("\texttt{.lhs}") files so they were excluded} Once we had the abstract syntax tree we could use generic traversal combinators provided by \textit{Scrap Your Boilerplate} (SYB) to search the parsed files for implementations of the \texttt{Monad} and \texttt{Applicative} typeclasses.
 
@@ -2294,7 +2306,7 @@ Even with these failures we were still able to parse more than 90\% of the Haske
   
 The found \texttt{Applicative} instances in 549 cases were defined using the suggested implementation of \texttt{(<*>) = ap}.
 
-Beyond the instances of \texttt{Applicative} that literally define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example \texttt{Applicative} instances can be automatically derived using the \texttt{GeneralizedNewtypeDeriving} language extension. 
+Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example \texttt{Applicative} instances can be automatically derived using the \texttt{GeneralizedNewtypeDeriving} language extension. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2309,7 +2321,7 @@ instance Monad m => Applicative (Sink i m) where
 \label{sousitAp}
 \end{figure}
 
-There are also ways to define \texttt{(<*>)} that duplicate the definition of \texttt{ap} without literally defining \texttt{(<*>) = ap}. For example one definition that was found is shown in figure~\ref{sousitAp}, this is an exact copy of the definition of \texttt{ap}. This means that the number of \texttt{Applicative} instances that actually use the suggested implementation is higher than the number found by our search. Note that by defining apply to be \texttt{ap}, this instance of Applicative actually monadic.
+There are also ways to define \texttt{(<*>)} that duplicate the definition of \texttt{ap} without literally defining \texttt{(<*>) = ap}. For example one definition that was found is shown in figure~\ref{sousitAp}: this is an exact copy of the definition of \texttt{ap}. This means that the number of \texttt{Applicative} instances that actually use the suggested implementation is higher than the number found by our search. Note that by defining apply to be \texttt{ap}, this instance of Applicative is actually monadic.
 
 \begin{figure}[t]
 \begin{lstlisting}%[frame=tblr]
@@ -2323,7 +2335,7 @@ ap m1 m2 = m1 >>=
 \label{apDefn}
 \end{figure}
 
-The definition of \texttt{ap} (see figure~\ref{apDefn}) forces \texttt{m1} to be evaluated strictly before evaluating \texttt{m2}, whereas apply has no such restriction. The arguments to apply could be computed in parallel, as in~\cite{haxl}. Even if not evaluated in parallel, using the \texttt{Applicative} interface rather than the \texttt{Monadic} can keep static values from being re-evaluated because the two sides of the apply operator are not dependent on one another which saves heap space~\cite{errParsers}.
+The definition of \texttt{ap} (see figure~\ref{apDefn}) forces \texttt{m1} to be evaluated strictly before evaluating \texttt{m2}, whereas apply has no such restriction. The arguments to apply could be computed in parallel, as in~\citep{haxl}. Even if not evaluated in parallel, using the \texttt{Applicative} interface rather than the \texttt{Monadic} can keep static values from being re-evaluated because the two sides of the apply operator are not dependent on one another, which saves heap space~\citep{errParsers}.
 
 \subsection{Common Implementation Patterns}
 
@@ -2358,7 +2370,7 @@ instance Applicative m => Applicative (DockerT m) where
 \section{Refactoring Monadic Programs to use Applicative}
 \label{sec:appRefact}
 
-This section will describe how the refactoring of monadic code to the applicative style works via a series of examples . Many of these examples are taken from the parser for money amounts and a JSON parser.\footnote{The full source code for these parsers can be found at \url{https://goo.gl/mrCdFh} and \url{https://goo.gl/ysWmSS}} 
+This section will describe how the refactoring of monadic code to the applicative style works via a series of examples. Many of these examples are taken from the parser for money amounts and a JSON parser.\footnote{The full source code for these parsers can be found at \url{https://goo.gl/mrCdFh} and \url{https://goo.gl/ysWmSS}} 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2384,7 +2396,7 @@ parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
 \label{strLit_ref}
 \end{figure}
 
-The refactoring in this case is relatively simple. Since the third and fifth lines of the original function are not bound to a variable we know that the values returned by those functions will be ignored, hence the use of the \texttt{*>} and \texttt{<*} operators. This way the double quotes characters will still be parsed but the values returned by those parsers will be discarded. The original 
+The refactoring in this case is relatively simple. Since the third and fifth lines of the original function are not bound to a variable, we know that the values returned by those functions will be ignored, hence the use of the \texttt{*>} and \texttt{<*} operators. This way the double quotes characters will still be parsed but the values returned by those parsers will be discarded. The original 
 function just returns the variable \texttt{str}, without calling any pure functions. There will therefore be no pure function application to the left of the effectful functions. 
 
 This is a fairly simple function to convert to applicative style. The next example is a little more complex. The function in figure~\ref{pMoney2} is a slight modification of the money parser from Section~\ref{sec:appProgStyle} as well. This version of the parser makes the decimal amount optional, so it will recognize both "\textsterling 10.35" and "\texteuro 4".
@@ -2441,7 +2453,7 @@ parseMoney =
 \end{figure}
 
 \subsection{Splitting the Applicative Chain}
-As chains of applicative computations can get more complicated it is useful or indeed mandatory to parenthesize parts of the function. The \texttt{objEntry}f unction in figure~\ref{objEntry} parses a single entry from a JSON object. Each entry consists of a string key and a value which can be any valid JSON value, separated by a colon, and stores the key and value in a tuple. 
+As chains of applicative computations can get more complicated it is useful or indeed mandatory to parenthesize parts of the function. The \texttt{objEntry} function in figure~\ref{objEntry} parses a single entry from a JSON object. Each entry consists of a string key and a value which can be any valid JSON value, separated by a colon, and stores the key and value in a tuple. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2453,7 +2465,7 @@ objEntry = (,)
 \label{objEntry}
 \end{figure}
 
-When there are a large amount of computations that do not affect the final value of the function there can be multiple valid ways to add parenthesis to the function. The two definitions of \texttt{objEntry} in Figure~\ref{objEntry2} are equivalent.
+When there are a large amount of computations that do not affect the final value of the function, there can be multiple valid ways to add parenthesis to the function. The two definitions of \texttt{objEntry} in Figure~\ref{objEntry2} are equivalent.
 
 The refactoring will produce the first version of this function, and in general will group each of the value-producing expressions (\texttt{parseStr} and \texttt{parseJVal} in this case) with the closest non-value producing statements. Every group contains a single value producing expression and zero or more non-value producing expressions on either side of the value producing expression. Each of these groups will then be surrounded by parentheses if it contains non-value producing statements, and the groups will be composed using the \texttt{<*>} operator. A more formal description of this is provided in Section~\ref{sec:refacImp}.
 
@@ -2506,7 +2518,7 @@ f = do
 \label{parseNThings}
 \end{figure}
 
-The second precondition is a bit more intuitive to grasp. Consider the function \texttt{g} in figure~\ref{outOrd}. The naive implementation of the refactoring is in lines one and two of figure~\ref{outOrd_ref}. This version of the refactoring maintains the order of statements from the \texttt{do} block but this causes a type error. Instead, if the refactoring swaps the order of the statements (lines five and six of figure~\ref{outOrd_ref}) the order that the contextual effects are performed changes, and the meaning of the refactored program is no longer the same as the source program so the refactoring is not valid.  
+The second precondition is a bit more intuitive to grasp. Consider the function \texttt{g} in figure~\ref{outOrd}. The naive implementation of the refactoring is in Figure~\ref{outOrd_ref1}. This version of the refactoring maintains the order of statements from the \texttt{do} block but this causes a type error. Instead, if the refactoring swaps the order of the statements (Figure~\ref{outOrd_ref2}) the order that the contextual effects are performed changes, and the meaning of the refactored program is no longer the same as the source program so the refactoring is not valid.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2524,18 +2536,26 @@ g = do
 \begin{lstlisting}
 g :: Applicative a => a (A,B)
 g = (,) <*> getB <*> getA
+\end{lstlisting}
+\caption{This attempt at refactoring causes a type error.}
+\label{outOrd_ref1}
+\end{figure}
 
+\begin{figure}[t]
+\begin{lstlisting}
 g :: Applicative a => a (A,B)
 g = (,) <*> getA <*> getB
 \end{lstlisting} 
-\caption{Two attempts at refactoring \texttt{g}.}
-\label{outOrd_ref}
+\caption{This refactoring changes the order the effects happen in.}
+\label{outOrd_ref2}
 \end{figure}
+
+These preconditions enforcing subtly different things. The first precondition, that the target function needs to be expressible with the \texttt{Applicative} interface, is an obvious requirement that the target function needs to meet for the refactoring to be able to be performed successfully. The second precondition, especially when described as naively as it has been in this section, seems to also be a mandatory pre-condition for it to be possible for the target function to be transformed to use the \texttt{Applicative} interface. However, an additional transformation could be applied to \texttt{g} that would allow the generalisation refactoring to continue without type errors and preserve the ordering of effects, the introduction of a lambda expression into the \texttt{return} statement. The details of this transformation are described in Section~\ref{lambdaIntro}.  
 
 
 \subsection{Additional Refactorings}
 \label{sec:otherRefs}
-The preconditions described in the previous section, and the second one in particular, may seem overly strict and needlessly limit the scope of code to which the refactoring could be applied. Instead of developing a single monolithic refactoring that contains many separate cases the approach HaRe takes is to develop multiple small refactorings that can be composed together. Composing refactorings together in this way is known as a composite refactoring~\cite{wranglerDomain}.
+The preconditions described in the previous section, and the second one in particular, may seem overly strict and needlessly limit the scope of code to which the refactoring could be applied. Instead of developing a single monolithic refactoring that contains many separate cases the approach HaRe takes is to develop multiple small refactorings that can be composed together. Composing refactorings together in this way is known as a composite refactoring~\citep{wranglerDomain}.
 
 This section will describe a number of refactorings that will help transform (or ``prefactor'') code so that it is capable of passing the preconditions for the generalising applicative refactoring. 
 
@@ -2615,11 +2635,12 @@ f = (,)
 \end{figure}
 
 \subsubsection{Introduce lambdas to reorder statements}
+\label{lambdaIntro}
 
 The other precondition to the generalise applicative refactoring is the condition that all bound variables need to be extracted from the monadic context in the order they appear in the return statement. Take the example given at the end of Section~\ref{sec:appPrecons} repeated in figure~\ref{ordering}.
 
 \begin{figure}[t]
-\begin{lstlisting}%[frame=tblr]
+\begin{lstlisting}
 
 f = do
 	b <- getB
@@ -2631,20 +2652,29 @@ f = do
 \end{figure}
 
 
-Since \texttt{a} appears before \texttt{b} in the return statement but \texttt{b} is bound before \texttt{a} this function would not pass the ordering precondition. If this return statement was refactored to include a lambda that flipped the arguments it could pass this precondition.
+Since \texttt{a} appears before \texttt{b} in the return statement but \texttt{b} is bound before \texttt{a} this function would not pass the ordering precondition. If this return statement was refactored to include a lambda that flipped the arguments it could pass this precondition. The result of applying this refactoring to the function from Figure~\ref{ordering} can be seen in Figure~\ref{reordered}.
 
+\begin{figure}[t]
 \begin{lstlisting}
 f = do
 	b <- getB
 	a <- getA
 	return (\ b a -> (a,b)) b a
 \end{lstlisting}
+\caption{The lambda expression in the \texttt{return} statement allows this function to pass the preconditions.}
+\label{reordered}
+\end{figure}
 
-The new definition of f would be generalised like so:
-
+\begin{figure}[t]
 \begin{lstlisting}
 f = (\ b a -> (a,b)) <$> getB <*> getA
 \end{lstlisting}
+\caption{The final \texttt{Applicative} implementation of \texttt{f}.}
+\label{finalF}
+\end{figure}
+
+Finally the function \texttt{f}, after applying the lambda reordering refactoring, can be fully rewritten using the \texttt{Applicative} interface. The final result of this chain of refactorings can be seen in Figure~\ref{finalF}.
+
 
 The previous three refactorings are designed to help expand the scope over which the refactoring for generalising to applicative would work. As we said at the beginning of this section, we feel that the composite refactoring approach is better than for generalise applicative automatically to apply the refactorings described in this section. In many cases, though technically correct, the refactorings in this section can produce very verbose and complicated code: for example, imagine a lambda expression with many more arguments than two, or trying to inline more complicated \texttt{do} expressions. Producing less readable code  defeats the purpose of refactoring in the first place. By taking this composite approach,  a software engineer is required to be much more involved in each step of the refactoring, and so to be more aware of the output at each step, too. 
 
@@ -2872,9 +2902,9 @@ There are two things that make a particular application a good candidate for thi
 This section will discuss some libraries where this refactoring could be useful.
 
 \subsection{Parsing}
-Many of the examples in this paper are parsers using parser combinator libraries. This has been a classic domain of applicative functors. The first examples of applicative-like developments come from papers on parsing~\cite{efficientParsing,errParsers}.
+Many of the examples in this paper are parsers using parser combinator libraries. This has been a classic domain of applicative functors. The first examples of applicative-like developments come from papers on parsing~\citep{efficientParsing,errParsers}.
 
-Indeed, when looking through projects on Hackage that are labeled as parsers, examples of where our refactoring could be applied are numerous. Html-tokenizer is a project that tokenizes HTML code to provide a base for HTML parsers~\cite{htmlTok}. Within it there were several functions that are can be generalised. These functions look very much like what we have already seen before. Take for example the following function that matches an opening tag in figure~\ref{openingTag} and the same function refactoring using this refactoring in figure~\ref{openingTag_ref}.
+Indeed, when looking through projects on Hackage that are labeled as parsers, examples of where our refactoring could be applied are numerous. Html-tokenizer is a project that tokenizes HTML code to provide a base for HTML parsers~\citep{htmlTok}. Within it there were several functions that are can be generalised. These functions look very much like what we have already seen before. Take for example the following function that matches an opening tag in figure~\ref{openingTag} and the same function refactoring using this refactoring in figure~\ref{openingTag_ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2906,7 +2936,7 @@ openingTag = (,,)
 \label{openingTag_ref}
 \end{figure}
 
-Another parser that has several functions that can be refactored is in the implementation of pi-forall, a simple dependently typed language created by Stephanie Weirich~\cite{piForall}. The function that parses a module definition and its refactored equivalent are shown in figures~\ref{piParse} and ~\ref{piParse_ref}.
+Another parser that has several functions that can be refactored is in the implementation of pi-forall, a simple dependently typed language created by Stephanie Weirich~\citep{piForall}. The function that parses a module definition and its refactored equivalent are shown in figures~\ref{piParse} and ~\ref{piParse_ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2943,10 +2973,10 @@ moduleDef = Module
 
 One of the big motivations behind adopting the applicative interface rather than using the monadic interface all the time is that the applicative operators are not inherently sequential. Essentially the left and right hand sides of a call to apply could be executed in parallel. 
 
-Facebook's Haxl project simplifies accessing remote data stores such as databases and web-services~\cite{haxl}. In the background when requests to the data store are composed with the \texttt{(<*>)} operator, concurrency is implicit~\cite{haxl}. With the generalise applicative refactoring programmers will be able to write their data queries in the do notation that they are familiar with and then refactor their code to gain the concurrency benefits. Haxl is the motivating behind the \textit{applicativeDo} project~\cite{applicativeDo}, as discussed further in Chapter~\ref{chp:related}.
+Facebook's Haxl project simplifies accessing remote data stores such as databases and web-services~\citep{haxl}. In the background when requests to the data store are composed with the \texttt{(<*>)} operator, concurrency is implicit~\citep{haxl}. With the generalise applicative refactoring programmers will be able to write their data queries in the do notation that they are familiar with and then refactor their code to gain the concurrency benefits. Haxl is the motivating behind the \textit{applicativeDo} project~\citep{applicativeDo}, as discussed further in Chapter~\ref{chp:related}.
 
 \subsection{Yesod}
-Another possible application of this refactoring is to parts of the code used to define Yesod webservers~\cite{yesod}. The preferred way to handle the creation and processing of web forms uses the applicative interface~\cite{yesodBook}. Yesod doesn't force forms to be handled applicatively because a monad instance is provided as well but it is the \textit{idiomatic} way to handle web forms. This refactoring would allow people to write in the more familiar do notation and then refactor their code to fit the community standard.
+Another possible application of this refactoring is to parts of the code used to define Yesod webservers~\citep{yesod}. The preferred way to handle the creation and processing of web forms uses the applicative interface~\citep{yesodBook}. Yesod doesn't force forms to be handled applicatively because a monad instance is provided as well but it is the \textit{idiomatic} way to handle web forms. This refactoring would allow people to write in the more familiar do notation and then refactor their code to fit the community standard.
 
 \section{Summary}
 
@@ -3428,7 +3458,7 @@ do
 \label{doEx}
 \end{figure}
 
-\textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are (see \cite{realWorldHaskell} and \cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
+\textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are (\cite{realWorldHaskell}; \cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
 
 The sugaring of bind syntax into \texttt{do} syntax is a separate refactoring in HaRe. This allows for the programmer to choose exactly which functions should be written with \texttt{do} syntax and when functions are clearer remaining as binds. The refactoring takes in a single parameter, the position where the target function is declared. The sugared version of \texttt{eval} from figure~\ref{monEval} is shown in figure~\ref{finEval}. The first two cases weren't bind expressions so they remain just calls to return. The three other cases have been refactored into the equivalent \texttt{do} statements.
 
@@ -3768,7 +3798,7 @@ The primary artifacts of this work are my contributions to HaRe and its API. In 
 \item The design and implementation of a set of data-driven refactorings in HaRe. These refactorings are:
 	\begin{itemize}
 		\item Introduce a Type Synonym, section~\ref{introSyn}
-		\item Generalise Maybe to MonadPlus/Monad, section~\ref{maybeMonadPlus} and chapter~\ref{chp:generalImp}
+		\item Generalise Maybe to MonadPlus/Monad, Section~\ref{maybeMonadPlus} and Chapter~\ref{chp:generalImp}
 		\item List to Hughes List, section~\ref{listToDlist} and chapter~\ref{chp:generalImp}
 		\item Generalise Monad to Applicative, chapter~\ref{chp:applicative}
 		\item Monadification	, chapter~\ref{chp:monadification}	
