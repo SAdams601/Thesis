@@ -251,6 +251,16 @@ This thesis also takes advantage of Haskell's call-by-need evaluation strategy w
 
 This thesis will proceed as follows:
 
+
+\textbf{Chapter~\ref{chp:related}: Related work}
+
+This thesis begins with chapter that discusses the some of the related work that this thesis builds from and is inspired by. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\comment{Update this!!!}
+This chapter covers other refactoring tools for other functional and object-oriented languages. This chapter also discusses multiple projects that are using refactoring in unique and interesting ways such as introducing parallelism, and non-traditional programming languages. Next the chapter describes work on developing syntactic sugar for applicative functors. Finally there is a brief discussion of type changing program transformation systems.
+
+
 \textbf{Chapter~\ref{chp:hare}: Background: Refactoring Haskell in HaRe}
 
 This chapter covers the history of HaRe (the \textbf{Ha}skell \textbf{Re}factorer), the technologies it depends on, and the current implementation of HaRe. Specifically there is an overview of the~\citep{ghcApi}, the generic traversal library Scrap Your Boilerplate~\citep{syb}, and ghc-exactprint~\citep{exactprint}. This chapter also describes how the inner workings of HaRe are implemented and the functions that compose its API. Finally it discuses the design and development process of implementing refactorings for HaRe.
@@ -275,10 +285,6 @@ This chapter also describes how the Haskell community is currently using the \te
 
 Chapter~\ref{chp:monadification} describes the monadification refactoring. Monadification is the process of introducing monads into pure code. Monads are the standard way for effects to be used in Haskell and so a refactoring to automatically add them is very useful to the community. There are many styles of monadification and this chapter describes several of them. Finally it discusses the implementation of the monadification refactoring in HaRe.
 
-\textbf{Chapter~\ref{chp:related}: Related work}
-
-The final content chapter discusses the literature related to this thesis. This chapter covers other refactoring tools for other functional and object-oriented languages. This chapter also discusses multiple projects that are using refactoring in unique and interesting ways such as introducing parallelism, and non-traditional programming languages. Next the chapter describes work on developing syntactic sugar for applicative functors. Finally there is a brief discussion of type changing program transformation systems.
-
 \textbf{Chapter~\ref{chp:conc}: Conclusion}
 
 The final chapter summarises the work done for this thesis and the contributions it has made. It concludes with a discussion of future work that could be performed on HaRe.
@@ -293,6 +299,317 @@ The work in this thesis was carried out in HaRe. This study focused on adding ad
 	\item The design and implementation of the ``generalise monads to applicative'' refactoring, Chapter~\ref{chp:applicative}. Effects in Haskell are typically handled using monads, a powerful abstraction that allows the type system to check the type of the effects that are being performed by a program. Since the introduction of monads the Haskell community has developed more fine-grained approaches to effect handling. This refactoring allows software systems to handle effects using the applicative as opposed to the monadic interface.
 	\item The design and implementation of the ``monadification'' refactoring, see Chapter~\ref{chp:monadification}. Monadification is the process of making a program work over a monadic type rather than a pure one. This refactoring supports the evolution of pure programs to effectful ones.
 \end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Related Work}
+\label{chp:related}
+
+This chapter reviews current work in refactoring and other areas of the literature. The chapter is divided into several sections. This chapter will begin with a brief description of refactoring tools in general. The second section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint}, a tool that suggests improvements to Haskell code, and Wrangler~\citep{wrangler}, a refactoring tool for Erlang. The next section (\ref{otherTools}) will discuss novel, non-programming language refactoring of wikis and spreadsheets. Section~\ref{refacParallel} discusses automated refactoring tools that introduce parallelism into their target programs. Then Section~\ref{applicativeDo} will describe another approach to using applicative functors in Haskell.  Finally section~\ref{typeTrans} covers work done on type changing program transformations, including Ralf L{\"a}mmel's ``Reuse by Program Transformation''~\citep{lammelReuse}, the work of Erwig and Ran on monadification~\citep{monadification}, and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
+
+\section{Refactoring Tools in Modern IDEs}
+Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, IntelliJ\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy). 
+
+\section{Refactoring Tools for functional languages}\label{funcTools}
+A reason that often used to be given to explain why functional languages are not in widespread use in industry is the lack of a robust tooling ecosystem~\citep{wadlerTools}. This is no longer the case as functional language ecosystems have undergone a great deal of development in recent years and, maybe coincidently, use in industry has gone up substantially in the last five years. This section will cover some notable refactoring and code smell tools for functional programming languages.
+
+\subsection{HLint}
+
+HLint is a ``code smell'' tool for Haskell. Poorly designed code often produces ``smells,'' apparently superficial problems that indicate deeper design issues~\citep{fowler}. The most common of these smells is duplicated code. A code smell tool  suggests changes to a code base such as alternative functions to use, how to simplify code, and redundancies~\citep{hlint}.
+
+Code smell and refactoring tools are very closely related. Simplistically a code smell tool detects problems in a code base and a refactoring tool fixes them. If a tool can detect a problem why can't the same program fix them? HLint has a \texttt{-refactor} flag that will automatically apply the suggestions. However a single piece of code could have multiple smells, how would HLint choose which one to apply? Also once a transformation was applied other hints may no longer be applicable.
+
+One of the powerful features of HLint is its customizability. An HLint (called \texttt{hlint.yaml}) configuration file added to the root of a project   will be detected by HLint and it will suggest both the default hints as well as the custom hints from that file. Hints are very simple to write.
+
+\begin{lstlisting}[caption={A simple hint from~\citep{hlint}}, label=lstHint]
+- hint: {lhs: x !! 0, rhs: head x}
+\end{lstlisting}
+
+Listing~\ref{lstHint} contains the definition of a hint that detects the list index operator is being used to look up the 0th element of a list and suggests using \texttt{head} instead. The \texttt{lhs} tag is the code HLint will search for. If code matching \texttt{lhs} is found  HLint will suggest the code be replaced with the \texttt{rhs} code. HLint assumes any single character variable is a substitution parameter. Given the hint from listing~\ref{lstHint} and the following code:
+
+\begin{lstlisting}
+f list = list !! 0
+\end{lstlisting}
+
+HLint produces the following output.
+
+\begin{lstlisting}
+ Suggestion: Use head
+Found:
+  list !! 0
+Why not:
+  head list
+
+1 hint
+\end{lstlisting}
+
+
+\subsection{Haskell Tools Refact}
+
+HaRe is not the only refactoring tool for Haskell. In late 2016 Haskell Tools Refact was announced and is currently at version 0.7~\citep{haskellTools}. The Haskell Tools project is a GHC based developer tool kit~\citep{haskellToolsGit}. There are eight refactorings currently supported\footnote{May 2018}.
+
+\begin{itemize}
+\item Rename
+\item Generate type signature
+\item Generate exports
+\item Extract binding
+\item Inline binding
+\item Organize imports
+\item Float out
+\item Organize extensions
+\end{itemize}
+
+Haskell Tools has implemented  its own abstract syntax tree. The AST of Haskell Tools is generated using information from all of GHC's compiler stages. Each node represents the same language elements; it just includes additional information that is spread across the different stages of the GHC~\citep{haskellTools}.
+
+The Haskell Tools refactorer is currently integrated into the Atom editor\footnote{\url{https://atom.io/}} with Sublime Text\footnote{\url{https://www.sublimetext.com}} support planned for the near future~\citep{haskellTools}
+
+\subsection{Wrangler}
+
+Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\citep{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\citep{erlangHistory}. Erlang's core design tenets include lightweight processes, that communicate through message passing. Erlang also boasts a ``let it fail" error handling architecture, where processes either succeed or fail and other specialised processes handle the error~\citep{armstrongThesis}.
+
+Wrangler is accessible from the command line and has been integrated into both Emacs and Eclipse and currently supports a large library of refactorings, code smells, as well as other program analysis tools such as clone detection and automatic API migration~\citep{wrangler}. Additionally Wrangler supports a template based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
+
+The template-based API of Wrangler allows users to define program analyses and transformations using Erlang concrete syntax. Wrangler templates consist of fragments of Erlang syntax that may contain meta-variables or meta-atoms that can stand for any language element. Meta-variables/atoms are variables or atoms that end with the "\texttt{@}" character; this meta-variable/atom will then stand for the next language element. Meta-variables/atoms that end with "\texttt{@@}" are list meta-variables/atoms that match a sequence of language elements as long as they are of same sort~\citep{letsUser}.\footnote{Things like the arguments to a function or a sequence of expressions in a function body are the same "sort."}
+
+\begin{figure}[t]
+\begin{lstlisting}[language=erlang]
+?T("erlang:spawn(Arg@)")
+
+?T("erlang:spawn(Arg@@)")
+\end{lstlisting}
+\caption{Some Wrangler templates}
+\label{templates}
+\end{figure}
+
+The first template in figure~\ref{templates} matches applications of \texttt{erlang:spawn} when it is called with one argument whereas the second template will match the same function with any number of arguments.
+
+Composite refactorings are refactorings that are made up of multiple refactorings run, in sequence, one after the other. It can be challenging to develop composite refactorings if they are not explicitly handled by the refactoring tool. The naive solution just chains refactorings together with the output from one refactoring in a composite refactoring becoming the input to the next refactoring. However, what if the second refactoring fails in a chain of four? Composite refactoring definitions, without tool support, become filled with error handling code to manage the situation when one of the component refactorings fail. Wrangler defines a domain specific language that helps describe the various facets of a composite refactoring.
+
+The Wrangler DSL supports the creation of a composite refactoring through a variety of features. First, Wrangler extends every primitive refactoring with a \textit{refactoring command generator}. A command generator allows the extended refactoring to accept not just concrete values but also structures that specify how the parameter should be generated; each parameter of a command generator accepts either a concrete value, a condition that checks if a value is satisfactory, or a generator for creating the parameter based on the previous parameters. A refactoring for renaming functions named with the format \texttt{camelCase} to \texttt{camel\_case} would accept three arguments: the target filename, the name of the target function, and the desired new name. This command generator's first parameter is a condition that always returns true because any file is a valid target for renaming. The second parameter is another condition that checks if the function name matches is in camel case format (e.g. "\texttt{aFunName}"). The final parameter is generated by taking the second parameter and modifying it so that the name is in the corresponding "snake case" format (e.g. "\texttt{a\_fun\_name}"). 
+
+The DSL also allows decision making to occur during the execution of a composite refactoring. Composite refactorings are transactional and can be either atomic or non-atomic. Atomic composite refactorings require each component refactoring to be successfully applied before continuing onto the next refactoring. If a single refactoring fails inside of an atomic composite refactoring, the entire refactoring fails and the program remains unchanged. When a single refactoring fails inside a non-atomic composite refactoring, correspondingly, the entire refactoring will not fail and continue by trying the next refactoring in the sequence. The Wrangler DSL allows for refactorings to described as atomic and non-atomic sections at each level.  
+
+\subsection{ROTOR}
+
+Another newcomer to the refactoring tools for functional language space is ROTOR\footnote{\textbf{R}eliable \textbf{O}Caml-base \textbf{T}ool for \textbf{O}Caml \textbf{R}efactoring} the first refactoring tool to target OCaml~\citep{rotor}. Language features of OCaml provide some unique challenges for a refactoring tool. In OCaml one module may be included in another so that, for example, when renaming the function \texttt{f} in module \texttt{A} but \texttt{A} is included in module \texttt{B} the both \texttt{A.f} and \texttt{B.f} will need to be renamed. 
+
+An opportunity of the ROTOR project is that it has an partner in industry, Jane Street Capital. ROTOR is using the core library\footnote{\url{https://github.com/janestreet/core}} an "industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
+ 
+\section{Novel applications of Refactoring}\label{otherTools}
+
+Though automated refactoring was originally developed for the object-oriented language Smalltalk~\citep{refactoringBrowser}, there has been recent work on building tools that refactor things that are not traditional programming languages. This section with briefly talk about two novel applications of refactoring, spreadsheets and wikis.
+
+\subsection{Spreadsheet refactoring}
+Spreadsheets are a widely used tool in industry, with 13 million end-users that are estimated to be "programming" with spreadsheets or databases in 2012; this figure dwarfs 3 million professional programmers at that time~\citep{endUsers}. Spreadsheets can also exhibit "bad smells" much like the code smells described by Fowler. End-users are also able to detect "spreadsheet smells" and agree that these patterns should be avoided~\citep{spreadsheetSmells}. This indicates that even though it is not a traditional form of programming, spreadsheets are a valid target for refactoring.
+
+BumbleBee is a refactoring tool whose grammar is built from the grammar for Excel formulas~\citep{bumblebee}. Many spreadsheet users have no formal programming training so creating a language that would be familiar to them is important. The grammar of BumbleBee consists of two Excel formulas associated by a "$\leftrightarrow$" operator that indicates the two formula can be transformed into each other.
+
+$$ A1+A2+A3 \leftrightarrow SUM(A1:A3) $$
+
+The previous example means that adding together the cells A1, A2, and A3 could be replaced by a call to the $SUM$ function. BumbleBee also has metavariables that stand in for certain constructs from the Excel language. A "$C$" represents a cell, "$R$" a range, and "$P$" a constant. The following example transforms a sum over any range divided by the length of that range into a call to the average function over the same range.
+
+$$ SUB(R)/COUNT(R) \leftrightarrow AVERAGE(R) $$
+
+Finally BumbleBee allows for cells to be referenced in the form ${i,j}$ and cells can be connected into groups with the "$...$" operator. This enables the following transformation rule that replaces a chain of sums to be replaced with a single call to $SUM$.
+
+$$ \{i,j\} + ... + \{m,n\} \leftrightarrow SUM(\{i,j\}:\{m,n\}) $$
+
+The goal of this syntax is to allow user familiar with Excel but not another programming language to be able to create their own translations. BumbleBee is implemented as an add-on for Excel so users can work with it in a familiar environment.
+
+\subsection{Wiki refactoring}
+
+Another increasingly popular type of ``end user programming'' is writing Wikis. A wiki is essentially just a user-editable graph of articles and categories. Articles store written information and categories are keywords that characterize articles. As a community adds content to a wiki the articles that make up the wiki require refactoring. This may involve splitting an article into multiple articles, or moving an article from one category to another. Currently wiki engines (e.g. MediaWiki the engine for Wikipedia) are entirely focused on content creation and offer little to no support for refactoring.
+
+Refactoring a wiki is a surprisingly difficult task. Beyond just the content of an article there is also the history of changes to that article and the "talk" page where users can discuss about the content of an article. A refactoring needs to preserve two key properties of the wiki, authorship independence and readership independence. Authorship independence means that a refactoring will preserve the attribution of content to the original author(s). Readership independence implies that a refactoring will not alter the content of the wiki, a refactoring will only change how content is distributed throughout the wiki.
+
+Splitting an article into two is a common refactoring that needs to take place, common enough that Wikipedia documents the process.\footnote{\url{http://en.wikipedia.org/wiki/Wikipedia:Splitting}} Article splitting occurs when an article describes multiple things that would be better served by having two dedicated articles. The new article that is created takes all of its content from the source article. The split refactoring maintains authorship independence by adding a note in the talk and recent changes pages of the new article indicating that the new article was originally a section of the source article. Additionally similar changes need to be added to the talk and recent changes pages of the source article as well. These changes allow for authorship to be tracked both through the source and new articles.
+
+
+\begin{figure}[t]
+	\begin{center}
+		\includegraphics[scale=.4]{images/wikiwhirl_mindmap.png}
+	\end{center}
+	\caption{A screen shot of WikiWhirl taken from \url{http://www.onekin.org/portal/wikiwhirl}}
+	\label{wikiwhirl}
+\end{figure}
+
+Readership independence is maintained during an article split by adding a new section to the source article that summarises the content that was moved to the newly created article. This allows people reading the source article to still understand what the split of section contained. This process is tedious and poorly supported by the wiki engine which makes it an ideal target for automated refactoring.
+
+WikiWhirl is a visual DSL for refactoring wikis~\citep{wikiWhirl}. WikiWhirl is built on top of FreeMind, an open source mind-mapping tool~\citep{freeMind}. Mind mapping is a method of visualizing the relationships between pieces of  hierarchical information. WikiWhirl represents a wiki as a mind map and users can then refactor the wiki using this view (see figure~\ref{wikiwhirl}). 
+
+
+WikiWhirl currently supports eight refactorings. They are:
+
+\begin{itemize}
+	\item Create an article/category
+	\item Categorize an article
+	\item Uncategorize an article
+	\item Rename an article/category
+	\item Delete an article/category
+	\item Merge two articles/categories
+	\item Split an article/category
+	\item Move a section from one article to another
+\end{itemize}
+
+Both wikis and spreadsheets are common data formats that deal with the same "smell" and quality issues that software projects experience. The difference between software development and these applications is that the users of the latter will not necessarily be technology professionals. Refactoring tools for wikis and spreadsheets have to be usable by laypeople not just software engineers. 
+
+\section{Refactoring to introduce parallelism}\label{refacParallel}
+
+The reasons to refactor source code have also expanded beyond code quality. This section will describe two different projects that have developed refactorings to change the execution of a program from single to multi-threaded. Functional programming languages are well suited to parallel execution due to immutability by default and in some languages (such as Erlang) first-class concurrency features. This section will first describe the ``ParaForming'' which uses refactoring to introduce parallel abstractions into Haskell code, then it will describe work done to refactor Erlang code to introduce algorithmic skeletons.
+
+\subsection{ParaForming}  
+ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\citep{paraforming}. The ParaForming work targets Glasgow parallel Haskell (GpH), an extension to Haskell, and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see figure~\ref{strategy}). 
+
+\begin{figure}[t]
+\begin{lstlisting}
+type Strategy a = a -> Eval a
+\end{lstlisting}
+\caption{The strategy type}
+\label{strategy}
+\end{figure}   
+
+A strategy takes its argument and determines how it will be evaluated inside of the \texttt{Eval} monad. The \texttt{rpar} strategy introduces parallelism by "sparking" its argument. Sparks are tasks that are collected into a pool which is managed by the runtime. The spark pool is a source of work that GHC can pull from when there are idle processors. Sparks may be evaluated in parallel or not at all depending on the availability of spare cores.
+
+The simplest parallel refactoring is to introduce data parallelism. This refactoring is applied to an expression that works over a list and evaluates each member of that list in a spark. A sequential function that sums the Euler totient function is in figure~\ref{eulerSeq} and the refactored program is in figure~\ref{eulerPar1}
+
+\begin{figure}[t]
+\begin{lstlisting}
+sumEulerSeq :: Int -> Int
+sumEulerSeq n = sum (map euler (mkList n))
+\end{lstlisting}
+\caption{A sequential calculation that sums the Euler totient function}
+\label{eulerSeq}
+\end{figure} 
+
+
+\begin{figure}[t]
+\begin{lstlisting}
+sumEulerPar1 :: Int -> Int
+sumEulerPar1 n = sum (map euler (mkList n) `using` parList rdeepseq)
+\end{lstlisting}
+\caption{A refactored version of the function from figure~\ref{eulerSeq}}
+\label{eulerPar1}
+\end{figure} 
+  
+This refactoring evaluates the calculation of \texttt{map euler (mkList n)} using\footnote{The (\texttt{using :: a -> Strategy a -> a}) function just evaluates some expression with the given strategy.} the \texttt{parList rdeepseq} strategy. The \texttt{parlist}\footnote{\texttt{parlist :: Strategy a -> Strategy [a]}} function evaluates each element of a list in parallel according to a given strategy and \texttt{rdeepseq} is the strategy the fully evaluates its argument. 
+  
+The refactored program in figure~\ref{eulerPar1} is highly parallel but not very efficient because the parallelism is too fine grained. Another refactoring can help in this case instead of sparking every element of a list another strategy can be introduced, one that separates the list into "chunks" and each of the chunks of the list is executed in parallel. This refactoring adds an additional argument to the function that determines how many chunks the list will be split into, as seen in figure~\ref{eulerChunk}.
+  
+\begin{figure}[t]
+\begin{lstlisting}
+sumEulerChunk :: Int -> Int -> Int
+sumEulerChunk c n = sum (map euler (mkList n) `using` parListChunk c rdeepseq)
+\end{lstlisting}
+\caption{A "chunked" version of the function from figure~\ref{eulerSeq}}
+\label{eulerChunk}
+\end{figure}  
+
+These two refactorings are both a way of introducing data parallelism with varying degrees of granularity. The other form of parallelism is known as task parallelism. Where data parallelism is focused on computing different parts of a data structure in parallel (the elements of a list in the previous case), task parallelism instead focuses on having different ``tasks'' excecuted in parallel. The work done in~\cite{paraforming} outlines a refactoring that can make recursive calls happen in parallel.
+
+\subsection{Cost-Directed Parallel Refactoring}
+
+The previous section touched on one of the big challenges of parallel programming, determining the correct level of parallelism to achieve maximum performance. \cite{parallelErl} describes a methodology to introduce algorithmic skeletons into Erlang programs using the Erlang refactoring tool Wrangler. In addition to introducing a skeleton this work provides cost models that estimate the performance of the program after adding each skeleton. This estimate helps a programmer make an informed decision about what parallelisation strategy is the best for a particular program. 
+
+An algorithmic skeleton is a common parallel pattern. A skeleton is implemented as a higher-order function that takes in a sequential function and any parameters that the skeleton requires. \cite{parallelErl} discusses the four most common and useful skeletons. For example, the map skeleton works by breaking up the target data into pieces that can be operated on in parallel. Finally the results from the the parallel computations are combined back into a single image. One of the examples presented in~\cite{parallelErl} is an image processing system that denoises images. Denoising a section of an image can be done independently from processing the other sections of the same image. The introducing the map skeleton would break the image into pieces to be denoised in parallel then the outputted sections can be stitched back together again
+
+Skeletons are simple to understand in theory but it can be difficult to know which to apply in practice. This is when the cost models of each skeleton become useful to help make an informed decision about which skeleton should cause the greatest speed up. In~\cite{parallelErl} an initial benchmark of the program can 
+be used to estimate the speed up that different skeletons could provide.
+
+Parallelisation can be tedious and difficult to do which makes it a good candidate for tool assistance. A refactoring tool can guide a programmer through the process of parallelisation. Much like how the data-driven refactorings have multiple small changes are required before the entire process can be considered ``finished'' changing a program to run in parallel is also a sequence of several smaller changes.
+
+\section{ApplicativeDo}\label{applicativeDo}
+
+Haskell is a pure functional programming language. Purity in this context means that Haskell is side-effect free. This causes some confusion because in other programming languages most of what programs do are side-effects. Haskell instead models side-effect causing computations using Monads, which take effects of computation that are typically implicit and make them an explicit result of the program instead. Beyond modeling side effect causing operations, monads allow for computations to be supplemented with additional features~\citep{haskellWikiMonad}.
+
+Haskell supports the writing of monadic code through the ``\texttt{do}'' syntactic sugar, an example of this syntax can be seen in Figure~\ref{doF}. Monads and their \texttt{do} syntax have become a commonly accepted pattern for handling effects within the Haskell community. 
+
+Applicative functors are another type class that describe computations performed within some context, but are less powerful than monads. They were first described by~\cite{mcbrideIdioms}, and a fairly recent change to GHC made the \texttt{Applicative} type class\footnote{\texttt{Applicative} is what the GHC calls the type class that implements applicative functors.} a superclass of \texttt{Monad} which means that every instance of \texttt{Monad} now must also implement the \texttt{Applicative} interface as well.   
+
+Compiler changes can't force a community to change its practices and \texttt{Applicative} remains underutilised compared to \texttt{Monad}. This under-utilisation of applicative functors in Haskell has not gone unnoticed; in \cite{applicativeDo}, they implemented a language extension for GHC that changes the way Haskell desugars do statements so that applicative functors can be supported by the same \texttt{do} syntactic sugar. \texttt{Applicative}'s offer a key advantage over monads, when applicative functors are composed the results they calculate remain independent of each other. This means that each of the applicative functors can be evaluated in parallel. Using the familiar \texttt{do} syntactic sugar to also support \texttt{Applicative}'s means that programs can become concurrent for ``free,'' this is the main motivation behind the applicative-do work~\citep{applicativeDo}.
+
+Figure~\ref{doF} shows a simple function constructed using Haskell's do notation. The standard way that this function would be desugared is shown in Figure~\ref{fDesugar}. Finally Figure~\ref{fApDoDesugar} shows how the same function would be desugared when the \texttt{ApplicativeDo} language extension is turned on.
+
+\begin{figure}[t]
+\begin{lstlisting}
+f = do
+	x1 <- A
+	x2 <- B x1
+	x3 <- C
+	return (x2,x3)
+\end{lstlisting}
+\caption{A simple monadic function constructed using a \texttt{do} statement.}
+\label{doF}
+\end{figure}
+
+\begin{figure}[t]
+\begin{lstlisting}
+f = A >>=
+	(\x1 -> B x1 >>=
+		(\x2 -> C >>=
+			(\x3 -> return (x2,x3))))
+\end{lstlisting}
+\caption{The desugared version of \texttt{f} from Figure~\ref{doF}.}
+\label{fDesugar}
+\end{figure}
+
+\begin{figure}[t]
+\begin{lstlisting}
+f = (\x2 x3 -> (x2, x3))
+        <$> (A >>= (\x1 -> B x1))
+        <*> C                
+\end{lstlisting}
+\caption{How \texttt{f} will be desugared when applicative do is turned on.}
+\label{fApDoDesugar}
+\end{figure}
+
+The \textit{ApplicativeDo} algorithm will attempt to insert as many applies into the expression as possible. When the implementation of the \texttt{Applicative} instance evaluates the two arguments of apply in parallel, better performance can be achieved by adding more applies. 
+
+There could be multiple ways to desugar a particular function. The \textit{applicativeDo} algorithm first assumes that every expression have an identical time cost, from this assumption the algorithm heuristically determines the desugaring with the shortest execution time.
+
+
+\section{Program transformations}\label{typeTrans}
+
+Refactoring is a type of program transformation but it does not constitute the whole field. A major difference between refactoring and other types of program transformations is scope that a refactoring must be aware of. Program transformations typically focus on just the algorithm whereas refactorings must take into account the broader effects a transformation has on a codebase and the context that programs exist in. Additionally the target program of a refactoring needs to be readable, maintainable, and keep proper layout and user comments. Other types of program transformation don't typically have these concerns. This section will describe some of the program transformation work most relevant to this thesis. First it will describe the type and transform system developed by~\citep{typeAndTransformSemantics}. Next there will be a discussion of the previous methods of monadification found in the literature. 
+
+\subsection{Type and transform systems}
+
+The type-and-transform system described in~\citep{typeAndTransformSemantics} is a system for a semantics preserving and type changing program transformations over the typed lambda calculus with let polymorphism. The type-and-transform system is limited to isomorphic types, there must be a way to convert between the two types and back again as described in figure~\ref{transformIso}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+rep :: A -> R
+abs :: R -> A
+
+rep . abs = id
+abs . rep = id
+\end{lstlisting}
+\caption{The properties that must hold for the type-and-transform system to work over types \texttt{A} and \texttt{R}}
+\label{transformIso}
+\end{figure} 
+
+The type-and-transform system supports type-changing rewrites through typed rewrite rules that insert conversions between the source and target types as appropriate. To handle the fact that there are multiple ways to retype a program each rewrite rule is weighted to maximize the use of the target type, introduce the target type as soon as possible in the program, and delay the conversion back to the source type as late as possible.
+
+This work emphasises formalisation and its correctness and the work is done in the context of the lambda calculus rather than a full programming language. There is a Haskell implementation of their system but it is only a prototype though they state that they want to expand this work to work with Haskell however this has not been published yet.
+
+\subsection{Automatic Monadification}\label{erwigMonad}
+
+Monadification is not a new problem and various solutions have been presented in the literature. In~\citep{lammelReuse} monadification is performed in two steps. First the program is transformed into A-normal form\footnote{This is also known as sequencing}, which flattens applications into let expressions. The first line of figure~\ref{anormal} shows a normal expression and line 3 of the same figure shows that expression in A-normal form.
+
+\begin{figure}[t]
+\begin{lstlisting}
+f (g x) (h y)
+
+let x1 = g x in
+	let x2 = h y in
+		f x1 x2
+\end{lstlisting}
+\caption{A-normal form converstion}
+\label{anormal}
+\end{figure}
+
+Once the program has been converted into A-normal a let expression of the form $ let x = t1 in t2 $ is transformed into $ t1 >>= \lambda x. t2 $. If the right hand side of the lambda is not already a monadic type then \texttt{return} will be introduced, e.g. $ t1 >>= \lambda x. return~~t2 $. The full transformation is given by inference rules in~\citep{lammelReuse}.
+
+Monadification is developed further by~\citep{monadification}. This work provides an algorithm for restricted call-by-value monadification as opposed to the semantics style inference rules defined in~\citep{lammelReuse}. This work targets the lambda calculus extended with case and let expressions. The algorithm from~\citep{monadification} is very similar to the one implemented in HaRe. It has the same precondition where every call to a monadified function must be fully saturated and it produces the same style of monadification. A prototype implementation of this method was produced.
 
 \chapter{Background: Refactoring Haskell in HaRe}
 \label{chp:hare}
@@ -530,7 +847,7 @@ renameXVar v = v
 	\label{renamexvar}
 	\end{figure}
 	
-	There are four cases to the \texttt{renameXVar} function. The first case matches when \texttt{renameXVar} is called with a \texttt{(Var "x")} value. This is one of the cases that the function will replace the "x" name with an "a" name. The second case matches an assignment and is the other case when actual ``work'' happens. In this case the function needs to check if the variable being assigned is an "x" or not, if it is then the name being assigned is replaced with "a" otherwise the name remains the same. Then there is a recursive call replace the name in the right hand side of the assignment. The other two cases will not directly modify an expression. In the \texttt{Add} case there is just a recursive call to perform replacements in its sub-expressions. The final case is just a catch-all term that returns its parameter. This will be called when \texttt{renameXVar} is called with a \texttt{Value} or a \texttt{Var} that isn't \texttt{"x"}.
+	There are four cases to the \texttt{renameXVar} function. The first case matches when \texttt{renameXVar} is called with a \texttt{(Var "x")} value. This is one of the cases that the function will replace the "x" name with an "a" name. The second case matches an assignment and is the other case when actual ``work'' happens. In this case the function needs to check if the variable being assigned is an "x" or not, if it is then the name being assigned is replaced with "a" otherwise the name remains the same. Then there is a recursive call replace the name in the right hand side of the assignment. The other two cases will not directly modify an expression. In the \texttt{Add} case there is just a recursive call to perform replacements in its sub-expressions. The final case is just a catch-all term that returns its parameter. This will be called when \texttt{renameXVar} is called with a \texttt{Value} or a \texttt{Var} that is not \texttt{"x"}.
 	
 	This is fairly straightforward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what is known as "boilerplate" code~\citep{syb}. Boilerplate code is highly repetitive, verbose, and difficult to debug and maintain.  In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} would become much more time-consuming and a nightmare to maintain. 
 	
@@ -709,7 +1026,7 @@ HaRe actually requires very few things from a refactoring implementation. As was
 
 Beyond those two features, refactorings are free to be implemented however the programmer chooses. However, certain conventions have been adopted within many of HaRe's refactorings. When describing a refactoring one would imagine that checking \textit{pre}conditions would be the first thing the implementation of that refactoring computes. A more efficient implementation checks preconditions throughout computation alongside the AST transformation. For example, the renaming refactoring doesn't check for name clashes in client modules until after the source module has been modified. If a name clash is found in a client module then an error is thrown at that point and the whole refactoring is rolled back. Though this slows down the time to failure somewhat, it saves HaRe from traversing every client module twice, once for preconditions and a second time for rewriting.
 
-Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times. For example, the renaming refactoring checks for name conflicts while it descends the AST, replacing the old name with the new one. Obviously this strategy only works for certain preconditions: the only precondition for deleting a definition is that the target definition isn't used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not.
+Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times. For example, the renaming refactoring checks for name conflicts while it descends the AST, replacing the old name with the new one. Obviously this strategy only works for certain preconditions: the only precondition for deleting a definition is that the target definition is not used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not.
 
 \subsection{Using the GHC's Abstract Syntax Trees}
 Each stage of the compiler takes the previous stage's output and creates it's own version of the tree decorated with some additional information. This provides a challenge when writing refactorings because all of the changes made to the source needs to be reflected in the parsed syntax tree. The additional name and type information can be retrieved from the other trees but they will have to be traversed from the top down to where the refactoring is taking place.
@@ -1401,7 +1718,7 @@ enumerate (Node left x right) = (enumerate left) `append` (singleton x) `append`
 \label{enumRef}
 \end{figure}
 
-The refactoring isn't finished yet, however. The original definition contained in Figure~\ref{enumBefore} had another function \texttt{printEnumTree} that depended on \texttt{enumerate}. The final modification that needs to happen to this example is to wrap all calls to \texttt{enumerate} in \textit{non-refactored} definitions with the abstraction function to convert the result back to a list. The final product of the refactoring can be seen in Figure~\ref{enumFinal}.
+The refactoring is not finished yet, however. The original definition contained in Figure~\ref{enumBefore} had another function \texttt{printEnumTree} that depended on \texttt{enumerate}. The final modification that needs to happen to this example is to wrap all calls to \texttt{enumerate} in \textit{non-refactored} definitions with the abstraction function to convert the result back to a list. The final product of the refactoring can be seen in Figure~\ref{enumFinal}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1505,17 +1822,17 @@ The following chapters will expand on some of these ideas. The next chapter will
 \renewcommand{\topfraction}{1}
 \renewcommand{\floatpagefraction}{1}
 
-The previous chapter described two refactorings, generalising \texttt{Maybe} and the list to Hughes list refactorings. This chapter will describe how refactorings are implemented in HaRe. Section~\ref{sec:genMaybeImp} describes the implementation of the generalising \texttt{Maybe} refactoring which was first covered in Section~\ref{genMaybe}. Section~\ref{sec:hughesListImp} covers the implementation of the list to Hughes list refactoring (see Section~\ref{listToDlist}) and the embeddable type refactoring system that it is made with. The chapter also covers the enhancements that HaRe's API has undergone while developing the refactorings discussed in this thesis. Section~\ref{hareAPI} discusses the enhancements I made to HaRe's API.
+The previous chapter described three refactorings, ``introducing a type synonym,'' ``generalising \texttt{Maybe},'' and the ``list to Hughes list refactorings''. This chapter will describe how refactorings are implemented in HaRe. Section~\ref{sec:genMaybeImp} describes the implementation of the generalising \texttt{Maybe} refactoring which was first covered in Section~\ref{genMaybe}. Section~\ref{sec:hughesListImp} covers the implementation of the ``list to Hughes list'' refactoring (see Section~\ref{listToDlist}) and the embeddable type refactoring system that it is made with. The chapter also covers the enhancements that HaRe's API has undergone while developing the refactorings discussed in this thesis. Section~\ref{hareAPI} discusses the enhancements I made to HaRe's API.
 
 \section{Implementation of the ``Generalising Maybe" refactoring}
 \label{sec:genMaybeImp}
 
 The design of the generalising \texttt{Maybe} refactoring was discussed in the previous chapter (see Section~\ref{genMaybe}). This section will describe its implementation in the HaRe refactoring tool. 
 
-This refactoring tries to generalise something of type \texttt{Maybe} to become either of type \texttt{Monad} or \texttt{MonadPlus}. The implementation of this refactoring attempts to produce the ``most general" version of the source program. This means that when possible the refactoring will replace the targetted \texttt{Maybe} type with a value of type \texttt{Monad}, if this is not possible the value will be of type \texttt{MonadPlus}, and finally if that also isn't possible the refactoring cannot continue and the source and target programs of the refactoring are identical.
+This refactoring tries to generalise something of type \texttt{Maybe} to become either of type \texttt{Monad} or \texttt{MonadPlus}. The implementation of this refactoring attempts to produce the ``most general" version of the source program. This means that when possible the refactoring will replace the targetted \texttt{Maybe} type with a value of type \texttt{Monad}; if this is not possible the value will be of type \texttt{MonadPlus}, and finally if that also is not possible the refactoring cannot continue and the source and target programs of the refactoring are identical.
 
 \begin{figure}[t]
-\begin{lstlisting}[basicstyle=\small]
+\begin{lstlisting}
 doMaybeToPlus :: FilePath -> SimpPos -> String -> Int -> RefactGhc ()  
 doMaybeToPlus fileName pos@(row,col) funNm argNum = do
   parsed <- getRefactParsed
@@ -1600,7 +1917,7 @@ The new name is then bound to the lambda expression (line 18) and the target fun
 
 \subsection{Generalising to \texttt{MonadPlus}}
 
-When the target function cannot be generalised to \texttt{Monad} because it does not contain the \texttt{Nothing} to \texttt{Nothing} case it may be possible to generalise it to use the \texttt{MonadPlus} typeclass instead. This section will cover how this case of the refactoring is implemented in HaRe.
+When the target function cannot be generalised to \texttt{Monad} because it does not contain the \texttt{Nothing} to \texttt{Nothing} case, it may be possible to generalise it to use the \texttt{MonadPlus} typeclass instead. This section will cover how this case of the refactoring is implemented in HaRe.
 
 An instance of \texttt{MonadPlus} is a \texttt{Monad} with a monoidal structure.
 This structure is defined by an associative operator \texttt{mplus} and its identity value \texttt{mzero}~\citep{typeclassopedia}. 
@@ -1843,7 +2160,7 @@ In this case the root node of the AST can be replaced with a call to \texttt{DLi
 \label{enumStateL1}
 \end{figure} 
 
-When the refactoring reaches the call to \texttt{enumerate} it realises that this is a recursive call so the result type is already \texttt{DList a} so no change needs to be made and the top of the goal type stack can be popped off. Also since \texttt{enumerate}'s argument is not a target of the refactoring that subtrees will not need to be traversed through, this is indicated by pushing \texttt{Nothing} onto the stack (see figure~\ref{enumStateL2}). This means that the entire left child of the root node is correct after the change to the root node and the refactoring can begin working on the right child of the root node.
+When the refactoring reaches the call to \texttt{enumerate}, it realises that this is a recursive call so the result type is already \texttt{DList a} so no change needs to be made and the top of the goal type stack can be popped off. Also since \texttt{enumerate}'s argument is not a target of the refactoring, those subtrees will not need to be traversed. This is indicated by pushing \texttt{Nothing} onto the stack (see figure~\ref{enumStateL2}). This means that the entire left child of the root node is correct after the change to the root node and the refactoring can begin working on the right child of the root node.
 
 \begin{figure}[t]
 	\begin{subfigure}{\linewidth}
@@ -1859,7 +2176,7 @@ When the refactoring reaches the call to \texttt{enumerate} it realises that thi
 \label{enumStateL2}
 \end{figure}
 
-The first node that the refactoring encounters when traversing the right child of the root node is another application of \texttt{++}. This is handled in the same that its parent node was, with \texttt{DList.append} replacing \texttt{++} and the new types of its subtrees (\texttt{DList a} in this case) pushed onto the stack. In the same way that the root node was handled the refactoring begins by traversing the left subtree. The state of the refactoring at this point is shown in figure~\ref{enumStateR1}.
+The first node that the refactoring encounters when traversing the right child of the root node is another application of \texttt{++}. This is handled in the same that its parent node was, with \texttt{DList.append} replacing \texttt{++} and the new types of its subtrees (\texttt{DList a} in this case) pushed onto the stack. In the same way that the root node was handled, the refactoring begins by traversing the left subtree. The state of the refactoring at this point is shown in figure~\ref{enumStateR1}.
 
 \begin{figure}[t]
 	\begin{subfigure}{\linewidth}
@@ -1891,7 +2208,7 @@ The node that the refactoring is at is a singleton list expression and according
 \label{enumStateR2}
 \end{figure}
 
-The only part of the AST that hasn't been refactored is the right most expression ``\texttt{(enumerate right)}''. This expression will be handled in the same way that the first recursive call to \texttt{enumerate} was. The refactoring will descend to the call to \texttt{enumerate} pop the top of the goal type stack and push \texttt{Nothing} onto the stack because none of the arguments need to change. The refactoring will ascend to the \texttt{HsApp} node and pop off the \texttt{Nothing} value and therefore not descend to check the subtree constisting only of the \texttt{right} variable. At this point the goal type stack is empty so the refactoring is finished and can return the modified AST.
+The only part of the AST that hasn't been refactored is the right most expression ``\texttt{(enumerate right)}''. This expression will be handled in the same way that the first recursive call to \texttt{enumerate} was. The refactoring will descend to the call to \texttt{enumerate}, pop the top of the goal type stack and push \texttt{Nothing} onto the stack because none of the arguments need to change. The refactoring will ascend to the \texttt{HsApp} node and pop off the \texttt{Nothing} value, and therefore not descend to check the subtree constisting only of the \texttt{right} variable. At this point the goal type stack is empty so the refactoring is finished and can return the modified AST.
 
 This section has given a concrete example of how an abstract syntax tree is traversed and how the goal type stack is used. The next section will go through the code that handles each of the different types of expressions.
 
@@ -1924,7 +2241,7 @@ Though the top level \texttt{doEmbRefact} function determines if a subtree shoul
 
 The way that function applications are transformed is shown in figure~\ref{embRefactApp}. The refactoring will transform the left hand side of the application first, then it checks if the entire application needs to be wrapped with a call to the projection function because the leftmost child of the subtree does not have an equivalent function over the target type. After that the right sub tree is refactored and this refactored expression is applied to the refactored left hand expression.
 
-If the projection function needs to be introduced at this layer then another application is wrapped around the already modified syntax tree. Otherwise the application with its modified subtrees can just be returned.
+If the projection function needs to be introduced at this layer then another application is wrapped around the already modified syntax tree. Otherwise the application with its modified sub trees can just be returned.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1941,9 +2258,9 @@ If the projection function needs to be introduced at this layer then another app
 \label{embRefactOp}
 \end{figure}
 
-The next case, operator application, is handled much like function application is, whether or not the operator can be replaced by a target type equivalent determines if the projection function needs to be added. Otherwise the left and right hand expressions can be refactored. 
+The next case, operator application, is handled much like function application is: whether or not the operator can be replaced by a target type equivalent determines if the projection function needs to be added. Otherwise the left- and right-hand expressions can be refactored. 
 
-The new operator may not be allowed in an infix position and in this case backquotes (\texttt{`}) are added, which in Haskell makes a prefix function into an infix version of that function. A good example of this is \texttt{DList.append}. \texttt{DList.append} is paired with \texttt{(++)} which is an operator whereas \texttt{DList.append} is a prefix function, therefore the refactoring of ``\texttt{leftList ++ rightList}'' is ``\texttt{leftListRef `DList.append` rightListRef}'' where left and right list ``\texttt{Ref}'' are the refactored parameters to the append function.
+The new operator may not be allowed in an infix position and in this case backquotes (\texttt{`}) are added, which in Haskell makes a prefix function into an infix version of that function. A good example of this is \texttt{DList.append}. \texttt{DList.append} is paired with \texttt{(++)} which is an operator whereas \texttt{DList.append} is a prefix function, therefore the refactoring of ``\texttt{leftList ++ rightList}'' is ``\texttt{leftListRef `DList.append` rightListRef}'' where \texttt{leftListRef} and \texttt{rightListRef} are the refactored parameters to the append function.
 
 \begin{figure}[!t]
 \begin{lstlisting}
@@ -1984,9 +2301,9 @@ The new operator may not be allowed in an infix position and in this case backqu
 
 The major changes that the refactoring makes are performed when \texttt{doEmbRefact'} encounters a variable. This logic is shown in figure~\ref{embRefactVar}. The first six lines of this case (lines 2 through 7 in figure~\ref{embRefactVar}) retrieve the type of the current variable from the typed abstract syntax. 
 
-Next (line 10 of figure~\ref{embRefactVar}) the refactoring checks if there is a possible replacement function. If a replacement isn't available then the transformation can pop the top element from the stack and any parameters that are applied to this value don't have to be searched. This is done through the call to \texttt{dontSearchSubTrees} which puts \texttt{Nothing} values onto the type stack. For example if the current variable was ``\texttt{f :: a -> b -> c}'' and there was no possible replacement for \texttt{f} then \texttt{dontSearchSubTrees} would push two \texttt{Nothing}s onto the type stack so that the subtrees of type \texttt{a} and \texttt{b} aren't modified. Finally in this case the boolean ``\texttt{insertProj}'' in the refactoring state is flipped that informs the refactoring that higher up the tree the application of this value needs to wrapped with the projection function. 
+Next (line 10 of figure~\ref{embRefactVar}) the refactoring checks if there is a possible replacement function. If a replacement is not available then the transformation can pop the top element from the stack and any parameters that are applied to this value don't have to be searched. This is done through the call to \texttt{dontSearchSubTrees} which puts \texttt{Nothing} values onto the type stack. For example, if the current variable was ``\texttt{f :: a -> b -> c}'' and there was no possible replacement for \texttt{f}, then \\ \texttt{dontSearchSubTrees} would push two \texttt{Nothing}s onto the type stack so that the subtrees of type \texttt{a} and \texttt{b} aren't modified. Finally in this case the boolean ``\texttt{insertProj}'' in the refactoring state is flipped, which informs the refactoring that higher up the tree the application of this value needs to be wrapped with the projection function. 
 
-When a possible replacement for the current value is found (this case begins on line 19 of figure~\ref{embRefactVar}) the refactoring first calculates which parameters of the new function have different types from the original function which is stored in the \texttt{changedTypes} variable. This variable is a list of \texttt{Maybe GHC.Type}s where the \texttt{Nothing} values mean that the type of that parameter has not changed and \texttt{Just \_} values indicate the new type that that parameter must become. This list represents each parameter of the variable from left to right order. This list of type changes that need to be handled is pushed onto the type stack in line 29 of figure~\ref{embRefactVar} after the current goal type is popped from the stack. 
+When a possible replacement for the current value is found (this case begins on line 19 of figure~\ref{embRefactVar}), the refactoring first calculates which parameters of the new function have different types from the original function which is stored in the \texttt{changedTypes} variable. This variable is a list of \texttt{Maybe GHC.Type}s where the \texttt{Nothing} values mean that the type of that parameter has not changed and ``\texttt{Just \_}'' values indicate the new type that the parameter must become. This list represents each parameter of the variable from left to right order. This list of type changes that need to be handled is pushed onto the type stack in line 29 of figure~\ref{embRefactVar} after the current goal type is popped from the stack. 
 
 The rest of this case constructs the new expression and copies over the annotation from the old piece of abstract syntax so that any formatting associated with the original call is preserved in the new source code. Finally the new expression can be returned.
 
@@ -2020,7 +2337,7 @@ The rest of this case constructs the new expression and copies over the annotati
 \label{embRefactExpLst}
 \end{figure}
 
-One of the goals that influenced the design of this system was to produce a reusable system so that more embeddable type refactorings could easily be created. A tricky situation arises with Haskell's support for explicit list syntax (e.g. ``\texttt{[1,2,3]}''). Because lists are the source type of the ``list to Hughes list'' refactoring the explicit list syntax may need to be transformed during the refactoring, so this type specific bit of code remains in the otherwise generic function. Removing this case is a major development priority.
+One of the goals that influenced the design of this system was to produce a reusable system so that more embeddable type refactorings could easily be created. A tricky situation arises with Haskell's support for explicit list syntax (e.g. ``\texttt{[1,2,3]}''). Because lists are the source type of the ``list to Hughes list'' refactoring, the explicit list syntax may need to be transformed during the refactoring, so this type-specific bit of code remains in the otherwise generic function. Ideally this function could remain completely type agnostic but because the ``list to hughes list'' refactoring works over the list type it needs to descend into this type specific constructor of the abstract syntax tree.
 
 The case that handles explicit lists is shown in figure~\ref{embRefactExpLst} and is simple enough. If the explicit list is just a single element long (e.g. ``\texttt{[3]}'') then that value will be passed to the difference list's \texttt{singleton} function, otherwise the projection function is wrapped around longer lists. 
 
@@ -2037,13 +2354,13 @@ doEmbRefact' ex = gmapM (SYB.mkM doEmbRefact) ex
 \section{Other enhancements made to HaRe}
 \label{hareAPI}
 
-Another contribution that was made in the process of creating the refactorings described in this thesis were many enhancements to HaRe's API. With the switch to the GHC API and the introduction of ghc-exactprint a large part of HaRe's original API was reimplemented but the functionality it provided was designed for aiding the development of refactorings that used Programatica's abstract syntax tree instead of GHC's. Additionally ghc-exactprint has a very different way of formatting source code and the current API did not help refactoring developers use this library. This section will describe contributions I made to the HaRe's API that help working with both GHC's abstract syntax and ghc-exactprint.
+Another contribution made in the process of creating the refactorings described in this thesis was many enhancements to HaRe's API. With the switch to the GHC API and the introduction of ghc-exactprint, a large part of HaRe's original API was reimplemented but the functionality it provided was designed for aiding the development of refactorings that used Programatica's abstract syntax tree instead of GHC's. Additionally ghc-exactprint has a very different way of formatting source code and the current API did not help refactoring developers use this library. This section will describe contributions I made to the HaRe's API that help working with both GHC's abstract syntax and ghc-exactprint.
 
 These contributions took two forms ``queries'' and ``transformations.'' Queries extract parts or determine properties of an AST, whereas transformations are small modifications to source code that are useful to many refactorings. This section will briefly describe some of the functionality provided by HaRe's API that I implemented while developing the refactorings described in this thesis. 
 
 \subsection{The \texttt{Query} module}
 
-One thing that many refactorings have in common is the need to extract the same AST elements. In an effort to reduce the amount of duplicated code the \texttt{Query} module was created to hold functions that extract or check properties of syntax elements.
+One thing that many refactorings have in common is the need to extract the same AST elements. In an effort to reduce the amount of duplicated code, the \texttt{Query} module was created to hold functions that extract or check properties of syntax elements.
 
 Common queries do things like retrieve the function binding based on function name, as seen in figure~\ref{getHsBind}. Many refactorings have function names as a input argument so \texttt{getHsBind} is useful for retrieving the appropriate binding.
 
@@ -2067,13 +2384,13 @@ getHsBind nm a = SYB.something  (Nothing `SYB.mkQ` isBind) a
 Currently the \texttt{Query} module defines the following functions:
 
 \begin{itemize}
-\item \texttt{getVarAndRHS} retrieves the pattern and right hand side expression from a function match
+\item \texttt{getVarAndRHS} retrieves the pattern and right-hand side expression from a function match
 \item \texttt{getHsBind}
 \item \texttt{getFunName} takes in a string representation of a function name and gets the \texttt{Name} of that function
 \item \texttt{getTypedHsBind} given an \texttt{OccName} retrieves the typed syntax tree for a function binding
 \item \texttt{getTypeSig} gets the type signature of a function based on the location of the function binding and its name
 \item \texttt{isHsVar} given a string and an expression this function checks if the expression is a variable with the same name as the value of the string
-\item \texttt{astCompare} does a rough estimate if two abstract syntax trees are the same. This is done by checking that the trees are the same shape and have the same constructors and that any names that appear in the trees are the same 
+\item \texttt{astCompare} does a rough estimate of whether two abstract syntax trees are the same. This is done by checking that the trees are the same shape and have the same constructors, and that any names that appear in the trees are the same 
 \item \texttt{lookupByLoc} retrieves the syntax element at a given location
 \item \texttt{getIdFromVar} takes in a parsed expression that uses the \texttt{HsVar} constructor and retrieves the typed \texttt{Id} of that variable
 \end{itemize}
@@ -2081,28 +2398,26 @@ Currently the \texttt{Query} module defines the following functions:
 
 \subsection{The \texttt{Transform} module}
 
-The other major contribution made to HaRe's API is the addition of the \texttt{Transform} module. This module collects small changes to the syntax tree and annotations that are not specific to any particular refactoring.
+The other major contribution made to HaRe's API is the addition of the \texttt{Transform} module. This module collects small changes to the syntax tree and annotations that are not specific to any particular refactoring and need to be performed by multiple refactorings.
 
-Abstract syntax changes like adding a import declaration to the target module, or replacing the original binding of a function with another one.
-
-The other type of transformation that is common across multiple refactorings are those that do not affect the abstract syntax tree but change the formatting of the program . This is done through modifying the annotations associated with the syntax elements. 
+Abstract syntax changes like adding a import declaration to the target module, or replacing the original binding of a function with another one are small changes to source programs that many refactorings need to do. The other type of transformations that refactorings all perform do not affect the abstract syntax tree but change the formatting of the program. In HaRe this formatting work is done by modifying the annotations associated with the syntax elements. 
 
 The \texttt{Transform} module defines the following functions:
 
 \begin{itemize}
-\item \texttt{addSimpleImportDecl} adds a new import to the current module based on a string module name and an optional qualifier
-\item \texttt{wrapInLambda} creates a lambda expression from a pattern and right hand side expression, also creates all the necessary annotations so that the expression displays correctly
-\item \texttt{wrapInParsWithDPs} wraps the given expression in parenthesis and offsets the new expression based on the given ``DPs'' (delta position)
-\item \texttt{wrapInPars} is similar to \texttt{wrapInParsWithDPs} but defaults to a single column offset between the new expression and the syntax element that comes before it
-\item  \texttt{removePars} removes parenthesis from an expression and makes sure that the new expression is offset on column from the previous syntax element
-\item \texttt{addNewLines} adds newlines before the given syntax element
-\item \texttt{replaceTypeSig} replaces the existing type signature of a function with the given one
-\item \texttt{replaceFunBind} replaces the source binding of a function with the given one
-\item \texttt{addBackquotes} adds backquote characters around an expression
-\item \texttt{constructHsVar} constructs an \texttt{HsVar} expression from a name
-\item \texttt{constructLHsTy} constructs a type variable from a name
-\item \texttt{insertNewDecl} inserts a new declaration into the current module from a given string that represents that declaration
-\item \texttt{rmFun} removes a function from the current module based on a name
+\item \texttt{addSimpleImportDecl} adds a new import to the current module based on a string module name and an optional qualifier.
+\item \texttt{wrapInLambda} creates a lambda expression from a pattern and right-hand side expression and also creates all the necessary annotations so that the expression displays correctly.
+\item \texttt{wrapInParsWithDPs} wraps the given expression in parentheses and offsets the new expression based on the given ``DPs'' (delta position).
+\item \texttt{wrapInPars} is similar to \texttt{wrapInParsWithDPs} but defaults to a single column offset between the new expression and the syntax element that comes before it.
+\item  \texttt{removePars} removes parentheses from an expression and makes sure that the new expression is offset one column from the previous syntax element.
+\item \texttt{addNewLines} adds newlines before the given syntax element.
+\item \texttt{replaceTypeSig} replaces the existing type signature of a function with the given one.
+\item \texttt{replaceFunBind} replaces the source binding of a function with the given one.
+\item \texttt{addBackquotes} adds backquote characters around an expression.
+\item \texttt{constructHsVar} constructs an \texttt{HsVar} expression from a name.
+\item \texttt{constructLHsTy} constructs a type variable from a name.
+\item \texttt{insertNewDecl} inserts a new declaration into the current module from a given string that represents that declaration.
+\item \texttt{rmFun} removes a function from the current module based on a name.
 \end{itemize}
 
 
@@ -2294,17 +2609,18 @@ pure = return
 
 \subsection{Methodology}
 
-Hackage is the main package repository for open source Haskell code~\citep{hackage}. The code in Hackage is broken up into 10,203 packages\footnote{As of 10 September 2016.} and within these packages there are 102,597 Haskell source files. We made a local mirror of all of these Hackage packages so that the source files could be easily searched.
+Hackage is the main package repository for open source Haskell code~\citep{hackage}. The code in Hackage is broken up into 12,601 packages\footnote{As of 14 May 2018.} and within these packages there are 144,413 Haskell source files, of which 133,246 (about 92\% of the total) were successfully parsed and searched. 
 
-We searched each package in parallel. Within each package every "\texttt{.hs}" file was parsed using the \textit{ghc-exactprint} library.\footnote{Unfortunately \textit{ghc-exactprint} cannot parse literate Haskell ("\texttt{.lhs}") files so they were excluded} Once we had the abstract syntax tree we could use generic traversal combinators provided by \textit{Scrap Your Boilerplate} (SYB) to search the parsed files for implementations of the \texttt{Monad} and \texttt{Applicative} typeclasses.
+Parsing failures were caused by two main reasons. First \textit{ghc-exactprint} cannot parse C or C++ code so any files with C/C++ code  blocks were not searched. The second major reason for failure was modules not including language pragmas at the top of each file. A feature of the Cabal build system allows turning on language extensions at the package level rather than the module level: since we are parsing individual files rather than entire projects the parser does not realise that certain language extensions may be turned on.
 
-Unfortunately of all the source files, 6,590 failed to parse. These failures were due to two main reasons. First \textit{ghc-exactprint} cannot parse C or C++ code so any files with C/C++ codeblocks were not searched. The second major reason for failure was modules not including language pragmas at the top of each file. A feature of the Cabal build system allows turning on language extensions at the package level rather than the module level: since we are parsing individual files rather than entire projects the parser does not realise that certain language extensions may be turned on.
+Each package was searched in parallel. Within each package every "\texttt{.hs}" file was parsed using the \textit{ghc-exactprint} library.\footnote{Unfortunately \textit{ghc-exactprint} cannot parse literate Haskell ("\texttt{.lhs}") files so they were excluded} Once we had the abstract syntax tree we could use generic traversal combinators provided by \textit{Scrap Your Boilerplate} (SYB) to search the parsed files for implementations of the \texttt{Monad} and \texttt{Applicative} typeclasses.
 
-Even with these failures we were still able to parse more than 90\% of the Haskell source files contained in Hackage. From the successfully parsed files a total of 1,810 \texttt{Applicative} and 1,727 \texttt{Monad} instance declarations were found.
+
+Even with these failures we were still able to parse more than 90\% of the Haskell source files contained in Hackage. From the successfully parsed files a total of 2,349 \texttt{Applicative} and 2,098 \texttt{Monad} instance declarations were found.
 
 \subsection{Search Results}
   
-The found \texttt{Applicative} instances in 549 cases were defined using the suggested implementation of \texttt{(<*>) = ap}.
+The found \texttt{Applicative} instances in 826 cases were defined using the suggested implementation of \texttt{(<*>) = ap}.
 
 Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example \texttt{Applicative} instances can be automatically derived using the \texttt{GeneralizedNewtypeDeriving} language extension. 
 
@@ -2504,7 +2820,7 @@ This refactoring has two fairly simple preconditions: first, the target function
 
 How can the first precondition be enforced? Where is the line between applicative and monadic? Let's start by looking at the type signatures of the bind and apply functions in figure~\ref{appBind}. One thing to keep in mind is that these two functions' arguments are in opposite order where the function type is the first argument to apply whereas the second argument to bind is a function. The difference between bind and apply is in the type of this function argument. The second argument of bind is a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value returned by a computation in the monad, while all of the arguments to apply are fully within the applicative context.
 
-What does this mean in practice? Take for example the function \texttt{f} from figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is applied to \texttt{parseNThings} as a pure value. This first precondition will check that any values bound in the \texttt{do} statement are not used in the right hand side of any expression other than the \texttt{return} statement.
+What does this mean in practice? Take for example the function \texttt{f} from figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is applied to \texttt{parseNThings} as a pure value. This first precondition will check that any values bound in the \texttt{do} statement are not used in a right hand side expression before the \texttt{return} statement.
 
 
 \begin{figure}[t]
@@ -2518,7 +2834,7 @@ f = do
 \label{parseNThings}
 \end{figure}
 
-The second precondition is a bit more intuitive to grasp. Consider the function \texttt{g} in figure~\ref{outOrd}. The naive implementation of the refactoring is in Figure~\ref{outOrd_ref1}. This version of the refactoring maintains the order of statements from the \texttt{do} block but this causes a type error. Instead, if the refactoring swaps the order of the statements (Figure~\ref{outOrd_ref2}) the order that the contextual effects are performed changes, and the meaning of the refactored program is no longer the same as the source program so the refactoring is not valid.
+The second precondition is a bit more intuitive to grasp. Consider the function \texttt{g} in figure~\ref{outOrd}. The naive implementation of the refactoring is in Figure~\ref{outOrd_ref1}. This version of the refactoring maintains the order of statements from the \texttt{do} block but this causes a type error. Instead, if the refactoring swaps the order of the statements (Figure~\ref{outOrd_ref2}) the order that the contextual effects are performed changes, and the meaning of the refactored program is no longer the same as the source program so the refactoring is not valid. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2550,7 +2866,9 @@ g = (,) <*> getA <*> getB
 \label{outOrd_ref2}
 \end{figure}
 
-These preconditions enforcing subtly different things. The first precondition, that the target function needs to be expressible with the \texttt{Applicative} interface, is an obvious requirement that the target function needs to meet for the refactoring to be able to be performed successfully. The second precondition, especially when described as naively as it has been in this section, seems to also be a mandatory pre-condition for it to be possible for the target function to be transformed to use the \texttt{Applicative} interface. However, an additional transformation could be applied to \texttt{g} that would allow the generalisation refactoring to continue without type errors and preserve the ordering of effects, the introduction of a lambda expression into the \texttt{return} statement. The details of this transformation are described in Section~\ref{lambdaIntro}.  
+These preconditions enforce subtly different things. The first precondition, that the target function needs to be expressible with the \texttt{Applicative} interface, is the obvious requirement that the target function needs to meet for the refactoring to be able to be performed successfully. The entire premise of this refactoring is to convert programs using the monadic interface to instead use the more general applicative one, so the target function must be expressible using that interface.
+
+The second precondition, especially when described as naively as it has been in this section, seems to also be a mandatory pre-condition for the refactoring to not change the behaviour of the target function. However, an additional transformation could be applied to \texttt{g} that would allow the generalisation refactoring to continue without type errors and preserve the ordering of effects, the introduction of a lambda expression into the \texttt{return} statement. The details of this transformation are described in Section~\ref{lambdaIntro}.  
 
 
 \subsection{Additional Refactorings}
@@ -2685,7 +3003,6 @@ The composite approach also makes it much easier for the refactoring to be exten
 
 The previous section informally discussed how the generalise monad to applicative refactoring in general. In practice there are quite a few options that implementers will make when writing this refactoring, including how parentheses are inserted, for example. This section will discuss more formally how HaRe implements the ``generalise to applicative'' refactoring.
 
-\subsection{Implementation of the Generalising to Applicative Refactoring}
 \begin{figure}[t]
 	\begin{math}
 		\begin{aligned}
@@ -2711,16 +3028,16 @@ s \in Stmt\ &::=\ p \leftarrow e\\
 	\label{syntax}
 \end{figure}
 
-The refactoring takes two arguments: the filepath of the file to be refactored, and the row and column in the file of the start of the function to be refactored. The rest of this section will go through the checking of preconditions and building the applicative expression more thoroughly. The syntax of the target function has been defined in Figure~\ref{syntax}.
+The refactoring takes two arguments: the filepath of the file to be refactored, and the row and column in the file of the start of the function to be refactored. The rest of this section will go through the checking of preconditions and building the applicative expression more thoroughly. The syntax of the target function is defined in Figure~\ref{syntax}.
 
 
 
-\subsubsection{Checking the Preconditions}
+\subsection{Checking the Preconditions}
 
 \begin{figure}[t]
 \textbf{let}\ $s_1, \ldots, s_n$ be\ the\ do\ block\ to\ refactor\\
-and\ $s_n$\ is\ the\ return\ statement\\
-this\ block\ must\ pass\ the\ following\ preconditions\\
+\ ~\ ~\ ~\ ~\       $s_n$\ is\ the\ return\ statement.\\
+This\ block\ must\ pass\ the\ following\ preconditions\\
 \hrule
 \begin{math}
 \begin{aligned}  	
@@ -2728,15 +3045,15 @@ this\ block\ must\ pass\ the\ following\ preconditions\\
 &\forall x.1\leq x < n.&\\
 &\qquad bv\ s_x \cap fv \{s_y |\ y \in \{1, \ldots, n-1\}, y \neq x\} = \emptyset \\
 \\
-&\textbf{The order variable are bound}\\
+&\textbf{The order variables are bound in}\\
 &\textbf{and appear in the return statement are the same}\\
 &\textbf{let}\ rv_1, \ldots, rv_m\ be\ the\ variables\ bound\ in\ s\ as\ they\ appear&\\
 &\qquad from\ left\ to\ right\ in\ the\ return\ statement\ \textbf{in}&\\
 &\forall i. 1 \leq i \leq m .&\\
 &\qquad \{bNum\ rv_i < bNum\ rv_j\ |\ j \in \{i+1, \ldots, m\} \}&\\
 \\
-&--bNum\ returns\ the\ index\ of\ the\ statement\\ 
-&--in\ which\ a\ variable\ is\ bound\ \\
+&\textit{bNum returns the index of the statement}\\ 
+&\textit{in which a variable is bound}\\
 &bNum\ v\ \{s_1, \ldots, s_n \} = y &\\
 &\qquad \textbf{where}\ v \in bv\ s_y&\\ 
 &bv\ \{s_1, \ldots, s_n \}\ =\ the\ bound\ variables\ of\ \{s_1, \ldots, s_n\}\\
@@ -2747,14 +3064,14 @@ this\ block\ must\ pass\ the\ following\ preconditions\\
 	\label{preconditions}
 \end{figure}
 
-Now that the relevant parts of the function have been extracted we can check if the preconditions pass. These preconditions have been defined in  Figure~\ref{preconditions}. 
+The two arguments that the refactoring takes in are enough to identify and extract the target function so that precondition checking can begin. These preconditions have been defined in Figure~\ref{preconditions}. 
 
-The first precondition, checking whether any of the variables bound within the do block is used in another statement, is fairly straightforward: the refactoring just recurses through the list of statements and checks the right hand side of each statement to see whether a bound variable is used in it.
+The first precondition, checking whether any of the variables bound within the do block is used in another statement, is fairly straightforward to verify. the refactoring just recurses through the list of statements and checks the right hand side of each statement to see whether a bound variable is used in it. If one of the bound variable is found in a right hand side expression then the entire do expression is not context-free and so cannot be rewritten using the applicative interface alone.
 
-The second precondition is checked using a similar method. First we construct a list of the variables in the order that they are used in the return statement from left to right. Then going through the do statements we check that whenever a binding statement is found that it is the leftmost variable in the return statement that we haven't already found.
+The second precondition is checked using a similar method. First we construct a list of the variables in the order that they are used in the return statement. Then going through the do statements whenever a binding statement is found we check that the variable being bound is the leftmost variable in the return statement that has not already been processed.
 %\clearpage
 
-\subsubsection{Constructing the Effectful Expression}
+\subsection{Constructing the Effectful Expression}
 \begin{figure}[t]
 \begin{math}
 \begin{aligned}
@@ -2823,7 +3140,7 @@ Once every cluster has been refactored separately all of the clusters are wrappe
 \end{figure}
 
 
-\subsubsection{Building the Pure Expression}
+\subsection{Building the Pure Expression}
 
 \vspace{5pt}
 \begin{figure}
@@ -3490,299 +3807,6 @@ eval (Assign x e) env = do
 
 Monads are a challenging and characteristic feature of Haskell and, anecdotally, infamous amongst those trying to learn the language. Monadification is an important and common transformation that Haskell code undergoes. This chapter has described two refactorings that automate this transformation. The monadification refactoring transforms a set of functions into restricted call-by-value monad style, where only the result type of a function is made monadic. The second refactoring sugars the binds produced by the monadification into \texttt{do} notation, a common structure for monadic Haskell functions.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Related Work}
-\label{chp:related}
-
-This chapter reviews current work in refactoring and other areas of the literature. The chapter is divided into several sections. This chapter will begin with a brief description of refactoring tools in general. The second section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint} a tool that suggests improvements to Haskell code and Wrangler~\citep{wrangler} a refactoring tool for Erlang. The next section (\ref{otherTools}) will discuss novel, non-programming language refactoring of wikis and spreadsheets. Section~\ref{refacParallel} discusses automated refactoring tools that introduce parallelism into their target programs. Then Section~\ref{applicativeDo} will describe another approach to using applicative functors in Haskell.  Finally section~\ref{typeTrans} covers work done on type changing program transformations, including the work of Erwig and Ran on monadification~\citep{monadification} and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
-
-\section{Refactoring Tools in Modern IDEs}
-Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, Intellij\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy). 
-
-\section{Refactoring Tools for functional languages}\label{funcTools}
-A reason that often used to be given to explain why functional languages are in widespread use in industry is the lack of a robust tooling ecosystem~\citep{wadlerTools}. This is no longer the case as functional language ecosystems have undergone a great deal of development in recent years and, maybe coincidently, use in industry has gone up substantially in the last five years. This section will cover some notable refactoring and code smell tools for functional programming languages.
-
-\subsection{HLint}
-
-HLint is a ``code smell'' tool for Haskell. Poorly designed code often produces ``smells,'' apparently superficial problems that indicate deeper design issues~\citep{fowler}. The most common of these smells is duplicated code. A code smell tool  suggests changes to a code base such as alternative functions to use, how to simplify code, and redundancies~\citep{hlint}.
-
-Code smell and refactoring tools are very closely related. Simplistically a code smell tool detects problems in a code base and a refactoring tool fixes them. If a tool can detect a problem why can't the same program fix them? HLint has a \texttt{-refactor} flag that will automatically apply the suggestions. However a single piece of code could have multiple smells, how would HLint choose which one to apply? Also once a transformation was applied other hints may no longer be applicable.
-
-One of the powerful features of HLint is its customizability. An HLint (called \texttt{hlint.yaml}) configuration file added to the root of a project   will be detected by HLint and it will suggest both the default hints as well as the custom hints from that file. Hints are very simple to write.
-
-\begin{lstlisting}[caption={A simple hint from~\citep{hlint}}, label=lstHint]
-- hint: {lhs: x !! 0, rhs: head x}
-\end{lstlisting}
-
-Listing~\ref{lstHint} contains the definition of a hint that detects the list index operator is being used to look up the 0th element of a list and suggests using \texttt{head} instead. The \texttt{lhs} tag is the code HLint will search for. If code matching \texttt{lhs} is found  HLint will suggest the code be replaced with the \texttt{rhs} code. HLint assumes any single character variable is a substitution parameter. Given the hint from listing~\ref{lstHint} and the following code:
-
-\begin{lstlisting}
-f list = list !! 0
-\end{lstlisting}
-
-HLint produces the following output.
-
-\begin{lstlisting}
- Suggestion: Use head
-Found:
-  list !! 0
-Why not:
-  head list
-
-1 hint
-\end{lstlisting}
-
-
-\subsection{Haskell Tools Refact}
-
-HaRe isn't the only refactoring tool for Haskell. In late 2016 Haskell Tools Refact was announced and is currently at version 0.7~\citep{haskellTools}. The Haskell Tools project is a GHC based developer tool kit~\citep{haskellToolsGit}. There are six refactorings currently supported.
-
-\begin{itemize}
-\item Rename
-\item Generate type signature
-\item Generate exports
-\item Extract binding
-\item Inline binding
-\item Organize imports
-\end{itemize}
-
-Haskell-tools has implemented  its own abstract syntax tree. The AST of haskell-tools is generated using information from all of GHC's compiler stages. Each node represents the same language elements it just includes additional information that is spread across the different stages of the GHC~\citep{haskellTools}.
-
-The haskell-tools refactorer is currently integrated into the Atom editor\footnote{\url{https://atom.io/}} with Sublime Text\footnote{\url{https://www.sublimetext.com}} support planned for the near future~\citep{haskellTools}
-
-\subsection{Wrangler}
-
-Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\citep{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\citep{erlangHistory}. Erlang's core design tenets include lightweight processes, that communicate through message passing. Erlang also boasts a ``let it fail" error handling architecture, where processes either succeed or fail and other specialised processes handle the error~\citep{armstrongThesis}.
-
-Wrangler is accessible from the command line and has been integrated into both Emacs and Eclipse and currently supports a large library of refactorings, code smells, as well as other program analysis tools such as clone detection and automatic API migration~\citep{wrangler}. Additionally Wrangler supports a template based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
-
-The template-based API of Wrangler allows users to define program analyses and transformations using Erlang concrete syntax. Wrangler templates consist of fragments of Erlang syntax that may contain meta-variables or meta-atoms that can stand for any language element. Meta-variables/atoms are variables or atoms that end with the "\texttt{@}" character, this meta-variable/atom will then stand for the next language element. Meta-variables/atoms that end with "\texttt{@@}" are list meta-variables/atoms that match a sequence of language elements as long as they are of same sort~\citep{letsUser}.\footnote{Things like the arguments to a function or a sequence of expressions in a function body are the same "sort."}
-
-\begin{figure}[t]
-\begin{lstlisting}[language=erlang]
-?T("erlang:spawn(Arg@)")
-
-?T("erlang:spawn(Arg@@)")
-\end{lstlisting}
-\caption{Some Wrangler templates}
-\label{templates}
-\end{figure}
-
-The first template in figure~\ref{templates} matches applications of \texttt{erlang:spawn} when it is called with one argument whereas the second template will match the same function with any number of arguments.
-
-Composite refactorings are refactorings that are made up of multiple refactorings run, in sequence, one after the other. It can be challenging to develop composite refactorings if they are not explicitly handled by the refactoring tool. The naive solution just chains refactorings together with the output from one refactoring in a composite refactoring becoming the input to the next refactoring. However, what if the second refactoring fails in a chain of four? composite refactoring definitions, without tool support, become filled with error handling code to manage the situation when one of the component refactorings fail. Wrangler defines a domain specific language that helps describe the various facets of a composite refactoring.
-
-The Wrangler DSL supports the creation of a composite refactoring through a variety of features. First, Wrangler extends every primitive refactoring with a \textit{refactoring command generator}. A command generator allows the extended refactoring to accept not just concrete values but also structures that specify how the parameter should be generated; each parameter of a command generator accepts either a concrete value, a condition that checks if a value is satisfactory, or a generator for creating the parameter based on the previous parameters. A refactoring for renaming functions named with the format \texttt{camelCase} to \texttt{camel\_case} would accept three arguments the target filename, the name of the target function, and the desired new name. This command generator's first parameter is a condition that always returns true because any file is a valid target for renaming. The second parameter is another condition that checks if the function name matches is in camel case format (e.g. "\texttt{aFunName}"). The final parameter is generated by taking the second parameter and modifying it so that the name is in the corresponding "snake case" format (e.g. "\texttt{a\_fun\_name}"). 
-
-The DSL also allows decision making to occur during the execution of a composite refactoring. Composite refactorings are transactional and can be either atomic or non-atomic. Atomic composite refactorings require each component refactoring to be successfully applied before continuing onto the next refactoring. If a single refactoring fails inside of an atomic composite refactoring the entire refactoring fails and the program remains unchanged. When a single refactoring fails inside of a non-atomic composite refactoring, correspondingly, the entire refactoring will not fail and continue by trying the next refactoring in the sequence. The Wrangler DSL allows for refactorings to described as atomic and non-atomic sections at each level.  
-
-\subsection{ROTOR}
-
-Another newcomer to the refactoring tools for functional language space is ROTOR\footnote{\textbf{R}eliable \textbf{O}Caml-base \textbf{T}ool for \textbf{O}Caml \textbf{R}efactoring} the first refactoring tool to target OCaml~\citep{rotor}. Language features of OCaml provide some unique challenges for a refactoring tool. In OCaml one module may be included in another so that, for example, when renaming the function \texttt{f} in module \texttt{A} but \texttt{A} is included in module \texttt{B} the both \texttt{A.f} and \texttt{B.f} will need to be renamed. 
-
-An opportunity of the ROTOR project is that it has an partner in industry, Jane Street Capital. ROTOR is using the core library\footnote{\url{https://github.com/janestreet/core}} an "industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
- 
-\section{Novel applications of Refactoring}\label{otherTools}
-
-Though automated refactoring was originally developed for the object-oriented language Smalltalk~\citep{refactoringBrowser} there has been recent work on building tools that refactor things that are not traditional programming languages. This section with briefly talk about two novel applications of refactoring, spreadsheets and wikis.
-
-\subsection{Spreadsheet refactoring}
-Spreadsheets are a widely used tool in industry, with 13 million end users that are estimated to be "programming" with spreadsheets or databases in 2012; this figure dwarfs 3 million professional programmers at that time~\citep{endUsers}. Spreadsheets can also exhibit "bad smells" much like the code smells described by Fowler. End-users are also able to detect "spreadsheet smells" and agree that these patterns should be avoided~\citep{spreadsheetSmells}. This indicates that even though it isn't a traditional form of programming, spreadsheets are a valid target for refactoring.
-
-BumbleBee is a refactoring tool whose grammar is built from the grammer for Excel formulas~\citep{bumblebee}. Many spreadsheet users have no formal programming training so creating a language that would be familiar to them is important. The grammar of BumbleBee consists of two Excel formulas associated by a "$\leftrightarrow$" operator that indicates the two formula can be transformed into each other.
-
-$$ A1+A2+A3 \leftrightarrow SUM(A1:A3) $$
-
-The previous example means that adding together the cells A1, A2, and A3 could be replaced by a call to the $SUM$ function. BumbleBee also has metavariables that stand in for certain constructs from the Excel language. A "$C$" represents a cell, "$R$" a range, and "$P$" a constant. The following example transforms a sum over any range divided by the length of that range into a call to the average function over the same range.
-
-$$ SUB(R)/COUNT(R) \leftrightarrow AVERAGE(R) $$
-
-Finally BumbleBee allows for cells to be referenced in the form ${i,j}$ and cells can be connected into groups with the "$...$" operator. This enables the following transformation rule that replaces a chain of sums to be replaced with a single call to $SUM$.
-
-$$ \{i,j\} + ... + \{m,n\} \leftrightarrow SUM(\{i,j\}:\{m,n\}) $$
-
-The goal of this syntax is to allow user familiar with Excel but not another programming language to be able to create their own translations. BumbleBee is implemented as an add on for Excel so users can work with it in a familiar environment.
-
-\subsection{Wiki refactoring}
-
-Another increasingly popular type of ``end user programming'' is writing Wikis. A wiki is essentially just a user-editable graph of articles and categories. Articles store written information and categories are keywords that characterize articles. As a community adds content to a wiki the articles that make up the wiki require refactoring. This may involve splitting an article into multiple articles, or moving an article from one category to another. Currently wiki engines (e.g. MediaWiki the engine for Wikipedia) are entirely focused on content creation and offer little to no support for refactoring.
-
-Refactoring a wiki is a surprisingly difficult task. Beyond just the content of an article there is also the history of changes to that article and the "talk" page where users can discuss about the content of an article. A refactoring needs to preserve two key properties of the wiki, authorship independence and readership independence. Authorship independence means that a refactoring will preserve the attribution of content to the original author(s). Readership independence implies that a refactoring will not alter the content of the wiki, a refactoring will only change how content is distributed throughout the wiki.
-
-Splitting an article into two is a common refactoring that needs to take place, common enough that Wikipedia documents the process.\footnote{\url{http://en.wikipedia.org/wiki/Wikipedia:Splitting}} Article splitting occurs when an article describes multiple things that would be better served by having two dedicated articles. The new article that is created takes all of its content from the source article. The split refactoring maintains authorship independence by adding a note in the talk and recent changes pages of the new article indicating that the new article was originally a section of the source article. Additionally similar changes need to be added to the talk and recent changes pages of the source article as well. These changes allow for authorship to be tracked both through the source and new articles.
-
-
-\begin{figure}[t]
-	\begin{center}
-		\includegraphics[scale=.4]{images/wikiwhirl_mindmap.png}
-	\end{center}
-	\caption{A screen shot of WikiWhirl taken from \url{http://www.onekin.org/portal/wikiwhirl}}
-	\label{wikiwhirl}
-\end{figure}
-
-Readership independence is maintained during an article split by adding a new section to the source article that summarises the content that was moved to the newly created article. This allows people reading the source article to still understand what the split of section contained. This process is tedious and poorly supported by the wiki engine which makes it an ideal target for automated refactoring.
-
-WikiWhirl is a visual DSL for refactoring wikis~\citep{wikiWhirl}. WikiWhirl is built on top of FreeMind an open source mind mapping tool~\citep{freeMind}. Mind mapping is a method of visualizing the relationships between pieces of  hierarchical information. WikiWhirl represents a wiki as a mind map and users can then refactor the wiki using this view (see figure~\ref{wikiwhirl}). 
-
-
-WikiWhirl currently supports eight refactorings. They are:
-
-\begin{itemize}
-	\item Create an article/category
-	\item Categorize an article
-	\item Uncategorize an article
-	\item Rename an article/category
-	\item Delete an article/category
-	\item Merge two articles/categories
-	\item Split an article/category
-	\item Move a section from one article to another
-\end{itemize}
-
-Both wikis and spreadsheets are common data formats that deal with the same "smell" and quality issues that software projects experience. The difference between software development and these applications is that the users of the latter will not necessarily be technology professionals. Refactoring tools for wikis and spreadsheets have to be usable by laypeople not just software engineers. 
-
-\section{Refactoring to introduce parallelism}\label{refacParallel}
-
-The reasons to refactor source code have also expanded beyond code quality. This section will describe two different projects that have developed refactorings to change the execution of a program from single to multi-threaded. Functional programming languages are well suited to parallel execution due to immutability by default and in some languages (such as Erlang) first class concurrency features. This section will first describe the ``ParaForming'' which uses refactoring to introduce parallel abstractions into Haskell code, then it will describe work done to refactor Erlang code to introduce algorithmic skeletons.
-
-\subsection{ParaForming}  
-ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\citep{paraforming}. The ParaForming work targets Glasgow parallel Haskell (GpH), an extension to Haskell, and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see figure~\ref{strategy}). 
-
-\begin{figure}[t]
-\begin{lstlisting}
-type Strategy a = a -> Eval a
-\end{lstlisting}
-\caption{The strategy type}
-\label{strategy}
-\end{figure}   
-
-A strategy takes its argument and determines how it will be evaluated inside of the \texttt{Eval} monad. The \texttt{rpar} strategy introduces parallelism by "sparking" its argument. A sparks are tasks that are collected into a pool which is managed by the runtime. The spark pool is a source of work that GHC can pull from when there are idle processors. Sparks may be evaluated in parallel or not at all depending on the availability of spare cores.
-
-The simplest parallel refactoring is to introduce data parallelism. This refactoring is applied to an expression works over a list and evaluates each member of that list in a spark. A sequential function that sums the Euler totient function is in figure~\ref{eulerSeq} and the refactored program is in figure~\ref{eulerPar1}
-
-\begin{figure}[t]
-\begin{lstlisting}
-sumEulerSeq :: Int -> Int
-sumEulerSeq n = sum (map euler (mkList n))
-\end{lstlisting}
-\caption{A sequential calculation that sums the Euler totient function}
-\label{eulerSeq}
-\end{figure} 
-
-
-\begin{figure}[t]
-\begin{lstlisting}
-sumEulerPar1 :: Int -> Int
-sumEulerPar1 n = sum (map euler (mkList n) `using` parList rdeepseq)
-\end{lstlisting}
-\caption{A refactored version of the function from figure~\ref{eulerSeq}}
-\label{eulerPar1}
-\end{figure} 
-  
-This refactoring evaluates the calculation of \texttt{map euler (mkList n)} using\footnote{The (\texttt{using :: a -> Strategy a -> a}) function just evaluates some expression with the given strategy.} the \texttt{parList rdeepseq} strategy. The \texttt{parlist}\footnote{\texttt{parlist :: Strategy a -> Strategy [a]}} function evaluates each element of a list in parallel according to a given strategy and \texttt{rdeepseq} is the strategy the fully evaluates its argument. 
-  
-The refactored program in figure~\ref{eulerPar1} is highly parallel but not very efficient because the parallelism is too fine grained. Another refactoring can help in this case instead of sparking every element of a list another strategy can be introduced, one that separates the list into "chunks" and each of the chunks of the list is executed in parallel. This refactoring adds an additional argument to the function that determines how many chunks the list will be split into, as seen in figure~\ref{eulerChunk}.
-  
-\begin{figure}[t]
-\begin{lstlisting}
-sumEulerChunk :: Int -> Int -> Int
-sumEulerChunk c n = sum (map euler (mkList n) `using` parListChunk c rdeepseq)
-\end{lstlisting}
-\caption{A "chunked" version of the function from figure~\ref{eulerSeq}}
-\label{eulerChunk}
-\end{figure}  
-
-These two refactorings are both a way of introducing data parallelism with varying degrees of granularity. The other form of parallelism is known as task parallelism. Where data parallelism is focused on computing different parts of a data structure in parallel (the elements of a list in the previous case), task parallelism instead focuses on having different ``tasks'' excecuted in parallel. The work done in~\citep{paraforming} outlines a refactoring that can make recursive calls happen in parallel.
-
-\subsection{Cost-Directed Parallel Refactoring}
-
-The previous section touched on one of the big challenges of parallel programming, determining the correct level of parallelism to achieve maximum performance. \citep{parallelErl} describes a methodology to introduce algorithmic skeletons into Erlang programs using the Erlang refactoring tool Wrangler. In addition to introducing a skeleton this work provides cost models that estimate the performance of the program after adding each skeleton. This estimate helps a programmer make an informed decision about what parallelisation strategy is the best for a particular program. 
-
-An algorithmic skeleton is a common parallel pattern. A skeleton is implemented as a higher order function that takes in a sequential function and any parameters that the skeleton requires. \citep{parallelErl} discusses the four most common and useful skeletons. For example, the map skeleton works by breaking up the target data into pieces that can be operated on in parallel. Finally the results from the the parallel computations are combined back into a single image. One of the examples presented in~\citep{parallelErl} is that of an image processing system that denoises images. Denoising a section of an image can be done independently from processing the other sections of the same image. The introducing the map skeleton would break the image into pieces to be denoised in parallel then the outputted sections can be stitched back together again
-
-Skeletons are simple to understand in theory but it can be difficult to know which to apply in practice. This is when the cost models of each skeleton become useful to help make an informed decision about which skeleton should cause the greatest speed up. In~\citep{parallelErl} an initial benchmark of the program can 
-be used to estimate the speed up that different skeletons could provide.
-
-Parallelisation can be tedious and difficult to do which makes it a good candidate for tool assistance. A refactoring tool can guide a programmer through the process of parallelisation. Much like how the data-driven refactorings have multiple small changes are required before the entire process can be considered ``finished'' changing a program to run in parallel is also a sequence of several smaller changes.
-
-\section{ApplicativeDo}\label{applicativeDo}
-
-Applicative functors, as discussed in Chapter~\ref{chp:applicative}, are a fairly recent addition to GHC and their being made a superclass of \texttt{Monad} has made many more instances of the typeclass than there were before. However, compiler changes can't force a community to change its practices and \texttt{Applicative} remains underutilised compared to \texttt{Monad}.
-
-The under-utilisation of applicatives in Haskell has not gone un-noticed; \citep{applicativeDo}, reimplement the way Haskell desugars do notation so that applicatives will be supported by do notation as well. 
-
-\begin{lstlisting}
-f = do
-	x1 <- A
-	x2 <- B x1
-	x3 <- C
-	return (x2,x3)
-\end{lstlisting}
-
-The function \texttt{f} would normally desugar into the following:
-
-\begin{lstlisting}
-f = A >>=
-	(\x1 -> B x1 >>=
-		(\x2 -> C >>=
-			(\x3 -> return (x2,x3))))
-\end{lstlisting}
-
-With applicative do activated \texttt{f} would now desugar to:
-
-\begin{lstlisting}
-f = (\x2 x3 -> (x2, x3))
-        <$> (A >>= (\x1 -> B x1))
-        <*> C                
-\end{lstlisting}
-
-The \textit{ApplicativeDo} algorithm will attempt to insert as many applies into the expression as possible. When the implementation of the \texttt{Applicative} instance evaluates the two arguments of apply in parallel, better performance can be achieved by adding more applies. 
-
-There could be multiple ways to desugar a particular function. The \textit{applicativeDo} algorithm first assumes that every expression have an identical time cost, from this assumption the algorithm heuristically determines the desugaring with the shortest execution time.
-
-
-\section{Program transformations}\label{typeTrans}
-
-Refactoring is a type of program transformation but it does not constitute the whole field. A major difference between refactoring and other types of program transformations is scope that a refactoring must be aware of. Program transformations typically focus on just the algorithm whereas refactorings must take into account the broader effects a transformation has on a codebase and the context that programs exist in. Additionally the target program of a refactoring needs to be readable, maintainable, and keep proper layout and user comments. Other types of program transformation don't typically have these concerns. This section will describe some of the program transformation work most relevant to this thesis. First it will describe the type and transform system developed by~\citep{typeAndTransformSemantics}. Next there will be a discussion of the previous methods of monadification found in the literature. 
-
-\subsection{Type and transform systems}
-
-The type-and-transform system described in~\citep{typeAndTransformSemantics} is a system for a semantics preserving and type changing program transformations over the typed lambda calculus with let polymorphism. The type-and-transform system is limited to isomorphic types, there must be a way to convert between the two types and back again as described in figure~\ref{transformIso}.
-
-\begin{figure}[t]
-\begin{lstlisting}
-rep :: A -> R
-abs :: R -> A
-
-rep . abs = id
-abs . rep = id
-\end{lstlisting}
-\caption{The properties that must hold for the type-and-transform system to work over types \texttt{A} and \texttt{R}}
-\label{transformIso}
-\end{figure} 
-
-The type-and-transform system supports type-changing rewrites through typed rewrite rules that insert conversions between the source and target types as appropriate. To handle the fact that there are multiple ways to retype a program each rewrite rule is weighted to maximize the use of the target type, introduce the target type as soon as possible in the program, and delay the conversion back to the source type as late as possible.
-
-This work emphasises formalisation and its correctness and the work is done in the context of the lambda calculus rather than a full programming language. There is a Haskell implementation of their system but it is only a prototype though they state that they want to expand this work to work with Haskell however this has not been published yet.
-
-\subsection{Automatic Monadification}\label{erwigMonad}
-
-Monadification is not a new problem and various solutions have been presented in the literature. In~\citep{lammelReuse} monadification is performed in two steps. First the program is transformed into A-normal form\footnote{This is also known as sequencing}, which flattens applications into let expressions. The first line of figure~\ref{anormal} shows a normal expression and line 3 of the same figure shows that expression in A-normal form.
-
-\begin{figure}[t]
-\begin{lstlisting}
-f (g x) (h y)
-
-let x1 = g x in
-	let x2 = h y in
-		f x1 x2
-\end{lstlisting}
-\caption{A-normal form converstion}
-\label{anormal}
-\end{figure}
-
-Once the program has been converted into A-normal a let expression of the form $ let x = t1 in t2 $ is transformed into $ t1 >>= \lambda x. t2 $. If the right hand side of the lambda isn't already a monadic type then \texttt{return} will be introduced, e.g. $ t1 >>= \lambda x. return~~t2 $. The full transformation is given by inference rules in~\citep{lammelReuse}.
-
-Monadification is developed further by~\citep{monadification}. This work provides an algorithm for restricted call-by-value monadification as opposed to the semantics style inference rules defined in~\citep{lammelReuse}. This work targets the lambda calculus extended with case and let expressions. The algorithm from~\citep{monadification} is very similar to the one implemented in HaRe. It has the same precondition where every call to a monadified function must be fully saturated and it produces the same style of monadification. A prototype implementation of this method was produced.
 
 
 \chapter{Conclusion}
