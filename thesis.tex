@@ -305,7 +305,13 @@ The work in this thesis was carried out in HaRe. This study focused on adding ad
 \chapter{Related Work}
 \label{chp:related}
 
-This chapter reviews current work in refactoring and other areas of the literature. The chapter is divided into several sections. This chapter will begin with a brief description of refactoring tools in general. The second section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\citep{hlint}, a tool that suggests improvements to Haskell code, and Wrangler~\citep{wrangler}, a refactoring tool for Erlang. The next section (\ref{otherTools}) will discuss novel, non-programming language refactoring of wikis and spreadsheets. Section~\ref{refacParallel} discusses automated refactoring tools that introduce parallelism into their target programs. Then Section~\ref{applicativeDo} will describe another approach to using applicative functors in Haskell.  Finally section~\ref{typeTrans} covers work done on type changing program transformations, including Ralf L{\"a}mmel's ``Reuse by Program Transformation''~\citep{lammelReuse}, the work of Erwig and Ran on monadification~\citep{monadification}, and the type and transform system developed at the University of Utrecht~\citep{typeAndTransform}.
+This chapter reviews current work in refactoring and other areas of the literature and helps to situate the work described in this thesis into the broader landscape provided by the literature. This chapter begins with a short description of refactoring tools, both for modern sophisticated IDEs that support object-oriented languages and the refactoring tools that support functional languages. 
+
+Next Sections~\ref{refacParallel} and ~\ref{applicativeDo} will describe some of the work done to transform programs so that they are executed in parallel rather than sequentially. The original idea behind refactoring was to reduce the technical debt of a target program. The potential scope of refactorings have been expanded to include introducing parallelism rather than just improving code quality. 
+
+Section~\ref{typeTrans} covers work done in the program transformation and refactoring fields. In particular earlier versions of monadification are discussed, such as ``Reuse by Program Transformation''~\citep{lammelReuse}, and ``Monadification of Functional Programs''~\citep{monadification}. Other work that is covered in this section includes work on refactoring and program transformation that is particularly focused on types.
+
+The final section of this chapter will discuss the technology that a refactoring tool for Haskell is dependent on. In particular, Section~\ref{buildTool} will cover language front ends for Haskell, generic programming libraries, and other common dependencies that refactoring tools require.  
 
 \section{Refactoring Tools in Modern IDEs}
 Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, IntelliJ\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy). 
@@ -394,64 +400,6 @@ The DSL also allows decision making to occur during the execution of a composite
 Another newcomer to the refactoring tools for functional language space is ROTOR\footnote{\textbf{R}eliable \textbf{O}Caml-base \textbf{T}ool for \textbf{O}Caml \textbf{R}efactoring} the first refactoring tool to target OCaml~\citep{rotor}. Language features of OCaml provide some unique challenges for a refactoring tool. In OCaml one module may be included in another so that, for example, when renaming the function \texttt{f} in module \texttt{A} but \texttt{A} is included in module \texttt{B} the both \texttt{A.f} and \texttt{B.f} will need to be renamed. 
 
 An opportunity of the ROTOR project is that it has an partner in industry, Jane Street Capital. ROTOR is using the core library\footnote{\url{https://github.com/janestreet/core}} an "industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
- 
-\section{Novel applications of Refactoring}\label{otherTools}
-
-Though automated refactoring was originally developed for the object-oriented language Smalltalk~\citep{refactoringBrowser}, there has been recent work on building tools that refactor things that are not traditional programming languages. This section with briefly talk about two novel applications of refactoring, spreadsheets and wikis.
-
-\subsection{Spreadsheet refactoring}
-Spreadsheets are a widely used tool in industry, with 13 million end-users that are estimated to be "programming" with spreadsheets or databases in 2012; this figure dwarfs 3 million professional programmers at that time~\citep{endUsers}. Spreadsheets can also exhibit "bad smells" much like the code smells described by Fowler. End-users are also able to detect "spreadsheet smells" and agree that these patterns should be avoided~\citep{spreadsheetSmells}. This indicates that even though it is not a traditional form of programming, spreadsheets are a valid target for refactoring.
-
-BumbleBee is a refactoring tool whose grammar is built from the grammar for Excel formulas~\citep{bumblebee}. Many spreadsheet users have no formal programming training so creating a language that would be familiar to them is important. The grammar of BumbleBee consists of two Excel formulas associated by a "$\leftrightarrow$" operator that indicates the two formula can be transformed into each other.
-
-$$ A1+A2+A3 \leftrightarrow SUM(A1:A3) $$
-
-The previous example means that adding together the cells A1, A2, and A3 could be replaced by a call to the $SUM$ function. BumbleBee also has metavariables that stand in for certain constructs from the Excel language. A "$C$" represents a cell, "$R$" a range, and "$P$" a constant. The following example transforms a sum over any range divided by the length of that range into a call to the average function over the same range.
-
-$$ SUB(R)/COUNT(R) \leftrightarrow AVERAGE(R) $$
-
-Finally BumbleBee allows for cells to be referenced in the form ${i,j}$ and cells can be connected into groups with the "$...$" operator. This enables the following transformation rule that replaces a chain of sums to be replaced with a single call to $SUM$.
-
-$$ \{i,j\} + ... + \{m,n\} \leftrightarrow SUM(\{i,j\}:\{m,n\}) $$
-
-The goal of this syntax is to allow user familiar with Excel but not another programming language to be able to create their own translations. BumbleBee is implemented as an add-on for Excel so users can work with it in a familiar environment.
-
-\subsection{Wiki refactoring}
-
-Another increasingly popular type of ``end user programming'' is writing Wikis. A wiki is essentially just a user-editable graph of articles and categories. Articles store written information and categories are keywords that characterize articles. As a community adds content to a wiki the articles that make up the wiki require refactoring. This may involve splitting an article into multiple articles, or moving an article from one category to another. Currently wiki engines (e.g. MediaWiki the engine for Wikipedia) are entirely focused on content creation and offer little to no support for refactoring.
-
-Refactoring a wiki is a surprisingly difficult task. Beyond just the content of an article there is also the history of changes to that article and the "talk" page where users can discuss about the content of an article. A refactoring needs to preserve two key properties of the wiki, authorship independence and readership independence. Authorship independence means that a refactoring will preserve the attribution of content to the original author(s). Readership independence implies that a refactoring will not alter the content of the wiki, a refactoring will only change how content is distributed throughout the wiki.
-
-Splitting an article into two is a common refactoring that needs to take place, common enough that Wikipedia documents the process.\footnote{\url{http://en.wikipedia.org/wiki/Wikipedia:Splitting}} Article splitting occurs when an article describes multiple things that would be better served by having two dedicated articles. The new article that is created takes all of its content from the source article. The split refactoring maintains authorship independence by adding a note in the talk and recent changes pages of the new article indicating that the new article was originally a section of the source article. Additionally similar changes need to be added to the talk and recent changes pages of the source article as well. These changes allow for authorship to be tracked both through the source and new articles.
-
-
-\begin{figure}[t]
-	\begin{center}
-		\includegraphics[scale=.4]{images/wikiwhirl_mindmap.png}
-	\end{center}
-	\caption{A screen shot of WikiWhirl taken from \url{http://www.onekin.org/portal/wikiwhirl}}
-	\label{wikiwhirl}
-\end{figure}
-
-Readership independence is maintained during an article split by adding a new section to the source article that summarises the content that was moved to the newly created article. This allows people reading the source article to still understand what the split of section contained. This process is tedious and poorly supported by the wiki engine which makes it an ideal target for automated refactoring.
-
-WikiWhirl is a visual DSL for refactoring wikis~\citep{wikiWhirl}. WikiWhirl is built on top of FreeMind, an open source mind-mapping tool~\citep{freeMind}. Mind mapping is a method of visualizing the relationships between pieces of  hierarchical information. WikiWhirl represents a wiki as a mind map and users can then refactor the wiki using this view (see figure~\ref{wikiwhirl}). 
-
-
-WikiWhirl currently supports eight refactorings. They are:
-
-\begin{itemize}
-	\item Create an article/category
-	\item Categorize an article
-	\item Uncategorize an article
-	\item Rename an article/category
-	\item Delete an article/category
-	\item Merge two articles/categories
-	\item Split an article/category
-	\item Move a section from one article to another
-\end{itemize}
-
-Both wikis and spreadsheets are common data formats that deal with the same "smell" and quality issues that software projects experience. The difference between software development and these applications is that the users of the latter will not necessarily be technology professionals. Refactoring tools for wikis and spreadsheets have to be usable by laypeople not just software engineers. 
 
 \section{Refactoring to introduce parallelism}\label{refacParallel}
 
@@ -611,6 +559,28 @@ Once the program has been converted into A-normal a let expression of the form $
 
 Monadification is developed further by~\citep{monadification}. This work provides an algorithm for restricted call-by-value monadification as opposed to the semantics style inference rules defined in~\citep{lammelReuse}. This work targets the lambda calculus extended with case and let expressions. The algorithm from~\citep{monadification} is very similar to the one implemented in HaRe. It has the same precondition where every call to a monadified function must be fully saturated and it produces the same style of monadification. A prototype implementation of this method was produced.
 
+\subsection{Data Type Transformations}\label{dtt}
+
+Data types are obviously the focus of data-driven refactorings and a considerable amount of work has been focused on them in the program transformation and refactoring literature. 
+
+In~\cite{dataTypeFramework} the authors present a set of transformation primitives that help modify data types, either through writing scripts or via a GUI in an interactive mode. This framework can be used to define refactorings but its creators implemented operators that can be used for behaviour changing transformations as well, which take the framework's capabilities beyond just refactoring. This framework, for example, supports the insertion and deletion of constructor components~\citep{dataTypeFramework}. 
+
+This framework created a set of transformation operators that work over Haskell but the design of the framework is general enough to be implemented in other langauges that also support algebraic data types.
+
+\subsection{Generic Refactorings}
+
+The previous subsection (Section~\ref{dtt}) discussed a transformation system for data types and one of the main contributions of that framework is its language agnostic design~\citep{datatypeTransformation}. This section describes another language agnostic system for program transformation which was reported in ``Towards Generic Refactoring''~\citep{genericRefactoring}. This work asks the question what types of refactorings can be applied to many different programming languages and even markup languages such as XML. 
+
+This paper provides an implementation of the refactoring framework in Haskell but also provides an interface that can be instantiated for many different languages. This is possible because, despite syntax differences between different programming languages, certain refactoring actions have the same purpose regardless of the target language though the refactorings will need to be pointed towards the correct syntax elements for the target language. A good example of this is the ``extraction'' refactoring. It's better known as ``extract a function'' or ``extract a method'' depending if the target language is object-oriented or functional. In any language the refactoring will introduce a name for a previously anonymous section of code. The syntax that the refactoring targets and what the extracted piece of code is, is what makes up the differences between languages. In Haskell the refactoring would target expressions and the extracted code is a function, in Java statements would be made into a new method~\citep{genericRefactoring}. 
+
+The canonical reference for refactorings,~\cite{fowler}, is written using Java and though the author stresses that the refactoring catalogue is useful to other languages, the descriptions of the refactorings are very specific to object-oriented programming.~\cite{genericRefactoring} helps identify that certain transformations can be applied regardless of languages. This thesis will expand on this question in Section~\ref{ooRefs} by examining the data driven refactoring chapters from~\cite{fowler} that do not obvious functional equivalents.
+
+\section{Building a refactoring tool for Haskell}\label{buildTool}
+
+\subsection{Language Front Ends for Haskell}
+
+\subsection{Generic Programming}
+
 \chapter{Background: Refactoring Haskell in HaRe}
 \label{chp:hare}
 
@@ -686,7 +656,7 @@ Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is
 
 Some of the major components and the order in which they are used in GHC are shown in Figure~\ref{compilerStages} which has been adapted from~\citep{ghcDesign}. This figure is not a complete list of all the components GHC uses, just the parts that HaRe interacts with. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
 
-The top level datatype for all of the GHC abstract syntax is \texttt{HsSyn} ~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier type; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
+The top level data type for all of the GHC abstract syntax is \texttt{HsSyn} ~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier type; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
 
 \subsection{GHC's Name Types}\label{ghcNames}
 
@@ -2508,7 +2478,7 @@ f id = writeToLog id *> getCustomerById id
 \label{logApp}
 \end{figure}
 
-The function \texttt{f}, from figure~\ref{logApp}, looks up a customer datatype from the \texttt{IO} context and logs all of the customer ids that are looked up. We don't really care what \texttt{writeToLog} returns but we do want the effects that it causes (writing a log file) so we compose the calls to \texttt{writeToLog} and \texttt{getCustomerById} with the \texttt{*>} operator to cause both of the functions' effects to happen but only return the value of \texttt{getCustomerById}.
+The function \texttt{f}, from figure~\ref{logApp}, looks up a customer data type from the \texttt{IO} context and logs all of the customer ids that are looked up. We don't really care what \texttt{writeToLog} returns but we do want the effects that it causes (writing a log file) so we compose the calls to \texttt{writeToLog} and \texttt{getCustomerById} with the \texttt{*>} operator to cause both of the functions' effects to happen but only return the value of \texttt{getCustomerById}.
 
 Another useful function is the infix version of \texttt{fmap}, \texttt{(<\$>)}. A consequence of the applicative laws is functor instance of every \texttt{Applicative} will satisfy the equation in figure~\ref{fmapLaw}~\citep{control.applicative}. This means that instead of explicitly lifting every pure function, the infix version of \texttt{fmap} can be used instead. The next section will cover how these functions can be used in an applicative style of programming.
 
