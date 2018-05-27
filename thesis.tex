@@ -311,9 +311,9 @@ Next Sections~\ref{refacParallel} and ~\ref{applicativeDo} will describe some of
 
 Section~\ref{typeTrans} covers work done in the program transformation and refactoring fields. In particular earlier versions of monadification are discussed, such as ``Reuse by Program Transformation''~\citep{lammelReuse}, and ``Monadification of Functional Programs''~\citep{monadification}. Other work that is covered in this section includes work on refactoring and program transformation that is particularly focused on types.
 
-The final section of this chapter will discuss the technology that a refactoring tool for Haskell is dependent on. In particular, Section~\ref{buildTool} will cover language front ends for Haskell, generic programming libraries, and other common dependencies that refactoring tools require.  
+The final section of this chapter will discuss how refactoring tools are implemented. This section will pay special attention to refactoring tools that target languages other than Haskell, this is because the focus of Chapter~\ref{chp:hare} is on building refactoring tools for Haskell.
 
-\section{Refactoring Tools in Modern IDEs}
+\section{Refactoring Tools in Modern IDEs}\label{ideTools}
 Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse\footnote{\url{https://www.eclipse.org/}}, NetBeans\footnote{\url{https://netbeans.org/}}, IntelliJ\footnote{\url{https://www.jetbrains.com/idea/}}, and Visual Studio\footnote{\url{https://www.visualstudio.com/}} all come with refactoring tools for their primary language~\citep{ides}. These refactoring tools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy). 
 
 \section{Refactoring Tools for functional languages}\label{funcTools}
@@ -369,8 +369,7 @@ Haskell Tools has implemented  its own abstract syntax tree. The AST of Haskell 
 
 The Haskell Tools refactorer is currently integrated into the Atom editor\footnote{\url{https://atom.io/}} with Sublime Text\footnote{\url{https://www.sublimetext.com}} support planned for the near future~\citep{haskellTools}
 
-\subsection{Wrangler}
-
+\subsection{Wrangler}\label{wranglerOne}
 Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\citep{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\citep{erlangHistory}. Erlang's core design tenets include lightweight processes, that communicate through message passing. Erlang also boasts a ``let it fail" error handling architecture, where processes either succeed or fail and other specialised processes handle the error~\citep{armstrongThesis}.
 
 Wrangler is accessible from the command line and has been integrated into both Emacs and Eclipse and currently supports a large library of refactorings, code smells, as well as other program analysis tools such as clone detection and automatic API migration~\citep{wrangler}. Additionally Wrangler supports a template based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
@@ -575,11 +574,31 @@ This paper provides an implementation of the refactoring framework in Haskell bu
 
 The canonical reference for refactorings,~\cite{fowler}, is written using Java and though the author stresses that the refactoring catalogue is useful to other languages, the descriptions of the refactorings are very specific to object-oriented programming.~\cite{genericRefactoring} helps identify that certain transformations can be applied regardless of languages. This thesis will expand on this question in Section~\ref{ooRefs} by examining the data driven refactoring chapters from~\cite{fowler} that do not obvious functional equivalents.
 
-\section{Building a refactoring tool for Haskell}\label{buildTool}
+\section{Engineering refactoring tools}\label{engineeringRefac}
 
-\subsection{Language Front Ends for Haskell}
+Sections~\ref{ideTools} and~\ref{funcTools} briefly discussed some refactoring tools and the features they provide but not much about how they are built. This section will look at how refactoring tools are actually built with a specific focus on how these tools gain access to a representation of the target source code and how they work with that representation. This section will also focus on languages other than Haskell. Refactoring Haskell is, of course, the focus of this thesis, and the general implementation of HaRe will be the focus of Chapter~\ref{chp:hare}.
 
-\subsection{Generic Programming}
+This section will look in greater detail at implementing refactoring tools for Erlang and Clojure.
+
+\subsection{Implementing Wrangler}
+
+Wrangler was first mentioned in Section~\ref{wranglerOne}, this section will describe a bit more of how Wrangler is implemented with a particular focus on the internal representation of the Erlang source code that Wrangler uses and how that representation is transformed. 
+
+Erlang comes with its own ``front end.'' A language front end provides access to some of the same tools that language compiler and runtime systems are built out of. Refactoring tools are mostly interested in a language's parser, the data type the language is represented as internally (this usually is an abstract syntax tree), and a pretty printer for that data type. Many languages do not store all of the information a refactoring tool requires in its internal representation and Erlang is no different. Wrangler is dependent on the SyntaxTools library which includes more semantic data about the target program~\citep{wranglerUpdated}. In addition to the information SyntaxTools adds to the AST of an Erlang program the library also makes it so that additional information can be attached to the tree as well~\citep{syntaxTools}. Wrangler uses this feature to further annotate the AST with both syntactic and semantic information~\citep{wranglerUpdated}.  
+
+Once a refactoring tool has parsed the target program into its internal representation the transformations can begin. However the internal representation of a program for even moderately sized programs can be quite sizeable. Traversing and modifying these structures can introduce large amounts of what's called ``boilerplate'' code into a project. Boilerplate code is highly repetitive code that simply walks through a structure, it is difficult to maintain and hides the relatively small amount of ``real'' code that is actually performing the transformations~\citep{syb}. Generic programming is a technique used to eliminate this type of code. Rather than use a third party generic programming library like HaRe does (see Section~\ref{genProg}) Wrangler has implemented it's own versions of the generic traversals it requires.\footnote{See: \url{https://github.com/RefactoringTools/wrangler/blob/master/src/api_ast_traverse.erl}}
+
+\subsection{Refactoring LISPs}
+
+The LISP family of languages make interesting target languages for refactorings. Lisps' support for macros and because Lisp code is structured as lists means that the internal representation of a Lisp program can be manipulated with the list-processing functionality that comes built into the language. 
+
+Another unique aspect to building refactoring tools for a Lisp is the support that the Emacs text editor can provide. Implementations of the Emacs text editor normally ship with their own dialect of Lisp referred to as Emacs Lisp~\citep{emacs}. Refactoring tools are commonly integrated into Emacs, for example both HaRe and Wrangler provide Emacs extensions in Emacs Lisp. In those cases all the Lisp code is used for is to define the the user interface and wrapper around the command line calls to the refactoring tool. If the target language of the refactoring is a Lisp then Emacs Lisp can be used to define refactorings directly. Consider the Clojure refactoring tool ``clj-refactor.el''~\citep{clojureRefac}. Clojure is a Lisp that can be compiled to either Java bytecode for execution on the JVM, or to Javascript for front end web programming~\citep{clojure}. The Clojure refactoring tool uses a separate analyser to generate an AST independent of which dialect is being targeted. Once that representation is created Emacs Lisp can actually be used to perform the source code transformation instead of Clojure.    
+
+\section{Summary}
+
+This chapter has discussed the literature that relates to and helped build the work that is described in the rest of this thesis. It began with a discussion of other refactoring tools, for both functional and object-oriented languages. Next in Section~\ref{refacParallel} was a description of work that uses refactoring to introduce parallelism into programs. Refactoring's original goal was to improve code quality and reduce technical debt, but with this work refactoring has been expanded to include introducing parallelism. This thesis again pushes the scope that refactorings can focus on towards data type evolution. Section~\ref{applicativeDo} describes an alternative desugaring for the Haskell \texttt{do} syntax. The work described in Chapter~\ref{chp:applicative} has the same goal as this work, the introduction of applicative rather than monadic operations, but is a refactoring rather than a desugarer. The program transformation field also has looked at how data types can change and some of this work was described in Section~\ref{typeTrans}. 
+
+The final section discussed how refactoring tools were implemented in Erlang and Clojure. Both Wrangler and clj-refactor deal with similar issues when it comes to getting an abstract syntax tree of their target programs. Third party libraries help both of these projects gain access to the abstract syntax tree of the target program with enough information in them to perform transformations while preserving formatting. These tools differ in how easy it is to transform the AST. Lisp like languages place a strong emphasis on meta-programming, and their internal representation is simply lists so special libraries are not necessary to deal with the abstract syntax. Wrangler, on the other hand, must implement generic traversals to help navigate the abstract syntax tree. In the next chapter the implementation of HaRe will be discussed in detail, including the libraries it uses to solve both of these issues. 
 
 \chapter{Background: Refactoring Haskell in HaRe}
 \label{chp:hare}
@@ -819,7 +838,7 @@ renameXVar v = v
 	
 	There are four cases to the \texttt{renameXVar} function. The first case matches when \texttt{renameXVar} is called with a \texttt{(Var "x")} value. This is one of the cases that the function will replace the "x" name with an "a" name. The second case matches an assignment and is the other case when actual ``work'' happens. In this case the function needs to check if the variable being assigned is an "x" or not, if it is then the name being assigned is replaced with "a" otherwise the name remains the same. Then there is a recursive call replace the name in the right hand side of the assignment. The other two cases will not directly modify an expression. In the \texttt{Add} case there is just a recursive call to perform replacements in its sub-expressions. The final case is just a catch-all term that returns its parameter. This will be called when \texttt{renameXVar} is called with a \texttt{Value} or a \texttt{Var} that is not \texttt{"x"}.
 	
-	This is fairly straightforward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are what is known as "boilerplate" code~\citep{syb}. Boilerplate code is highly repetitive, verbose, and difficult to debug and maintain.  In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} would become much more time-consuming and a nightmare to maintain. 
+	This is fairly straightforward and doesn't take much time to write. However, if subtraction was added to the definition of expression \texttt{renameXVar} would need to be updated as well to include a recursive call very similar to the addition case. These duplicated recursive calls are  just boilerplate code~\citep{syb}. In this small example having a few of these types of cases is not an issue. However, as the expression begins to approach the size of an actual programming language writing traversals like \texttt{renameXVar} would become much more time-consuming and a nightmare to maintain. 
 	
 	The reduction of boilerplate code like this is the point of SYB. SYB allows us to rewrite \texttt{renameXVar} as shown in Figure~\ref{renameSYB}.
 	
