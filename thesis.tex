@@ -577,69 +577,21 @@ The canonical reference for refactorings,~\cite{fowler}, is written using Java a
 
 \section{Building a refactoring tool for Haskell}\label{buildTool}
 
-\subsection{Language Front Ends for Haskell}
+Well designed software should be designed to be as focused as possible. A web app should not also implement its own http server. There are already plenty of http servers already written, and unless absolutely necessary a web app should rely on one of them rather than reimplementing work that others have already performed. Refactoring tools also have to perform tasks that are better suited to being handled by dependencies. In particular generating abstract syntax trees of the target language and traversing those trees can be very arduous without the assistance of third party libraries.
 
-\subsection{Generic Programming}
+The final section of this chapter on related work will cover some of the dependencies that support the development of Haskell refactoring tools and specifically HaRe's current dependencies. Language front ends provide access to the internal structure and components of a programming language. Front ends allow third party applications reuse the components built for interpreting and executing the target programming language. Section~\ref{frontEnds} discusses the front ends that HaRe has used to to interact with GHC. Section~\ref{genericProgrammingLibs} describes the other major dependency that HaRe and other refactoring tools depend on, a generic programming library. Generic programming libraries help minimise the amount of code it takes to work with complex recursive structures such as abstract syntax trees. 
 
-\chapter{Background: Refactoring Haskell in HaRe}
-\label{chp:hare}
+\section{Language Front Ends for Haskell}\label{frontEnds}
 
+	To refactor programs, refactoring tools must represent these programs in a machine readable way. This is what a language's compiler and runtime system must also do. A language front end gives access to these components. This section will describe two front ends for Haskell, Programmatica and the GHC API.   
 
-Work on HaRe was initiated at the University of Kent. HaRe was started by Huiqing Li, Claus Reinke, and Simon Thompson in early 2003~\citep{refacWebsite}. The first implementation of HaRe supported the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is now the formal language standard but the Glasgow Haskell Compiler (GHC) has become a de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that can do everything from changing the type system to adding new syntax features~\citep{langExts}.
+\subsection{Programatica}
 
-This chapter begins, in Section~\ref{hareOrig}, with a brief discussion of the original implementation of HaRe, and its dependencies such as Programatica~\citep{programatica}, a language frontend for Haskell 98, and Strafunski-StrategyLib~\citep{strafunski} a generic programming library. Next the chapter describes the current dependencies of HaRe beginning with Section~\ref{ghcApi}. This section describes the GHC API, the language frontend that is included with the GHC. HaRe now uses the GHC API for access to the internal representation of Haskell rather than a third-party library like Programmtica. In addition to Strafunski-StrategyLib HaRe also uses another generic programming library, \textit{Scrap Your Boilerplate} (SYB)~\citep{syb}. Section~\ref{genProg} describes how HaRe uses SYB to perform abstract syntax tree traversals and transformations. Section~\ref{ghcExactprint} describes, \textit{ghc-exactprint}, the pretty-printer HaRe uses to output the modified program~\citep{exactprint}. Finally the chapter will conclude with a description of the current implementation of HaRe in Section~\ref{hareCurr}.
+Programatica was a project at the OGI School of Science and Engineering to build tool support for validating Haskell programs~\citep{programaticaTools}. The Programatica team open sourced their frontend so that other tools could also use it~\citep{refacWebsite}. When development on HaRe started there was no API to access the internals of GHC so Programatica was chosen as HaRe's front end. Programmatica was picked over other available front ends because it was the simplest front end that supported the full Haskell 98 standard and a number of its extensions~\citep{huiqingThesis}. Programatica's Haskell front end is broken up into multiple components including a lexer, a parser, an abstract syntax tree data type, a module system, a type checker, and a pretty printer.
 
-\section{The original implementation of HaRe}
-\label{hareOrig}
+Unfortunately the Haskell 98 standard has been superseded by the Haskell 2010 standard. In addition to the Haskell 2010 standard the Glasgow Haskell Compiler has become the dominant implementation of Haskell and it supports extensions to the language standard. HaRe required a new front end to continue to support the Haskell community. GHC now comes with a front end built in known as the GHC API. This front end is what HaRe currently depends on.
 
-Implementing an automated refactoring system has several dependencies including a frontend for the language that is targeted, a generic programming library or some means of making generic traversals of abstract syntax trees, and a pretty printer. The language frontend is required for the refactorer to analyse and modify source code, the generic programming library assists in traversing the complex abstract syntax tree of a real world programming language, and the pretty printer outputs as source the modified AST in a form recognizable by the author of the original program. The original implementation of HaRe fulfilled these dependencies with two libraries, Programatica and Strafunski-StrategyLib. 
-
-\subsection{Programatica and Strafunski}\label{prog&Strafunski}
-
-Programatica was a project at the OGI School of Science and Engineering to build tool support for validating Haskell programs~\citep{programaticaTools}. The Programatica team open sourced their frontend so that other tools could also use it~\citep{refacWebsite}. At the time there was no API to access the internals of GHC so the HaRe team chose to use Programatica over other available front ends because it was the simplest front end that supported the full Haskell 98 standard along with a number of its extensions~\citep{huiqingThesis}. Programatica's Haskell front end is broken up into multiple components including a lexer, a parser, an abstract syntax tree data type, a module system, a type checker, and a pretty printer. Programatica's frontend allows for the implementers of HaRe to focus on refactoring only rather than having to build all of these components as well.
-
-Programatica's abstract syntax contains 20 data types with 110 data constructors in total. Working with the syntax directly would introduce a large amount of "boilerplate" code into HaRe that would make maintenance and reusability of much more difficult~\citep{huiqingThesis}. Instead HaRe used Strafunski-StrategyLib, a combinator library for generic programming, to traverse the abstract syntax tree (AST) of the source code~\citep{strafunski}. 
-
-Commonly transforming a program only modifies small sections of the source program's AST. Renaming a function, for example, will only need to modify the name used in the binding and places where that name is being used; all other sections of the AST remain unmodified. A commonly used operation in Strafunski takes a function that works on a particular data type (or types)\footnote{In the renaming example this could be code that checks if a variable is the one being renamed and replaces it with the new name.} and extends it to work on all types by leaving all other types unmodified. Strafunski also provides "strategies" that define how that extended function will be applied to the syntax tree as a traversal of the tree~\citep{strafunski}\footnote{E.g. top-down or bottom-up.}. Using Strafunski will be discussed in more detail in Section~\ref{genProg}.
-
-These two dependencies allowed the original implementation of HaRe to obtain the abstract syntax tree of source code to be refactored, traverse and transform that AST, and output the modified program. All these tasks are things that the current implementation of HaRe needs to do but the dependencies that it relies on have changed somewhat. The Haskell standard was updated in 2010~\citep{haskell2010} and GHC continues to expand the number of language extensions it supports. Unfortunately Programatica has not kept up with these changes and does not support anything beyond Haskell 98. At the same time GHC's own API has been defined and matured so that it can replace Programatica as HaRe's front end. HaRe now relies on this and a few other projects for its language frontend. For generic traversals "Scrap Your Boilerplate" has been added as a dependency though Strafunski-StrategyLib is still used in HaRe~\citep{syb}.
- 
-\subsection{HaRe's original refactorings}\label{origRefactorings}
-
-HaRe's original refactorings fall into three categories, structural, module, and data-oriented refactorings.
-
-\subsubsection{Structural Refactorings}
-
-Structural refactorings principally concern the name and scope of entities defined in a program~\citep{huiqingThesis}. These refactorings target functions, and smaller sections of code.  A traditional example of this is the renaming refactoring. Renaming is the most basic refactoring. The purpose of renaming is to change the name of a given identifier. A renaming refactoring could target a variable, function name, type, or any other piece of syntax that a programmer can assign a name to. This refactoring allows for the names used in a program to truly reflect what the pieces of that program are actually doing. 
-
-Though these refactorings target small pieces of code, the changes made to the code base can affect modules throughout the codebase. The renaming refactoring, for example, can affect any other module that uses the renamed object.
-
-Other examples of structural refactorings include Deleting a Definition, Duplicating a Function, and Adding an Argument~\citep{huiqingThesis}.
-
-\subsubsection{Module Refactorings}
-
-Module refactorings concern the imports and exports of an individual module, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be "clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the "move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another and fixes the imports and exports of any affected modules. For example if we were moving some function \texttt{foo} from module \texttt{A} to module \texttt{B} any external dependencies of \texttt{foo} need to be imported into \texttt{B} and if those dependencies are no longer used in \texttt{A} the relevant import statements should be removed. If \texttt{foo} is still being used in \texttt{A} then \texttt{A} needs to import \texttt{B} (if it does not already do so). Finally any other modules that currently depend on \texttt{foo} need to now import \texttt{B} (if it's not already imported) and remove the import of \texttt{A} (assuming none of \texttt{A}'s other definitions are used).
-
-\subsubsection{Data Type Based Refactorings}
-
-The third category of refactorings are those that are associated with data type definitions~\citep{huiqingThesis}. "Add field names" is a good example of a data-oriented refactoring.  The add field names refactoring will add field names to a data type. These names can then be used as selector functions that make extraction of a particular part of a type a simple function call. The new field names are generated by HaRe but can be renamed by the user~\citep{huiqingThesis}.
-
-These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers, an API was exposed so that other developers could implement their own refactorings which will be discussed in more detail in the next Section~\citep{hareApi}.
-
-
-\subsection{The HaRe API}\label{hareApi}
-
-Early in the development cycle of HaRe, it was restructured to expose an API for implementing refactorings and general Haskell program transformations~\citep{hareApi}. The HaRe API contains a collection of functions for program analysis and transformation of Haskell 98 programs. These functions, along with the functionality provided by Strafunski and Programatica, form the basis for implementing basic refactorings~\citep{hareApi}.
-
-The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the user but because of generic programming with Strafunski only the to be transformed parts of the AST have to be explicitly referenced in a refactoring~\citep{hareApi}. Another key feature of the API was to hide layout and comment preservation allowing the programmer to focus on program transformation instead. Each subtree in the AST is tagged with its absolute location in the source file. Any modifications to the AST will change the location of all elements that occur after the change. The API abstracts over this cascade of changes that follows even the simplest of changes. The HaRe API transformation functions modify the token stream and the AST simultaneously which keeps refactoring definitions free of this location bookkeeping ~\citep{hareApi}. 
-
-The overall goal of the HaRe API is to help ensure the correctness of new refactorings by limiting the amount of code required that is not related to program transformation, and isolating common error sources~\citep{hareApi}. This design goal still guides the development of HaRe, and many of the functions that were provided in the original HaRe API have been updated to HaRe's latest implementation. 
- 
-\section{Underlying technologies}
-
-As was mentioned in Section~\ref{prog&Strafunski}, HaRe's dependencies have changed somewhat in its current implementation. HaRe originally used Programatica as its front end, now the language front end is composed of several projects now, the GHC API~\citep{ghcApi}, ghc-mod~\citep{ghcMod}, and ghc-exactprint~\citep{exactprint}. The following sections will describe these dependencies as well as Scrap Your Boilerplate~\citep{syb}, another generic programming library, and how HaRe currently uses them.
-
-\section{The GHC API}
+\subsection{The GHC API}
 \label{ghcApi}
 
 Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is composed of several smaller components that each correspond to a separate compiler stage. GHC's executable consists of a lightweight main function that ties together the smaller components~\citep{ghcDesign}. These components are exposed to users  and this is what constitutes the GHC API.
@@ -768,19 +720,19 @@ data HsDecl id =
 
 \texttt{HsDecl} only provides a high level categorisation of what type it is. There is very little information stored at this level, the inner type is the "payload" of the declaration (e.g. \texttt{HsBind} or \texttt{TyClDecl}). These payload types are what store the type and expression level abstract syntax of Haskell that was described in the previous section.
 
-Some notable payload types are \texttt{TyClDecl}, \texttt{InstDecl}, \texttt{HsBind}, and \texttt{Sig}. \texttt{TyClDecl} represents a family, type synonym, data, or type class declaration. The \texttt{InstDecl} is used to represent the instance declarations for type classes, and data or type families. The real workhorse of the language is \texttt{HsBind}. \texttt{HsBind} represents functions and pattern bindings (e.g. \texttt{(x,y) = (1,2)}). The \texttt{HsBind} type also has constructors that are introduced by the type checker such as dictionary binding. Finally \texttt{Sig} is the data type that represents type signatures. 
+Some notable payload types are \texttt{TyClDecl}, \texttt{InstDecl}, \texttt{HsBind}, and \texttt{Sig}. \texttt{TyClDecl} represents a family, type synonym, data, or type class declaration. The \texttt{InstDecl} is used to represent the instance declarations for type classes, and data or type families. The real workhorse of the language is \texttt{HsBind}. \texttt{HsBind} represents functions and pattern bindings (e.g. \texttt{(x,y) = (1,2)}). The \texttt{HsBind} type also has constructors that are introduced by the type checker such as dictionary binding. Finally \texttt{Sig} is the data type that represents type signatures.
 
-\section{Generic programming}
-\label{genProg}
+\section{Generic Programming}\label{genericProgrammingLibs}
 
-The need for a generic programming library, as previously discussed in Section~\ref{prog&Strafunski}, remains the same when using the GHC API's AST as opposed to Programatica's. Currently HaRe still uses Strafunski-StrategyLib as well as another library, Scrap Your Boilerplate. Scrap Your Boilerplate (SYB) is a generic programming library developed by Ralf L{\"a}mmel and Simon Peyton-Jones~\citep{syb}. 
+The previous section described just a small subset of the abstract syntax of the GHC API. Even Programatica, which was selected for it's simplicity, had an abstract syntax made up of 20 different data types that had 110 data constructors in total~\citep{programatica}. Working with the large data types that represent a programming language directly would introduce a large amount of ``boilerplate'' code into a program. Boilerplate code is the repetitive code that traverses a large structure. For example, the \texttt{HsExpr} type has over 30 constructors, searching for a particular variable within a single expression would require writing a function that would terminate if it reaches an \texttt{HsVar} constructor with the desired name, otherwise it would have to pattern match all the other constructors to recursively descend their child expressions. This boilerplate code is highly verbose and difficult to maintain which makes it unwise to have it in a code base. 
 
-SYB is included with GHC and has become the Haskell community's standard generic traversal library, however HaRe still uses Strafunski because it provides ``stop'' traversals. These traversals (stop-top-down, type preserving, and type unifying) descend the tree until the strategy ``succeeds'' (that is, the extended function can be applied) and then stops. Essentially it cuts a line across the abstract syntax tree where everything below the line is unvisited. This traversal is useful when refactoring because of how the ASTs types are nested within each other. For example, a refactoring commonly wants to modify the body of a function and the stop traversals ensure that when the extended function is applied, it is applied with the expression representing the whole binding rather than sub-expressions.
+Generic programming libraries help eliminate this type of code. There are many generic programming libraries for Haskell but this section will describe two of them: Strafunski-StrategyLib and Scrap Your Boilerplate (SYB). These two libraries are both used by HaRe.~\cite{comparingGenerics} provides a more comprehensive overview of the generic programming libraries for Haskell.  
 
-\subsection{Generic Traversals}
-The Stratego/XT library was one of first systems for programming tree transformations in a systematic way~\citep{stratego}. Stratego developed the idea of a transformation strategy. A strategy is the combination of a term rewriting function and a traversal function that describes how that rewriting function should be applied to a tree of terms. Stratego provides combinators that help construct term rewriting functions and tree traversal functions \citep{stratego}.
+\subsection{Strafunski-StrategyLib}
 
-Stratego is an untyped transformation system and so was unsuitable for working with the statically typed Haskell. Strafunski was ``largely inspired'' by Stratego, but for a statically typed context~\citep{strafunski}.
+The Stratego/XT library was one of first systems for programming tree transformations in a systematic way~\citep{stratego}. Stratego developed the idea of a transformation strategy. A strategy is the combination of a term rewriting function and a traversal function. A traversal function describes how the rewriting function should be applied to a tree of terms. Stratego provides combinators that help construct term rewriting functions and tree traversal functions \citep{stratego}.
+
+Stratego is an untyped transformation system and so was unsuitable for working with the statically typed Haskell. Strafunski was ``largely inspired'' by Stratego, but for a statically typed context~\citep{strafunski}. Strafunski was first developed in~\cite{strafunskiOrig} but much of the work that HaRe depends on was first described in~\cite{strafunski}.
   
 \subsection{Scrap Your Boilerplate}\label{syb}
 
@@ -904,8 +856,61 @@ renameVars e = everywhereM (mkM f) e
 \label{renameVars}
 \end{figure}
  
-This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs the features provided by an instance of \texttt{GhcMonad}, all while modifying the abstract syntax. The GHC API's operations all work within the \texttt{GhcMonad} that provides the features GHC needs to compile a single Haskell source file such as IO, logging warning, exception handling, and keeping track of the compilation session~\citep{ghcApi}.   
-	 
+This type of generic traversal is very common in HaRe because traversals often need to make use of a refactoring's stored state or run something from the GHC API which needs to be computed in an instance of \texttt{GhcMonad}, while also modifying the abstract syntax. The GHC API's operations all work within the \texttt{GhcMonad} that provides the features GHC needs to compile a Haskell source file such as IO, logging warning, exception handling, and keeping track of the compilation session~\citep{ghcApi}.
+
+\section{Summary}
+
+This chapter has discussed the literature that relates to and helped build the work that is described in the rest of this thesis. It began with a discussion of other refactoring tools, for both functional and object-oriented languages. Next in Section~\ref{refacParallel} was a description of work that uses refactoring to introduce parallelism into programs. Refactoring's original goal was to improve code quality and reduce technical debt, but with this work refactoring has been expanded to include introducing parallelism. This thesis again pushes the scope that refactorings can focus on towards data type evolution. Section~\ref{applicativeDo} describes an alternative desugaring for the Haskell \texttt{do} syntax. The work described in Chapter~\ref{chp:applicative} has the same goal as this work, the introduction of applicative rather than monadic operations, but is a refactoring rather than a desugarer. The program transformation field also has looked at how data types can change and some of this work was described in Section~\ref{typeTrans}. 
+
+The final sections of this chapter discussed the tools that are used to implement HaRe, a language front end and generic programming libraries. With this background the thesis will continue in the next chapter by describing how refactorings are implemented in HaRe. 
+
+ 
+
+\chapter{Background: Refactoring Haskell in HaRe}
+\label{chp:hare}
+
+
+Work on HaRe was initiated at the University of Kent. HaRe was started by Huiqing Li, Claus Reinke, and Simon Thompson in early 2003~\citep{refacWebsite}. The first implementation of HaRe supported the Haskell 98 standard~\citep{huiqingThesis}. The Haskell ecosystem has evolved a great deal since then. Haskell 2010 is now the formal language standard but the Glasgow Haskell Compiler (GHC) has become a de facto Haskell standard~\citep{refacTools}. GHC supports the entire 2010 standard but also includes language extensions that can do everything from changing the type system to adding new syntax features~\citep{langExts}.
+
+This chapter begins, in Section~\ref{hareOrig}, with a brief discussion of the original implementation of HaRe. Most of HaRe's current dependencies were described in Chapter~\ref{chp:related}, however Section~\ref{ghcExactprint} describes, \textit{ghc-exactprint}, the pretty-printer HaRe uses to output the modified program~\citep{exactprint}. This pretty printer was developed by Alan Zimmerman and Chris Pickering specifically for HaRe but a description of how it works has not appeared in the literature so it has been placed into this chapter. Finally the chapter will conclude with a description of the current implementation of HaRe in Section~\ref{hareCurr}.
+
+\section{The original implementation of HaRe}
+\label{hareOrig}
+
+HaRe was originally implemented using the Programatica language front end for Haskell 98 and Strafunski-StrategyLib provided generic traversals which made handling Programatica's syntax tree much easier, these libraries were discussed in Chapter~\ref{chp:related}. This section will describe the types of refactorings that the original HaRe provided. Section~\ref{hareApi} will also describe the API the HaRe provided. HaRe has always been an open source project that wanted people outside of Kent to contribute to, to help facilitate this HaRe provided an API for refactoring and program analysis. This API helped people develop their own refactorings without needing to understand the entire codebase, only the higher level functionality that the API provided. 
+ 
+\subsection{HaRe's original refactorings}\label{origRefactorings}
+
+HaRe's original refactorings fall into three categories, structural, module, and data-oriented refactorings.
+
+\subsubsection{Structural Refactorings}
+
+Structural refactorings principally concern the name and scope of entities defined in a program~\citep{huiqingThesis}. These refactorings target functions, and smaller sections of code.  A traditional example of this is the renaming refactoring. Renaming is the most basic refactoring. The purpose of renaming is to change the name of a given identifier. A renaming refactoring could target a variable, function name, type, or any other piece of syntax that a programmer can assign a name to. This refactoring allows for the names used in a program to truly reflect what the pieces of that program are actually doing. 
+
+Though these refactorings target small pieces of code, the changes made to the code base can affect modules throughout the codebase. The renaming refactoring, for example, can affect any other module that uses the renamed object.
+
+Other examples of structural refactorings include Deleting a Definition, Duplicating a Function, and Adding an Argument~\citep{huiqingThesis}.
+
+\subsubsection{Module Refactorings}
+
+Module refactorings concern the imports and exports of an individual module, or the relocation of definitions between modules~\citep{huiqingThesis}. A simple refactoring in this category would be "clean an import list," which analyses a module's import list and removes redundant import declarations. Another example of a refactoring in this category would be the "move a definition" refactoring. As its name suggests, move a definition takes a definition from one module and moves it to another and fixes the imports and exports of any affected modules. For example if we were moving some function \texttt{foo} from module \texttt{A} to module \texttt{B} any external dependencies of \texttt{foo} need to be imported into \texttt{B} and if those dependencies are no longer used in \texttt{A} the relevant import statements should be removed. If \texttt{foo} is still being used in \texttt{A} then \texttt{A} needs to import \texttt{B} (if it does not already do so). Finally any other modules that currently depend on \texttt{foo} need to now import \texttt{B} (if it's not already imported) and remove the import of \texttt{A} (assuming none of \texttt{A}'s other definitions are used).
+
+\subsubsection{Data Type Based Refactorings}
+
+The third category of refactorings are those that are associated with data type definitions~\citep{huiqingThesis}. "Add field names" is a good example of a data-oriented refactoring.  The add field names refactoring will add field names to a data type. These names can then be used as selector functions that make extraction of a particular part of a type a simple function call. The new field names are generated by HaRe but can be renamed by the user~\citep{huiqingThesis}.
+
+These original refactorings were chosen to be basic yet still useful, and for their ability to give insight into the issues surrounding implementing an automated refactoring tool~\citep{huiqingThesis}. In addition to the refactorings that were implemented by HaRe's developers, an API was exposed so that other developers could implement their own refactorings which will be discussed in more detail in the next Section~\citep{hareApi}.
+
+
+\subsection{The HaRe API}\label{hareApi}
+
+Early in the development cycle of HaRe, it was restructured to expose an API for implementing refactorings and general Haskell program transformations~\citep{hareApi}. The HaRe API contains a collection of functions for program analysis and transformation of Haskell 98 programs. These functions, along with the functionality provided by Strafunski and Programatica, form the basis for implementing basic refactorings~\citep{hareApi}.
+
+The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the user but because of generic programming with Strafunski only the to be transformed parts of the AST have to be explicitly referenced in a refactoring~\citep{hareApi}. Another key feature of the API was to hide layout and comment preservation allowing the programmer to focus on program transformation instead. Each subtree in the AST is tagged with its absolute location in the source file. Any modifications to the AST will change the location of all elements that occur after the change. The API abstracts over this cascade of changes that follows even the simplest of changes. The HaRe API transformation functions modify the token stream and the AST simultaneously which keeps refactoring definitions free of this location bookkeeping ~\citep{hareApi}. 
+
+The overall goal of the HaRe API is to help ensure the correctness of new refactorings by limiting the amount of code required that is not related to program transformation, and isolating common error sources~\citep{hareApi}. This design goal still guides the development of HaRe, and many of the functions that were provided in the original HaRe API have been updated to HaRe's latest implementation. 
+ 
+ 	 
 \section{ghc-exactprint}
 \label{ghcExactprint}
 
@@ -999,7 +1004,7 @@ Beyond those two features, refactorings are free to be implemented however the p
 Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times. For example, the renaming refactoring checks for name conflicts while it descends the AST, replacing the old name with the new one. Obviously this strategy only works for certain preconditions: the only precondition for deleting a definition is that the target definition is not used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not.
 
 \subsection{Using the GHC's Abstract Syntax Trees}
-Each stage of the compiler takes the previous stage's output and creates it's own version of the tree decorated with some additional information. This provides a challenge when writing refactorings because all of the changes made to the source needs to be reflected in the parsed syntax tree. The additional name and type information can be retrieved from the other trees but they will have to be traversed from the top down to where the refactoring is taking place.
+As discussed in Section~\ref{ghcApi}, each stage of the GHC takes the previous stage's output and creates it's own version of the tree decorated with some additional information. This provides a challenge when writing refactorings because all of the changes made to the source needs to be reflected in the parsed syntax tree. The additional name and type information can be retrieved from the other trees but they will have to be traversed from the top down to where the refactoring is taking place.
 
 In the same way that the a refactoring can be sped up through careful consideration of how much re-traversing of the abstract syntax tree is absolutely necessary, it is also important to be mindful of when it is absolutely necessary to traverse through the other stages' trees. For the most part HaRe's refactorings can avoid having to look up information in either the renamed or typechecked trees. The renaming refactoring, for example, uses a \texttt{NameMap} which associates every \texttt{RdrName} in the parsed source with it's \texttt{Name} from the renamed source. This allows the refactoring to ensure that the instance of a variable it is going to rename is actually the targeted variable and not just a variable with the same name in a different scope. This map is calculated at the start of the refactoring, so the renamed syntax tree only needs to be completely traversed once rather than over and over again to check if each name that matches the target variable's name.
 
