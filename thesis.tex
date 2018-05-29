@@ -2605,11 +2605,11 @@ Parsing failures were caused by two main reasons. First \textit{ghc-exactprint} 
 Each package was searched in parallel. Within each package every "\texttt{.hs}" file was parsed using the \textit{ghc-exactprint} library.\footnote{Unfortunately \textit{ghc-exactprint} cannot parse literate Haskell ("\texttt{.lhs}") files so they were excluded} Once we had the abstract syntax tree we could use generic traversal combinators provided by \textit{Scrap Your Boilerplate} (SYB) to search the parsed files for implementations of the \texttt{Monad} and \texttt{Applicative} typeclasses.
 
 
-Even with these failures we were still able to parse more than 90\% of the Haskell source files contained in Hackage. From the successfully parsed files a total of 2,349 \texttt{Applicative} and 2,098 \texttt{Monad} instance declarations were found.
+Even with these failures we were still able to parse more than 90\% of the Haskell source files contained in Hackage. From the successfully parsed files a total of 2,376 \texttt{Applicative} and 2,126 \texttt{Monad} instance declarations were found.
 
 \subsection{Search Results}
   
-The found \texttt{Applicative} instances in 826 cases were defined using the suggested implementation of \texttt{(<*>) = ap}.
+Once all of the \texttt{Applicative} instances were discovered it was much easier to search through all of them to try and understand how the Haskell community is using the type class. For example the most common implementation for apply is simply \texttt{(<*>) = ap}, in 841 cases. This is the suggested implementation for apply in the case where the implementor of a new monad instance just wants their program to compile. 
 
 Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example \texttt{Applicative} instances can be automatically derived using the \texttt{GeneralizedNewtypeDeriving} language extension. 
 
