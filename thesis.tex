@@ -2608,10 +2608,12 @@ Each package was searched in parallel. Within each package every "\texttt{.hs}" 
 Even with these failures we were still able to parse more than 90\% of the Haskell source files contained in Hackage. From the successfully parsed files a total of 2,376 \texttt{Applicative} and 2,126 \texttt{Monad} instance declarations were found.
 
 \subsection{Search Results}
-  
-Once all of the \texttt{Applicative} instances were discovered it was much easier to search through all of them to try and understand how the Haskell community is using the type class. For example the most common implementation for apply is simply \texttt{(<*>) = ap}, in 841 cases. This is the suggested implementation for apply in the case where the implementor of a new monad instance just wants their program to compile. 
 
-Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example \texttt{Applicative} instances can be automatically derived using the \texttt{GeneralizedNewtypeDeriving} language extension. 
+Once all of the \texttt{Applicative} instances were discovered it was much easier to search through them to try and understand how the Haskell community is using this type class. The\texttt{Applicative} type class is an interesting case of programming language design and management where a language feature, in this case \texttt{Monads}, was accepted and even celebrated by the language's community. Then, twenty-five years into the language's life, to continue use this popular feature user's have to modify their code. The question that this search is trying to answer is: how has the Haskell community adapted to having to write \texttt{Applicative} instances for every \texttt{Monad} instance? Are programmers taking advantage of what the new type class can offer?
+
+ For example the most common implementation for apply is simply \texttt{(<*>) = ap}, in 841 cases. This is the suggested implementation for apply in the case where the implementor of a new monad instance just wants their program to compile. 
+
+Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example, with the \texttt{GeneralizedNewtypeDeriving} language extension \texttt{Applicative} instances can be automatically derived by the compiler~\citep{genDeriveBlog}. Though it is unclear how often this extension is used, as there seems to be some community pushback about using it because it could cause unsafe type coerces~\citep{genDeriveUnsafe}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
