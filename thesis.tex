@@ -2611,10 +2611,12 @@ Even with these failures we were still able to parse more than 90\% of the Haske
 
 Once all of the \texttt{Applicative} instances were discovered it was much easier to search through them to try and understand how the Haskell community is using this type class. The\texttt{Applicative} type class is an interesting case of programming language design and management where a language feature, in this case \texttt{Monads}, was accepted and even celebrated by the language's community. Then, twenty-five years into the language's life, to continue use this popular feature user's have to modify their code. The question that this search is trying to answer is: how has the Haskell community adapted to having to write \texttt{Applicative} instances for every \texttt{Monad} instance? Are programmers taking advantage of what the new type class can offer? These are the sorts of questions this search will address.   
 
-So, how has the Haskell community adapted to the forced introduction to applicative functors? The reaction seemed to be mixed. Of those 2,376 \texttt{Applicative} instances the search discovered 841 directly defined apply as: \texttt{(<*>) = ap}. This is the suggested implementation for apply; it was included in the proposal to make \texttt{Monad} inherit from \texttt{Applicative}~\citep{applicativeProposal}, and it is the fasted way for an implementer of a new monad instance to get their program to compile. 
+So, how has the Haskell community adapted to the forced introduction to applicative functors? The reaction seemed to be mixed. Of those 2,376 \texttt{Applicative} instances the search discovered 841 directly defined apply as: \texttt{(<*>) = ap}. This is the suggested implementation for apply; it was included in the proposal to make \texttt{Monad} inherit from \texttt{Applicative}~\citep{applicativeProposal}, and it is the fastest way for an implementer of a new monad instance to get their program to compile. 
 
-Beyond just defining apply to be \texttt{ap} a few instances 
-Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other ways that effectively do the same thing. For example, with the \texttt{GeneralizedNewtypeDeriving} language extension \texttt{Applicative} instances can be automatically derived by the compiler~\citep{genDeriveBlog}. Though it is unclear how often this extension is used, as there seems to be some community pushback about using it because it could cause unsafe type coerces~\citep{genDeriveUnsafe}. 
+Beyond just defining apply to be \texttt{ap} some instances simply replicated the functionality of 
+Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other instances that essentially copy the definition of \texttt{ap}. For example, Figure~\ref{sousitAp} shows the \texttt{Applicative} definition of \texttt{Sink} from the Sousit library. This definition is an exact duplicate of the definition of \texttt{ap}. There are other ways that this functionality can be duplicated, the applicative instance in Figure~\ref{appWithBind} shows another pattern that several packages used. 
+
+There could be other \texttt{Monad} and \texttt{Applicative} instances that this search couldn't pick up. With the \texttt{GeneralizedNewtypeDeriving} language extension \texttt{Applicative} and \texttt{Monad} instances can be automatically derived by the compiler with their most obvious implementations~\citep{genDeriveBlog}. Though it is unclear how often this extension is used, as there seems to be some community pushback about using it because it could cause unsafe type coercions~\citep{genDeriveUnsafe}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2625,25 +2627,21 @@ instance Monad m => Applicative (Sink i m) where
         v <- s
         return (f v)
 \end{lstlisting}
-\caption{The applicative instance of \texttt{Sink} from \textit{Sousit} version 0.4}
+\caption{The applicative instance of \texttt{Sink} from \textit{Sousit} version 0.4.}
 \label{sousitAp}
 \end{figure}
 
-There are also ways to define \texttt{(<*>)} that duplicate the definition of \texttt{ap} without literally defining \texttt{(<*>) = ap}. For example one definition that was found is shown in figure~\ref{sousitAp}: this is an exact copy of the definition of \texttt{ap}. This means that the number of \texttt{Applicative} instances that actually use the suggested implementation is higher than the number found by our search. Note that by defining apply to be \texttt{ap}, this instance of Applicative is actually monadic.
-
 \begin{figure}[t]
-\begin{lstlisting}%[frame=tblr]
-
-ap :: (Monad m) => m (a -> b) -> m a -> m b
-ap m1 m2 = m1 >>=
-      (\x1 -> m2 >>=
-        (\x2 -> return (x1 x2)))
+\begin{lstlisting}
+instance Applicative TypeCheckMonad where
+    pure x    = TCM $ \_ _ _ -> Right x
+    mf <*> mx = mf >>= \f -> fmap f mx
 \end{lstlisting}
-\caption{The definition of \texttt{ap}}
-\label{apDefn}
+\caption{The applicative instance of \texttt{TypeCheckMonad} from \textit{Hakaru} version 0.6.0.}
+\label{appWithBind}
 \end{figure}
 
-The definition of \texttt{ap} (see figure~\ref{apDefn}) forces \texttt{m1} to be evaluated strictly before evaluating \texttt{m2}, whereas apply has no such restriction. The arguments to apply could be computed in parallel, as in~\citep{haxl}. Even if not evaluated in parallel, using the \texttt{Applicative} interface rather than the \texttt{Monadic} can keep static values from being re-evaluated because the two sides of the apply operator are not dependent on one another, which saves heap space~\citep{errParsers}.
+Overall this search discovered 868 instances of \texttt{Applicative} where either apply was directly defined to be \texttt{ap} or \texttt{ap}'s definition was replicated in some way. This means that roughly 35\% of the \texttt{Applicative} definitions aren't doing anything beyond the suggested implementation. The following subsection will look at some other common patterns that go beyond the most basic \texttt{Applicative} implementation.
 
 \subsection{Common Implementation Patterns}
 
