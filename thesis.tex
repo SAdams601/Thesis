@@ -2805,7 +2805,7 @@ objEntry = (,)
 \subsection{Preconditions}
 \label{sec:appPrecons}
 
-This refactoring has two fairly simple preconditions: first, the target function must be definable with the applicative interface not just the monadic interface and secondly, the order that variables are bound in the \texttt{do} block must correspond to the order in which they are used in the return statement. 
+This refactoring has two fairly simple preconditions: first, the target function must be definable with the applicative interface not just the monadic interface and secondly, the order that variables are bound in the \texttt{do} block must correspond to the order in which they are used in the return statement.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2819,9 +2819,9 @@ This refactoring has two fairly simple preconditions: first, the target function
 \label{appBind}
 \end{figure} 
 
-How can the first precondition be enforced? Where is the line between applicative and monadic? Let's start by looking at the type signatures of the bind and apply functions in figure~\ref{appBind}. One thing to keep in mind is that these two functions' arguments are in opposite order where the function type is the first argument to apply whereas the second argument to bind is a function. The difference between bind and apply is in the type of this function argument. The second argument of bind is a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value returned by a computation in the monad, while all of the arguments to apply are fully within the applicative context.
+What does this first condition actually mean? Where is the line between applicative functors and monads? Let's start by comparing the type signatures of the bind and apply functions, they are shown in figure~\ref{appBind}. One thing to keep in mind is that these two functions' arguments are in opposite order where the function type is the first argument to apply whereas the second argument to bind is a function. The difference between bind and apply is in the type of this function argument. The second argument of bind is a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value returned by a computation in the monad, while all of the arguments to apply are fully within the applicative context.
 
-What does this mean in practice? Take for example the function \texttt{f} from figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is applied to \texttt{parseNThings} as a pure value. This first precondition will check that any values bound in the \texttt{do} statement are not used in a right hand side expression before the \texttt{return} statement.
+What does this mean in practice? Take for example the function \texttt{f} from figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is applied to \texttt{parseNThings} as a pure value. The implementation of the first precondition checks that any values bound in the \texttt{do} statement are not used in a right hand side expression before the \texttt{return} statement. 
 
 
 \begin{figure}[t]
@@ -2869,8 +2869,9 @@ g = (,) <*> getA <*> getB
 
 These preconditions enforce subtly different things. The first precondition, that the target function needs to be expressible with the \texttt{Applicative} interface, is the obvious requirement that the target function needs to meet for the refactoring to be able to be performed successfully. The entire premise of this refactoring is to convert programs using the monadic interface to instead use the more general applicative one, so the target function must be expressible using that interface.
 
-The second precondition, especially when described as naively as it has been in this section, seems to also be a mandatory pre-condition for the refactoring to not change the behaviour of the target function. However, an additional transformation could be applied to \texttt{g} that would allow the generalisation refactoring to continue without type errors and preserve the ordering of effects, the introduction of a lambda expression into the \texttt{return} statement. The details of this transformation are described in Section~\ref{lambdaIntro}.  
+The second precondition, especially when described as naively as it has been in this section, seems to also be mandatory for the refactoring to not change the behaviour of the target function. However, an additional transformation could be applied to \texttt{g} that would allow the generalisation refactoring to continue without type errors and preserve the ordering of effects, the introduction of a lambda expression into the \texttt{return} statement. The details of this transformation are described in Section~\ref{lambdaIntro}.
 
+The next section will discuss further refactorings that help modify potential target functions so that they can pass the preconditions discussed in this chapter. The second precondition can always be ``avoided'' if the programmer so chooses by applying an additional refactoring first. The first precondition on the other hand cannot be simply avoided. The next section will discuss refactorings that can help maximise the amount of code that can be refactored, but code that does not pass the first precondition cannot be refactored.
 
 \subsection{Additional Refactorings}
 \label{sec:otherRefs}
@@ -3144,7 +3145,7 @@ Once every cluster has been refactored separately all of the clusters are wrappe
 \subsection{Building the Pure Expression}
 
 \vspace{5pt}
-\begin{figure}
+\begin{figure}[h!]
 \begin{math}
 \begin{aligned}
 &--This\ takes\ the\ expression\ being\ returned\\
