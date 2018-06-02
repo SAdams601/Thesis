@@ -269,7 +269,7 @@ This chapter covers the history of HaRe (the \textbf{Ha}skell \textbf{Re}factore
 
 Chapter~\ref{chp:ddRefs} introduces data-driven refactorings. The chapter begins with a discussion of this type of refactoring for object-oriented languages. The rest of the chapter describes data-driven refactorings for the Haskell programming language. First there is a description of the ``introduce a type synonym,'' the ``renaming'' refactoring of data-driven refactorings. The renaming refactoring is the most straightforward refactoring, it simply changes the name of a variable to one that better suits the real meaning of the variable. Similarly a type synonym can rename types to better reflect what certain instances of that type are being used for in a program, and this refactoring supports that transformation. The other two refactorings covered in this chapter are the ``generalising maybe'' and ``list to Hughes list'' refactorings.
 
-The ``generalising maybe'' refactoring (Section~\ref{genMaybe}) rewrites functions that use the concrete type of \texttt{Maybe} to use, instead, the operations provided by the typeclasses it implements, \texttt{Monad} and/or \texttt{MonadPlus}. The final refactoring described by this chapter is the ``list to Hughes list'' refactoring (Section~\ref{listToDlist}). Hughes lists (also known as difference lists) are an alternative implementation for lists that support $O(n)$ time appends. This refactoring takes functions that use that standard list implementation and rewrites the function to use Hughes lists instead. The approach for this refactoring is applicable between any two types that are ``reversibly embeddable'' a concept that will be defined as well.
+The ``generalising maybe'' refactoring (Section~\ref{genMaybe}) rewrites functions that use the concrete type of \texttt{Maybe} to use, instead, the operations provided by the type classes it implements, \texttt{Monad} and/or \texttt{MonadPlus}. The final refactoring described by this chapter is the ``list to Hughes list'' refactoring (Section~\ref{listToDlist}). Hughes lists (also known as difference lists) are an alternative implementation for lists that support $O(n)$ time appends. This refactoring takes functions that use that standard list implementation and rewrites the function to use Hughes lists instead. The approach for this refactoring is applicable between any two types that are ``reversibly embeddable'' a concept that will be defined as well.
 
 \textbf{Chapter~\ref{chp:generalImp}: Implementing Data-Driven Refactorings in HaRe}
 
@@ -277,7 +277,7 @@ This chapter continues from the refactoring designs presented in chapter~\ref{ch
 
 \textbf{Chapter~\ref{chp:applicative}: Generalising Monads to Applicative}
 
-This chapter presents another generalisation refactoring. Applicative functors are a, relatively, new addition to the Haskell environment. Applicative functors are an interface for sequencing effectful computations. Currently the Haskell community predominantly uses the monadic interface for effects. This chapter will describe the design and implementation of a refactoring for taking a monadic \texttt{do} statement and transforming it to use the \texttt{Applicative} (the Haskell typeclass for Applicative functors) interface instead.
+This chapter presents another generalisation refactoring. Applicative functors are a, relatively, new addition to the Haskell environment. Applicative functors are an interface for sequencing effectful computations. Currently the Haskell community predominantly uses the monadic interface for effects. This chapter will describe the design and implementation of a refactoring for taking a monadic \texttt{do} statement and transforming it to use the \texttt{Applicative} (the Haskell type class for Applicative functors) interface instead.
 
 This chapter also describes how the Haskell community is currently using the \texttt{Applicative} interface, based on the results of a survey of Hackage, the Haskell package archive~\citep{hackage}. Finally this chapter concludes with a discussion of possible applications of the refactoring.
 
@@ -1318,7 +1318,7 @@ class Monad m => MonadPlus m where
 \label{maybeMonadPlus}
 \end{figure}
 
-Monads are a very powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, who inherit from \texttt{Monad}, that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. Figure~\ref{maybeMonadPlus} shows the class declaration for \texttt{MonadPlus} and \texttt{Maybe}'s instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a typeclass for monads that also have some concept of failure and choice. All instances of \texttt{MonadPlus} have an \texttt{mzero} value, which represents a failed computation, and an \texttt{mplus} function, which represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
+Monads are a very powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, who inherit from \texttt{Monad}, that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. Figure~\ref{maybeMonadPlus} shows the class declaration for \texttt{MonadPlus} and \texttt{Maybe}'s instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a type class for monads that also have some concept of failure and choice. All instances of \texttt{MonadPlus} have an \texttt{mzero} value, which represents a failed computation, and an \texttt{mplus} function, which represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
 
 
 \begin{figure}[t]
@@ -1906,7 +1906,7 @@ The new name is then bound to the lambda expression (line 18) and the target fun
 
 \subsection{Generalising to \texttt{MonadPlus}}
 
-When the target function cannot be generalised to \texttt{Monad} because it does not contain the \texttt{Nothing} to \texttt{Nothing} case, it may be possible to generalise it to use the \texttt{MonadPlus} typeclass instead. This section will cover how this case of the refactoring is implemented in HaRe.
+When the target function cannot be generalised to \texttt{Monad} because it does not contain the \texttt{Nothing} to \texttt{Nothing} case, it may be possible to generalise it to use the \texttt{MonadPlus} type class instead. This section will cover how this case of the refactoring is implemented in HaRe.
 
 An instance of \texttt{MonadPlus} is a \texttt{Monad} with a monoidal structure.
 This structure is defined by an associative operator \texttt{mplus} and its identity value \texttt{mzero}~\citep{typeclassopedia}. 
@@ -2422,60 +2422,59 @@ The next chapters will continue to introduce more complex data driven refactorin
 \chapter{Generalising Monadic Code to Applicative Functors}
 \label{chp:applicative}
 
-The previous chapter introduced the concept of a functional data refactoring and gave three examples of data driven refactorings: introducing a type synonym, generalising Maybe to MonadPlus, and list to Hughes lists. This chapter will cover another generalising refactoring in more depth, rewriting monadic functions to use applicative functors. 
+The previous chapter introduced the concept of a functional data refactoring and gave three examples of data driven refactorings: introducing a type synonym, generalising maybe to MonadPlus, and list to Hughes lists. This chapter will cover another generalising refactoring, rewriting monadic functions to use applicative functors. 
 
-In their 2008 functional pearl "Applicative programming with effects," Conor McBride and Ross Paterson introduced a new typeclass that they called Idioms but are more commonly known as Applicative Functors~\citep{mcbrideIdioms}. Applicative functors provide a way to run effectful computations and collect their results. They are more expressive than functors but more general than monads. Further work was done in~\citep{arrowsAndIdioms} to prove that applicative functors are also less powerful than Arrows.\footnote{Arrows are another abstraction for evaluating computations within a context.} 
+In their 2008 functional pearl "Applicative Programming with Effects," Conor McBride and Ross Paterson introduced a new type class that they called Idioms but are more commonly known as Applicative Functors~\citep{mcbrideIdioms}. Applicative functors, like monads, provide a way to run computations within some context, and collect their results. Applicative functors are more expressive than functors but more general than monads. 
 
-Applicative functors were implemented in GHC as the typeclass \texttt{Applicative}. An interesting part of the history of GHC is that despite McBride and Paterson proving in their original functional pearl~\citep{mcbrideIdioms} that all monads are also applicative functors, but  GHC did not actually require instances of monad to also be instances of Applicative until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exists a large amount of code which could be rewritten using the applicative operators rather than the monadic ones. 
+Applicative functors were implemented in GHC as the type class \texttt{Applicative}. Interestingly, even though McBride and Paterson proved that all monads are also applicative functors in their original functional pearl~\citep{mcbrideIdioms}, but GHC did not actually require instances of \texttt{Monad} to also be instances of \texttt{Applicative} until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exist a large amount of code which could potentially be rewritten using the applicative operators rather than the monadic ones. 
 
-This chapter will discuss the design and implementation of a refactoring which will automatically refactor code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the \texttt{Applicative} typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators. Next, section~\ref{sec:appInPractice} describes how the Haskell community uses the applicative typeclass. Then section~\ref{sec:appRefact} describes in detail the refactoring. Section~\ref{sec:refacImp} discusses the refactorings implementation in HaRe and some additional refactorings that can be used to get around the preconditions. Finally some applications that are good candidates for this refactoring are discussed in section~\ref{sec:appApps}.
+This chapter will discuss the design and implementation of a refactoring which automatically refactors code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the \texttt{Applicative} typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators. Next, section~\ref{sec:appInPractice} describes how the Haskell community uses the applicative typeclass. Then section~\ref{sec:appRefact} describes in detail the refactoring. Section~\ref{sec:refacImp} discusses the refactoring's implementation in HaRe and some additional refactorings that can be used to get around the preconditions. Finally some applications that are good candidates for this refactoring are discussed in section~\ref{sec:appApps}.
 
-\section{The Applicative type class}
+\section{The Applicative Type Class}
 \label{sec:appOverview}
-This section is a quick introduction to the \texttt{Applicative} typeclass and some other functions that are commonly used to write functions in an applicative style. 
-We begin by discussing a superclass of \texttt{Applicative}, \texttt{Functor}, shown in figure~\ref{functor}. The \texttt{Functor} typeclass defines a single function that must be implemented, \texttt{fmap}.
+This section is a short introduction to the \texttt{Applicative} type class and some other functions that are commonly used to write functions in an applicative style. 
+This section begins by discussing functors first. Functors are the type class that applicative functors inherit from. The definition of GHC's \texttt{Functor} type class is shown in figure~\ref{functor}. The \texttt{Functor} type class defines a single function that must be implemented: \texttt{fmap}.
 
 \begin{figure}
 \begin{lstlisting}
 class Functor f where
 	fmap :: (a -> b) -> f a -> f b
 \end{lstlisting}
-\caption{The \texttt{Functor} typeclass}
+\caption{The \texttt{Functor} type class}
 \label{functor}
 \end{figure}
 
-The \texttt{fmap} function allows for a function to be applied to the contents of the Functor \texttt{f}. The functor could be considered as a context and \texttt{fmap} as a function that allows other functions to run within the \texttt{Functor}'s context. Consider the function \texttt{g}
-and the two values \texttt{x} and \texttt{y} whose types are shown in figure~\ref{gxy}, where \texttt{f} is some functor. With these three things it's simple to envision a situation where its desirable to compute a value of type \texttt{f c}. When \texttt{g} is ``fmapped'' over   \texttt{x}, a value of \texttt{(f (b -> c))} is returned.
+\texttt{fmap} allows for a pure function to be applied to the values inside the functor \texttt{f}. Essentially \texttt{fmap} as a function that runs other functions within the \texttt{Functor}'s context. Functors do have a serious limitation, for example, lists are one of the simplest functors, \texttt{fmap} is just defined as \texttt{map :: (a -> b) -> [a] -> [b]}. Now consider the function \texttt{g} and the two lists \texttt{x} and \texttt{y} whose types are shown in figure~\ref{gxy}. With these three values the obvious goal would be to compute a value of type \texttt{[c]}. When \texttt{g} is mapped over   \texttt{x}, a value of type \texttt{[(b -> c)]} is returned.
 
 \begin{figure}[t]
 \begin{lstlisting}
 g :: a -> b -> c
-x :: f a
-y :: f b
+x :: [a]
+y :: [b]
 \end{lstlisting}
-\caption{A function and some values in a functor.}
+\caption{A function and two.}
 \label{gxy}
 \end{figure}
 
-Unfortunately there is no way to either extract the function of type \texttt{(b -> c)} from the functor or apply the \texttt{(f b)} value to the \texttt{(f (b -> c))} value using the \texttt{Functor} typeclass alone. Sequencing commands in this way requires a more powerful abstraction. These are what is known as applicative functors~\citep{realWorldHaskell}. 
+Unfortunately there is no way to either extract the function of type \texttt{(b -> c)} from the list or apply \texttt{y} to the \texttt{[(b -> c)]} value using the \texttt{Functor} type class alone. Sequencing commands in this way requires a more powerful abstraction. Applicative functors allow for this sort of sequencing of commands within a context~\citep{realWorldHaskell}. 
 
-In Haskell applicative functors are implemented by the \texttt{Applicative} typeclass. \texttt{Applicative} declares two functions, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in figure~\ref{appTypes} where \texttt{f} is the applicative functor. 
+In Haskell applicative functors are implemented by the \texttt{Applicative} type class. \texttt{Applicative} declares two functions, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in figure~\ref{appTypes}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
-
-pure :: a -> f a
-(<*>) :: f (a -> b) -> f a -> f b
+class Functor f => Applicative f where
+   pure :: a -> f a
+   (<*>) :: f (a -> b) -> f a -> f b
 \end{lstlisting}
-\caption{Applicative's minimal complete definition}
+\caption{\texttt{Applicative}'s minimal complete definition}
 \label{appTypes}
 \end{figure}
 
-The \texttt{pure} function is the equivalent of monad's \texttt{return}: it simply lifts a value into the applicative context. The other function \texttt{(<*>)}, which is typically pronounced "applied over" or just "apply", takes in two arguments, both of which are applicative values. The first argument is a function, from types \texttt{a} to \texttt{b}, within the applicative context, and the second argument is an \texttt{Applicative} over type \texttt{a}. Apply will return an \texttt{Applicative} over \texttt{b}.
+The \texttt{pure} function corresponds to monad's \texttt{return}: it simply lifts a value into the applicative context. The other function \texttt{(<*>)}, which is typically pronounced "applied over" or just "apply", takes in two arguments, both of which are applicative values. The first argument is a function, from types \texttt{a} to \texttt{b}, within the applicative context, and the second argument is an \texttt{Applicative} over type \texttt{a}. Apply will return an \texttt{Applicative} over \texttt{b}.
 
 \subsection{Other useful functions}
 \label{sec:useful}
-Though \texttt{pure} and apply are the only two functions that are required to be defined to declare an instance of \texttt{Applicative} there are several other useful functions that can either be derived from these two functions or come from other typeclasses which will be briefly covered here. First, there are two variations of apply, whose types are listed in figure~\ref{appVars}.
+Though \texttt{pure} and apply are the only two functions that are required to be defined to declare an instance of \texttt{Applicative} there are several other useful functions that can either be derived from these two functions or come from other type classes which will be briefly covered here. First, there are two variations of apply, whose types are listed in figure~\ref{appVars}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2523,9 +2522,9 @@ pure f <*> is_1 <*> ... <*> is_n
 \label{canonForm}
 \end{figure}
 
-McBride and Paterson proved that any expression built from the applicative combinators can take the following canonical form in figure~\ref{canonForm}~\citep{mcbrideIdioms}:\footnote{This notation is taken from~\citep{mcbrideIdioms} where applicatives were called "idioms", hence the use of "\texttt{is}".} The \texttt{is}'s in Figure~\ref{canonForm} are computations within the applicative context. These computations are applied to some pure function ``\texttt{f}'' which has been lifted into the context with the \texttt{pure} function. 
+McBride and Paterson proved that any expression built from the applicative combinators can take the canonical form in figure~\ref{canonForm}~\citep{mcbrideIdioms}:\footnote{This notation is taken from~\citep{mcbrideIdioms} where applicatives were called "idioms", hence the use of "\texttt{is}".} The \texttt{is}'s in Figure~\ref{canonForm} are computations within the applicative context. These computations are applied to some pure function ``\texttt{f}'' which has been lifted into the context with the \texttt{pure} function. 
 
- Context-free parsing is a good ``use case'' of the applicative style and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function, from figure~\ref{parseMoney}, that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>}. This parser would recognise "\$4.59" or "\textsterling64.56" and parse it into the  data type in figure~\ref{parseMoney}. The \texttt{parseMoney} function is in the canonical form as defined by~\citep{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount respectively. 
+ Context-free parsing is a good ``use case'' of the applicative style and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function, from figure~\ref{parseMoney}, that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>}. This parser would recognise "\$4.59" or "\textsterling64.56" and parse it into the \texttt{Money} data type as defined in figure~\ref{parseMoney}. The \texttt{parseMoney} function is in the canonical form as defined by~\citep{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount respectively. 
 
 
 \begin{figure}[t]
@@ -2585,7 +2584,9 @@ The examples covered in this section give a basic introduction to programming in
 \section{Applicative in practice}
 \label{sec:appInPractice}
 
-To inform the development of this refactoring, it is helpful to understand how the Haskell community has adopted and used the applicative interface. The simplest question we wanted to answer was how many projects are actually taking advantage of the \texttt{Applicative} interface versus using the suggested implementation. When \texttt{Applicative} was made a superclass of \texttt{Monad} an implementation of the \texttt{Applicative} interface was suggested, which allowed programmers to get their existing \texttt{Monad} instances to re-compile successfully with minimum effort. We are interested in how many instances use this suggested implementation, which is defined in figure~\ref{appSugImp}.
+It is helpful to understand how the Haskell community has adopted and uses the applicative interface to help inform the development of refactorings. If the Haskell community has fully embraced the addition of applicative functors and use them regularly, then a refactoring that rewrites the monadic operations to use applicative ones is not as useful.  
+
+The simplest question we wanted to answer was how many projects are actually taking advantage of the \texttt{Applicative} interface versus using the suggested implementation. When \texttt{Applicative} was made a superclass of \texttt{Monad} an implementation of the \texttt{Applicative} interface was suggested~\citep{applicativeProposal}. This implementation allowed programmers to get their existing \texttt{Monad} instances to re-compile successfully with minimum effort. We are interested in how many instances use this suggested implementation, which is defined in figure~\ref{appSugImp}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2600,20 +2601,20 @@ pure = return
 
 Hackage is the main package repository for open source Haskell code~\citep{hackage}. The code in Hackage is broken up into 12,601 packages\footnote{As of 14 May 2018.} and within these packages there are 144,413 Haskell source files, of which 133,246 (about 92\% of the total) were successfully parsed and searched. 
 
-Parsing failures were caused by two main reasons. First \textit{ghc-exactprint} cannot parse C or C++ code so any files with C/C++ code  blocks were not searched. The second major reason for failure was modules not including language pragmas at the top of each file. A feature of the Cabal build system allows turning on language extensions at the package level rather than the module level: since we are parsing individual files rather than entire projects the parser does not realise that certain language extensions may be turned on.
+Parsing failures were caused by two main reasons. First \textit{ghc-exactprint} cannot parse C or C++ code so any files with  embedded C/C++ code blocks were not searched. The second major reason for failure was modules not including language pragmas at the top of each file. A feature of the Cabal build system allows turning on language extensions at the package level rather than the module level: since we are parsing individual files rather than entire projects the parser does not realise that certain language extensions may be turned on.
 
-Each package was searched in parallel. Within each package every "\texttt{.hs}" file was parsed using the \textit{ghc-exactprint} library.\footnote{Unfortunately \textit{ghc-exactprint} cannot parse literate Haskell ("\texttt{.lhs}") files so they were excluded} Once we had the abstract syntax tree we could use generic traversal combinators provided by \textit{Scrap Your Boilerplate} (SYB) to search the parsed files for implementations of the \texttt{Monad} and \texttt{Applicative} typeclasses.
-
+Within each package every "\texttt{.hs}" file was parsed using the \textit{ghc-exactprint} library.\footnote{Unfortunately \textit{ghc-exactprint} cannot parse literate Haskell ("\texttt{.lhs}") files so they were excluded} Once we had the abstract syntax tree we could use generic traversal combinators provided by \textit{Scrap Your Boilerplate} (SYB) to search the parsed files for implementations of the \texttt{Monad} and \texttt{Applicative} type classes.
 
 Even with these failures we were still able to parse more than 90\% of the Haskell source files contained in Hackage. From the successfully parsed files a total of 2,376 \texttt{Applicative} and 2,126 \texttt{Monad} instance declarations were found.
 
 \subsection{Search Results}
 
-Once all of the \texttt{Applicative} instances were discovered it was much easier to search through them to try and understand how the Haskell community is using this type class. The\texttt{Applicative} type class is an interesting case of programming language design and management where a language feature, in this case \texttt{Monads}, was accepted and even celebrated by the language's community. Then, twenty-five years into the language's life, to continue use this popular feature user's have to modify their code. The question that this search is trying to answer is: how has the Haskell community adapted to having to write \texttt{Applicative} instances for every \texttt{Monad} instance? Are programmers taking advantage of what the new type class can offer? These are the sorts of questions this search will address.   
+Once all of the \texttt{Applicative} instances were discovered it was much easier to search through them to try and understand how the Haskell community is using this type class. The \texttt{Applicative} type class is an interesting case of programming language design and management. A language feature, in this case \texttt{Monads}, was accepted and even celebrated by the language's community. Then, twenty-five years into the language's life, to continue use this popular feature user's have to modify their code. 
 
-So, how has the Haskell community adapted to the forced introduction to applicative functors? The reaction seemed to be mixed. Of those 2,376 \texttt{Applicative} instances the search discovered 841 directly defined apply as: \texttt{(<*>) = ap}. This is the suggested implementation for apply; it was included in the proposal to make \texttt{Monad} inherit from \texttt{Applicative}~\citep{applicativeProposal}, and it is the fastest way for an implementer of a new monad instance to get their program to compile. 
+The question that this search is trying to answer is: how has the Haskell community adapted to having to write \texttt{Applicative} instances for every \texttt{Monad} instance? Are programmers taking advantage of what the new type class can offer? 
 
-Beyond just defining apply to be \texttt{ap} some instances simply replicated the functionality of 
+So, how has the Haskell community adapted to the forced introduction to applicative functors? The reaction seems to be mixed. Of those 2,376 \texttt{Applicative} instances the search discovered 841 directly defined apply as: \texttt{(<*>) = ap}. This is the suggested implementation for apply. 
+ 
 Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other instances that essentially copy the definition of \texttt{ap}. For example, Figure~\ref{sousitAp} shows the \texttt{Applicative} definition of \texttt{Sink} from the Sousit library. This definition is an exact duplicate of the definition of \texttt{ap}. There are other ways that this functionality can be duplicated, the applicative instance in Figure~\ref{appWithBind} shows another pattern that several packages used. 
 
 There could be other \texttt{Monad} and \texttt{Applicative} instances that this search couldn't pick up. With the \texttt{GeneralizedNewtypeDeriving} language extension \texttt{Applicative} and \texttt{Monad} instances can be automatically derived by the compiler with their most obvious implementations~\citep{genDeriveBlog}. Though it is unclear how often this extension is used, as there seems to be some community pushback about using it because it could cause unsafe type coercions~\citep{genDeriveUnsafe}. 
@@ -2641,7 +2642,9 @@ instance Applicative TypeCheckMonad where
 \label{appWithBind}
 \end{figure}
 
-Overall this search discovered 868 instances of \texttt{Applicative} where either apply was directly defined to be \texttt{ap} or \texttt{ap}'s definition was replicated in some way. This means that roughly 35\% of the \texttt{Applicative} definitions aren't doing anything beyond the suggested implementation. The following subsection will look at some other common patterns that go beyond the most basic \texttt{Applicative} implementation.
+One interesting thing that the search discovered is that only 697 instances of \texttt{Applicative} defined \texttt{pure} as \texttt{return}. This is less than the number of instances that define apply as \texttt{ap}. It is surprising that implementers take the time to define a pure instance but then define apply as \texttt{ap}.
+
+In total this search discovered 868 instances of \texttt{Applicative} where either apply was directly defined to be \texttt{ap} or \texttt{ap}'s definition was replicated in some way. This means that roughly 35\% of the \texttt{Applicative} definitions aren't doing anything beyond the suggested implementation. The following subsection will look at some other common patterns that go beyond the most basic \texttt{Applicative} implementation.
 
 \subsection{Common Implementation Patterns}
 
@@ -2672,6 +2675,14 @@ instance Applicative m => Applicative (DockerT m) where
 \caption{Applicative instance from \textit{Docker} version 0.3.0.0}
 \label{dockerApp}
 \end{figure}
+
+\subsection{Conclusions}
+
+The search results are a bit inconclusive. It is hard to make firm judgements about people's familiarity with a complex type class just from the implementation of the type class alone. However taken in combination with other results, such as the work done in~\cite{applicativeDo} which takes the approach that a single universal notation is easier to use, and the long history of people having trouble understanding monads~\citep{monadTutorialFallacy}, suggests that programmers do struggle with type classes like monads and applicative functors. Additionally, the popularity of the default \texttt{Applicative} definition could suggest that the Haskell community has not completely adjusted to the type class.
+
+At the same time it is possible that most monad instances are more monadic than applicative and so the applicative operations are only useful for a few implementations. This is why a refactoring can be a powerful tool for assisting programmers in adopting new language features. A refactoring tool is opt-in and explicit about the changes it makes to a code base. It is up to the programmer to identify that their code is a candidate for refactoring and opt-into using it and once the tool has been used, what was changed is literally written into the target file. Programmers can attempt to use the the refactoring to see if their monadic code can or should be rewritten with the \texttt{Applicative} operators instead.
+
+The rest of this chapter will describe this refactoring, its implementation, preconditions, and some related refactorings that transforms code so that it may be able to pass the preconditions. The next section will describe the design of this refactoring.
 
 \section{Refactoring Monadic Programs to use Applicative}
 \label{sec:appRefact}
@@ -3287,7 +3298,7 @@ Another possible application of this refactoring is to parts of the code used to
 
 \section{Summary}
 
-This refactoring is another example of a generalisation refactoring that rewrites code to work with a typeclass. The previous examples of this type of refactoring, the Maybe to MonadPlus or the Maybe to Monad refactorings generalised a concrete type to one of its typeclasses. This refactoring can accept code from any instance of a typeclass and generalise it to use the operations from a superclass instead (assuming that code passes the preconditions of course). This refactoring opens the door for possible performance increases if the \texttt{Applicative} instance definition allows for parallel execution of the arguments to apply.
+This refactoring is another example of a generalisation refactoring that rewrites code to work with a type class. The previous examples of this type of refactoring, the Maybe to MonadPlus or the Maybe to Monad refactorings generalised a concrete type to one of its type classes. This refactoring can accept code from any instance of a type class and generalise it to use the operations from a superclass instead (assuming that code passes the preconditions of course). This refactoring opens the door for possible performance increases if the \texttt{Applicative} instance definition allows for parallel execution of the arguments to apply.
 
 Additionally there are cases where the applicative versions of functions are cleaner and easier to read. Parsers in particular can become very descriptive in the applicative style with function calls being read from left to right in the same order as the syntax elements they are parsing appear in the input. 
 
@@ -3303,10 +3314,10 @@ Monadification of a Haskell program is a common transformation that must be perf
 
 This chapter will describe a monadification refactoring. First will be a very brief definition of the \texttt{Monad} type class from GHC (section~\ref{monTC}). There are multiple styles of monadification as described in~\citep{monadSurvey}, and section~\ref{monadStyles} will describe these styles and discuss their relative merits and usefulness to the Haskell community. Finally the implementation of the monadification refactoring within the HaRe project is described in section~\ref{monadImp}.
  
-\section{The Monad Typeclass}
+\section{The Monad type class}
 \label{monTC}
 
-The monad typeclass as it exists in GHC is defined in figure~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} typeclasses for reference. The two canonical monad functions are \texttt{return} and bind (\texttt{(>>=)}). \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
+The monad type class as it exists in GHC is defined in figure~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} type classes for reference. The two canonical monad functions are \texttt{return} and bind (\texttt{(>>=)}). \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3330,11 +3341,11 @@ class Applicative m => Monad m where
 	fail :: String -> m a
 	fail s = errorWithoutStackTrace s
 \end{lstlisting}
-\caption{The monad typeclass}
+\caption{The monad type class}
 \label{monadDef}
 \end{figure}
 
-The other two functions are part of the Haskell language standard for the \texttt{Monad} typeclass. The \texttt{(>>)} operator allows for sequential composition, when the second operation is not dependent on the outcome of the first. \texttt{fail} is called when a pattern match failure occurs inside of a \texttt{do} statement. In figure~\ref{failCall} \texttt{fail} would be called if the function \texttt{f} returns a \texttt{Nothing} rather than a \texttt{Just}.
+The other two functions are part of the Haskell language standard for the \texttt{Monad} type class. The \texttt{(>>)} operator allows for sequential composition, when the second operation is not dependent on the outcome of the first. \texttt{fail} is called when a pattern match failure occurs inside of a \texttt{do} statement. In figure~\ref{failCall} \texttt{fail} would be called if the function \texttt{f} returns a \texttt{Nothing} rather than a \texttt{Just}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3804,7 +3815,7 @@ Monads are a challenging and characteristic feature of Haskell and, anecdotally,
 
 \section{Summary of Contributions}
 
-This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow programs to be used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} typeclass doesn't force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
+This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow programs to be used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} type class doesn't force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
 
 The primary artifacts of this work are my contributions to HaRe and its API. In particular the following contributions have been made:
 
