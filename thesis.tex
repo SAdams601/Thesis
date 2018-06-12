@@ -2420,6 +2420,7 @@ The next chapters will continue to introduce more complex data driven refactorin
 %\renewcommand{\floatpagefraction}{.66}
 
 \chapter{Generalising Monadic Code to Applicative Functors}
+\chaptermark{Generalising Monads to Applicative}
 \label{chp:applicative}
 
 The previous chapter introduced the concept of a functional data refactoring and gave three examples of data driven refactorings: introducing a type synonym, generalising maybe to MonadPlus, and list to Hughes lists. This chapter will cover another generalising refactoring, rewriting monadic functions to use applicative functors. 
@@ -3318,7 +3319,7 @@ This chapter will describe a monadification refactoring. First will be a very br
 \section{The Monad type class}
 \label{monTC}
 
-The monad type class as it exists in GHC is defined in figure~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} type classes for reference. The two canonical monad functions are \texttt{return} and bind (\texttt{(>>=)}). \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
+The monad type class as it exists in GHC is defined in figure~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} type classes for reference. The two canonical monad functions are \texttt{return} and ``\texttt{(>>=)}'' which is pronounced bind. \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3359,22 +3360,24 @@ return (n+1)
 \label{failCall}
 \end{figure}
 
+Haskell has singled out monads as the standard framework for building I/O and stateful computations. This section has described the monad type class. Despite the number of tutorials written about how to understand it, the monad type class only consists of the \texttt{return} and \texttt{(>>=)} operations. The following section will discuss the different ways that monadic programs can be constructed. 
+
 \section{Styles of Monadification}
 \label{monadStyles}
 
-Up to this point this thesis has been fairly vague about what monadification is beyond the process of introducing monads into a previously pure type. Monadifying a single type changes it from type \texttt{a} to type \texttt{Monad m => m a}. Monadifying a function changes the result type of the function because there is no way to extract values out of any given monadic context. Monadification can also affect any combination of parameters. Which parameters are affected depends on the \textit{style} of monadification.
+Up to this point this thesis has been fairly vague about what monadification is, beyond the process of introducing monads into a previously pure type. Monadifying a single type changes it from type \texttt{a} to type \texttt{Monad m => m a}. Monadifying a function changes the result type of the function because there is no way to extract values out of any given monadic context. Monadification can also affect any combination of parameters. Which parameters are affected depends on the \textit{style} of monadification.
 
-The different styles of monadification can change how a function is evaluated. In~\citep{monadSurvey} five different styles of monadification are described as part of a survey on the Haskell community's use of monads. The monadification styles are:
+The different styles of monadification can change how a function is evaluated. In~\cite{monadSurvey} five different styles of monadification are described as part of a survey of the Haskell community's use of monads. The monadification styles are:
 
 \begin{itemize}
 \item Full Call-by-Value
 \item Full Call-by-Name
 \item Restricted Call-by-Name
 \item Data-Directed
-\item Restricted Call-by Value
+\item Restricted Call-by Value (This is the style implemented in HaRe)
 \end{itemize}
 
-The rest of this chapter will describe these monadification styles in more detail. There are two examples used, one is an implementation of mergesort that was developed for this thesis the other is an expression evaluator which is taken from~\citep{monadSurvey}. 
+The rest of this chapter will describe these monadification styles in more detail. There are two examples used, one is an implementation of mergesort that was developed for this thesis, and the other is an expression evaluator which is taken from~\cite{monadSurvey}. 
 
 \subsection{Full Call-by-Value Monadification}
 
@@ -3472,7 +3475,7 @@ mergesort ml = do
 All of the arguments to \texttt{mergesort} in figure~\ref{resCBN} are within the monad so the arguments will be evaluated; hence the call-by-name "flavour" as~\citep{monadSurvey} describes it.
 
 \subsection{Data-Directed Monadification}
-This style refactors a certain type to be replaced by a monadic computation over that type. This example becomes clearer when working with functions that have more than a single type like the \texttt{mergesort} example. This style will be explained using the example from~\citep{monadSurvey}. The example given in~\citep{monadSurvey} is a simple arithmetic expression interpreter as seen in figure~\ref{fig:interpreter}.
+This style refactors a certain type to be replaced by a monadic computation over that type. This example becomes clearer when working with functions that have more than a single type like the \texttt{mergesort} example. This style will be explained using the example from~\cite{lammelReuse}. The example is a simple arithmetic expression interpreter as seen in figure~\ref{fig:interpreter}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3517,17 +3520,17 @@ evalOp Div v1 v2 = do
 \label{fig:monInterp}
 \end{figure}
 
-Some arguments are passed unevaluated, the monadic typed ones, whereas other types are non-monadic. Therefore this style is a mixture of the call-by-name and call-by-value styles~\citep{monadSurvey}. 
+Some arguments are passed unevaluated, the monadic typed ones, whereas other types are non-monadic. Therefore this style is a mixture of the call-by-name and call-by-value styles~\citep{monadification}. 
 
-Data-directed monadification is useful if a particular type can always represent the result of a computation that should be effectful. In the interpreter case, \texttt{Int} is always the result of an evaluation. Even in the only call to \texttt{evalOp} the second and third arguments are computed from recursive calls to \texttt{eval} so those \texttt{Int} types also represent expression evaluation.
+Data-directed monadification is useful if a particular type can always represent the result of a computation that should be effectful. This makes it a difficult style of monadification to implement, because there is not enough information in the type system to always determine which parameters are targets of the refacoring. In the interpreter case, \texttt{Int} is always the result of an evaluation. Even in the only call to \texttt{evalOp} the second and third arguments are computed from recursive calls to \texttt{eval} so those \texttt{Int} types also represent expression evaluation.
 
-This style of monadification would pair well with the ``introduce a type synonym'' refactoring to differentiate instances of types that should be monadified. In the interpreter example if it was anticipated that another \texttt{Int} type that didn't represent the result of an evaluation needed to be added to the program.
+This style of monadification would pair well with the ``introduce a type synonym'' refactoring to differentiate instances of types that should be monadified. In the interpreter example if it was anticipated that another \texttt{Int} type that didn't represent the result of an evaluation needed to be added to the program. 
 
 \subsection{Restricted Call-by-Value Monadification}
 
-The final monadification style simply monadifies the result type of the target function(s). This is the style of monadification that is produced by the algorithm described in~\citep{monadification} and that is implemented in HaRe as part of this thesis work.
+The final monadification style simply monadifies the result type of the target function(s). This is the style of monadification that is produced by the algorithm described in~\cite{monadification} and that is implemented in HaRe as part of this thesis work.
 
-Returning to the mergesort example from earlier in the section the restricted call-by-value monadification implementation of this can be seen in figure~\ref{rCBV}.
+Returning to the mergesort example that was used earlier in this section, the restricted call-by-value monadification implementation of this can be seen in figure~\ref{rCBV}.
 
 This style of monadification meshes nicely with the bind operator which expects functions whose arguments are pure values and returns a monadic type. This style of monadification has been implemented in HaRe and the next section will go into greater detail about the implementation of this refactoring.
 
@@ -3555,6 +3558,8 @@ merge (x:xs) (y:ys) =
 \caption{Restricted call-by-value monadification}
 \label{rCBV}
 \end{figure}
+
+This section has been a summary of the different ways that monadic programs can be written. These styles were first identified by~\cite{lammelReuse},~\cite{monadification}, and~\cite{monadSurvey}. This thesis provides an implementation of the restricted call-by-value monadification. This style fits well with how bind's one argument is a pure value and it returns a monadic value. The next section will describe HaRe's implementation of the restricted call-by-value monadification refactoring.
 
 \section{Implementation of the Monadification Refactoring}
 \label{monadImp}
@@ -3590,7 +3595,7 @@ g_m2 y = return (y * 2)
 
 \subsection{Preconditions}
 
-There are two preconditions that must be met before this refactoring can be applied. First, the target functions must be applied to sufficient arguments to be of non-functional type at all call points. This allows the refactoring to assume that the type of a subtree whose leftmost child is a monadified function is a monadic value and not something of type \texttt{Monad m => a -> m a}. 
+There are two preconditions that must be met before this refactoring can be applied. First, all of call points of the target functions must be ``fully-saturated.'' This means that every call point will have a named variable applied to the target function. This allows the refactoring to assume that the type of a subtree whose leftmost child is a monadified function is a monadic value and not something of type \texttt{Monad m => a -> m a}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3609,7 +3614,7 @@ stringHandler mi s =
 \label{strHan}
 \end{figure}
 
-Like the many of the preconditions for the ``generalise monad to applicative'' refactoring other refactorings can help transform programs to pass the preconditions. The \texttt{stringHandler} in figure~\ref{strHan} has calls to \texttt{f} that are not fully saturated. Fortunately $\eta$-expansion can be used to fully saturate the calls to \texttt{f} (see figure~\ref{etaHan}) allowing \texttt{stringHandler} and \texttt{f} to be monadified.\footnote{The original definition of \texttt{stringHandler} could be monadified alone.}
+Like the many of the preconditions for the ``generalise monad to applicative'' refactoring other refactorings can help transform programs to pass the preconditions. The \texttt{stringHandler} in figure~\ref{strHan} has calls to \texttt{f} that are not fully saturated. Fortunately $\eta$-expansion can be used to fully saturate the calls to \texttt{f} (see figure~\ref{etaHan}) allowing \texttt{stringHandler} and \texttt{f} to be monadified.\footnote{The original definition of \texttt{stringHandler} could be monadified alone.} This expansion involves introducing abstraction over a function so given some function: \texttt{f :: a -> b -> c} which is used in the expression: \texttt{f x}, this can be $\eta$-expanded to: \texttt{(\textbackslash y -> f x y)} so now all of \texttt{f}'s parameters at this call site are a named variable. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3626,20 +3631,20 @@ stringHandler mi s =
 
 The second precondition that needs to hold before monadification can take place is that none of the target functions can be called by non-monadic functions. This is due to the fact that a target function's result type will change from some pure value \texttt{a} to a monadic computation over \texttt{a} there is no function that retrieves values out of any given monad so the target function, once it is refactored, will be unusable by non-monadic functions. 
 
-Because this precondition can't be avoided for the refactoring to happen, the set of target functions will have to be changed. Either all functions that reference a target function become target functions as well or the dependent function is dropped from the refactoring.
+For the refactoring to applied the set of target functions has to be changed. Either all functions that reference a target function become target functions as well or the dependent function is dropped from the refactoring.
 
 \subsection{The Transformation}
 
 The simplest case of this refactoring is when the target function is defined using only pure functions then the refactored version of the function is just the original body applied to \texttt{return}. Otherwise the refactoring works over the body of a target function in three steps:
 
 \begin{enumerate}
-\item Replace any right hand sub-trees that are calls to functions that are targeted in the refactoring with variables in a top-down left to right manner. For example the body of \texttt{(f x = f (g x))} becomes \texttt{(f v1)} assuming \texttt{f} and \texttt{g} are targets of the refactoring.
+\item Replace any right-hand sub-trees that are calls to functions that are targeted in the refactoring with variables in a top-down left to right manner. For example the body of \texttt{(f x = f (g x))} becomes \texttt{(f v1)} assuming \texttt{f} and \texttt{g} are targets of the refactoring.
 \item If the expression is not a call to one of the target functions then it needs to be applied to return. From the example in step one, the body of \texttt{f} had become \texttt{(f v1)}. Since \texttt{f} is one of the target functions this expression is monadic and doesn't need to be returned.
 \item In the order that the monadic sub-trees were extracted in. Bind those expressions to a lambda that accepts a single argument, the variable that replaced that expression in the original body. The example expression becomes \texttt{(g x) >>= (\\v1 -> f v1)}.
 \item Replace the body of the target function with the generated expression from step three. The final result of the refactoring is \texttt{f x = (g x) >>= (\\v1 -> f v1)}
 \end{enumerate}
 
-A more in depth example given in figure~\ref{simpleMon}. The functions \texttt{f}, \texttt{g}, and \texttt{h} are all targets of the refactoring.
+A concrete example is shown in figure~\ref{simpleMon}. The functions \texttt{f}, \texttt{g}, and \texttt{h} are all targets of the refactoring.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3670,6 +3675,8 @@ f x y = (g x) >>= (\ v2 -> (g y) >>= (\v1 -> f v2 v1))
 \caption{The final refactored version of \texttt{f}}
 \label{simpF_ref}
 \end{figure}
+
+At this point the refactoring is capable of transforming simple function application. Haskell, obviously, has more expressive expressions beyond just function applications. The next section will describe how this implementation handles let expressions.
 
 \section{Let Expressions}
 
@@ -3707,7 +3714,7 @@ eval (Assign x e) env = let (v,env1) = eval e env
 
 The idea is that at this point in the project the explicit passing of the state is unwanted so refactoring \texttt{eval} to become monadic so that the \texttt{Env} can be passed around using the \texttt{State} monad instead. The first two cases that handle the \texttt{Var} and \texttt{N} constructors can simply be wrapped with \texttt{return} because no recursive calls to \texttt{eval} happen in those cases. The three other cases contain let bindings that all call (the now monadic) \texttt{eval}. 
 
-In those cases the local bindings can be used as the variables inside of a lambda expression. This seems simple enough but what order should the bindings be processed in? Consider the let binding in figure~\ref{intLet}, assuming that the \texttt{f} and \texttt{x} variables are in scope, due to lazy evaluation this is a valid Haskell let binding despite \texttt{v1} being referenced on line one before it's defined on line two. However if the let bindings are processed in the obvious way from top to bottom\footnote{In this case: \texttt{g v1 >>= ($\backslash$v2 -> f x >>= ($\backslash$v1 -> ...))}} \texttt{v1} will not be in scope when it's passed to \texttt{g}.  
+In those cases the local bindings can be used as the variables inside of a lambda expression. This seems simple enough but what order should the bindings be processed in? Consider the let binding in figure~\ref{intLet}, assuming that the \texttt{f} and \texttt{x} variables are in scope. Due to lazy evaluation this is a valid Haskell let binding despite \texttt{v1} being referenced on line one before it's defined on line two. However if the let bindings are processed in the obvious way from top to bottom\footnote{In this case: \texttt{g v1 >>= ($\backslash$v2 -> f x >>= ($\backslash$v1 -> ...))}} \texttt{v1} will not be in scope when it's passed to \texttt{g}.  
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3719,7 +3726,7 @@ let v2 = g v1
 \label{intLet}
 \end{figure}
 
-Fortunately GHC offers a solution, the renamer of GHC which checks for lexical errors also does dependency analysis on local bindings and orders them so that later bindings may depend on earlier ones but not vice versa~\citep{ghcApi}. This renamed ordering is used to lookup the parsed bindings in dependency analysed order.
+Fortunately GHC offers a solution: the renamer of GHC, which checks for lexical errors, also performs dependency analysis on local bindings and orders them so that later bindings may depend on earlier ones but not vice versa when there is no mutually recursive bindings~\citep{ghcApi}. This renamed ordering is used to lookup the parsed bindings in dependency analysed order.
 
 Returning to the evaluator example the monadified version is shown in figure~\ref{monEval}.\footnote{Line breaks have been added to aid readability in this setting but the refactoring would not actually do this.} The let bindings in \texttt{eval} can be processed from top to bottom. In the \texttt{Add} case this means that the expression bound on line 16 in figure~\ref{evalExpr} makes up the outermost call to bind and the pattern it was originally bound to becomes the pattern that matches the argument passed to the first lambda expression. 
 \begin{figure}[t]
@@ -3759,6 +3766,8 @@ f_m x = let y = pureF x in
 \caption{A function with a mixture of pure and monadic function calls in a let expression.}
 \label{mixLet}
 \end{figure}
+
+The typed lambda calculus with polymorphic let expressions makes up the core of Haskell\comment{citation for this??}. With this section the refactoring supports the transformation of the core of Haskell. However, this refactoring outputs monadic code composed with the bind operator, which is probably not the most popular way to write monadic code. To better support monadic programming Haskell gives monads their own syntactic structure known as do-syntax. The next section will discuss a separate refactoring for introducing this syntax into the target function.
 
 \section{Adding Syntactic Sugar}
 
@@ -3807,9 +3816,9 @@ eval (Assign x e) env = do
 \label{finEval}
 \end{figure}
 
-Monads are a challenging and characteristic feature of Haskell and, anecdotally, infamous amongst those trying to learn the language. Monadification is an important and common transformation that Haskell code undergoes. This chapter has described two refactorings that automate this transformation. The monadification refactoring transforms a set of functions into restricted call-by-value monad style, where only the result type of a function is made monadic. The second refactoring sugars the binds produced by the monadification into \texttt{do} notation, a common structure for monadic Haskell functions.
+Introducing the do syntactic sugar into the target program is the final step of this two-step composite refactoring. Do syntax has become synonymous with monads in the Haskell language and a refactoring that supports them should also support this syntax as well.
 
-
+Monads are a challenging and characteristic feature of Haskell and, anecdotally at least, infamous amongst those trying to learn the language. Monadification is an important and common transformation that Haskell code undergoes. This chapter has described two refactorings that automate this transformation. The monadification refactoring transforms a set of functions into restricted call-by-value monad style, where only the result type of a function is made monadic. The second refactoring sugars the binds produced by the monadification into \texttt{do} notation, a common structure for monadic Haskell functions.
 
 \chapter{Conclusion}
 \label{chp:conc}
