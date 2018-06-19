@@ -1044,21 +1044,21 @@ Next this thesis will begin to describe its major contribution: the design and i
 \chapter{Data-driven refactorings}
 \label{chp:ddRefs}
 
-Some refactorings focus on rewriting the structure of a program (e.g. refactoring an \texttt{if} to \texttt{case} statement), but a data-driven refactoring focuses on the types that a program works over and \textit{how} that program manipulates those types. Any changes that a data-driven refactoring makes to the structure of the program are \textit{driven} by the data types of that program rather than being the main motivation of performing the refactoring. 
+Some refactorings focus on rewriting the structure of a program (e.g. refactoring an \texttt{if} to \texttt{case} statement), but a data-driven refactoring focuses on the data that a program works over and \textit{how} that program manipulates that data. Any changes that a data-driven refactoring makes to the structure of the program are \textit{driven} by the data types of that program rather than being the main motivation of performing the refactoring. 
 
-Consider the introducing a type synonym refactoring that is described in Section~\ref{introSyn}, this refactoring adds a type synonym for some type. The motivation behind this is keeping the types of your program up to date with what they are meant to represent. For example, if some strings are used to represent customer names in a program, introducing a synonym for strings called \texttt{Name} helps clarify what data certain strings are supposed to represent. In this way the refactoring's changes to the source program are motivated by the data in that program and the desire for the program's types to better communicate the nature of that data.
+Consider the introducing a type synonym refactoring (that is described in  more detail in Section~\ref{introSyn}), this refactoring adds a type synonym, i.e. a user chosen name, for some type. The motivation behind this is to ensure that the names of types correspond to the types that they represent. For example, if some strings are used to represent customer names in a program, introducing a synonym for strings called \texttt{Name} helps clarify what kind of data certain strings are supposed to represent. In this way the refactoring's changes to the source program are motivated by the data in that program and the desire for the program's types to better communicate the nature of that data.
 
-This chapter begins with a discussion of data-driven refactorings for imperative object-oriented languages in Section~\ref{ooRefs}. Imperative programs are written as a sequence of steps that modify an object to the desired output state. Types in an object-oriented program also exist in a strict hierarchy. These two factors mean that object-oriented data-driven refactorings modify the hierarchy while leaving the structure of the code mostly intact. The rest of this chapter will describe data-driven refactorings for functional programs.
+This chapter begins with a discussion of data-driven refactorings for imperative and object-oriented languages in Section~\ref{ooRefs}. Imperative programs are written as a sequence of steps that modify an object to a desired output state. Types in an object-oriented program exist in a strict hierarchy, every type is a sub-type of a top type commonly known as ``\texttt{Object}.'' These two factors mean that object-oriented data-driven refactorings modify the hierarchy, by moving methods between related classes or extracting new child or parent classes, while leaving the structure of the code mostly unchanged. The rest of this chapter will describe data-driven refactorings for functional programs.
 
-In comparison to the imperative way of constructing programs, functional programs describe the relationship between the input and output data. Functional programming languages also tend to offer a much richer type system than object-oriented languages where data types are typically either objects or a non-user expandable set of primitive types. These two facts mean that the structure of a functional program can be determined by the types it works over to a much greater degree than in imperative languages. 
+In comparison to imperative programs, functional programs describe the relationship between the input and output data. Functional programming languages also tend to offer a much richer type system than object-oriented languages where data types are typically either classes or a non-user expandable set of primitive types. These two facts mean that the structure of a functional program can be determined by the types it works over to a much greater degree than in imperative languages.
 
-Section~\ref{introSyn} describes the ``introducing a type synonym'' refactoring. This is the renaming of data-driven refactorings: neither the structure nor the type of the target program changes, just how the program refers to the types it works over. Next, Section~\ref{genMaybe} describes a generalisation refactoring. This thesis outlines two generalisations, one (described in Section~\ref{genMaybe}) makes code of a specific type (\texttt{Maybe}) work over a type class (\texttt{MonadPlus} or \texttt{Monad}) instead. The other generalises code of one type class to use a class higher the hierarchy (covered in Chapter~\ref{chp:applicative}). Finally Section~\ref{listToDlist} describes a refactoring that tranforms programs that work over lists to instead use an alternate implementation of lists. The refactoring method described in this chapter could be applied to refactor between any types that can be projected onto another type.
+Section~\ref{introSyn} describes the ``introducing a type synonym'' refactoring. This is the renaming of data-driven refactorings: neither the structure nor the type of the target program changes, just how the program refers to the types it works over. Next, Section~\ref{genMaybe} describes a generalisation refactoring. This thesis outlines two generalisations, one (described in Section~\ref{genMaybe}) makes code of a specific type (\texttt{Maybe}) work over a type class (\texttt{MonadPlus} or \texttt{Monad}) instead. The other generalises code using the functions defined in a particular type class to instead use the functions of it's superclass (covered in Chapter~\ref{chp:applicative}). Finally Section~\ref{listToDlist} describes a refactoring that tranforms programs that work over lists to instead use an alternate implementation of lists. The refactoring method described in this chapter could be applied to refactor between any types that can be ``projected'' onto another type. A type ``\texttt{A}'' can be projected onto some type ``\texttt{B}'' when all of the information stored in an instance of \texttt{A} can be transformed to be of type \texttt{B} instead. 
 
 \section{Object-Oriented Data Refactorings}\label{ooRefs}
 
-The origins of refactoring are deeply rooted in the object-oriented world~(\cite{programRestructuring};~\cite{refactOOFrameworks}), though Though it traces its origins to work on transforming Algol~\citep{recursiveTransformation}. The canonical catalogue of refactorings remains Martin Fowler's \emph{Refactoring: Improving the Design of Existing Code} ~\citep{fowler}. Fowler's catalogue of refactorings are all written in Java though he purposefully avoided using any features that were unique to Java, so that the refactorings could be applicable in many different programming languages.
+The origins of refactoring are deeply rooted in the object-oriented world~(\cite{programRestructuring};~\cite{refactOOFrameworks}), though its origins can be found in work on transforming Algol~\citep{recursiveTransformation}. The canonical catalogue of refactorings remains Martin Fowler's \emph{Refactoring: Improving the Design of Existing Code} ~\citep{fowler}. Fowler's catalogue of refactorings are all written in Java though he purposefully avoided using any features that were unique to Java, so that the refactorings could be applied in many different object-oriented programming languages.
 
-As a functional programmer when going through this catalogue of refactorings there seem to be three types of refactorings.
+As a functional programmer going through this catalogue there seem to be three types of refactorings.
 
 \begin{itemize}
 	\item Refactorings that are directly applicable in a functional language
@@ -1066,9 +1066,9 @@ As a functional programmer when going through this catalogue of refactorings the
 	\item Refactorings not applicable to a functional language
 \end{itemize}
 
-That first type of refactorings are structural refactorings and their usefulness to a functional program is easily understood. Refactorings like renaming or adding a parameter don't depend on object-oriented features existing in the target language.
+That first type of refactorings are typically structural refactorings and their usefulness to a functional program is easily understood. Refactorings like renaming or adding a parameter don't depend on object-oriented features existing in the target language.
 
-The third type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or have no equivalent in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, is not as ubiquitous in functional languages because most do not support objects, and immutability makes a "setter" function irrelevant. OCaml would be a notable exception to this rule: OCaml supports objects and allows the programmer to mark variables as mutable, and so getter and setter methods are possible.
+The third type of refactorings are so dependent on features associated with object-oriented languages that they are impossible to implement or have no equivalent in a functional language. The "remove setting method" refactoring depends on the common OO pattern of each field of a class having "getter" and "setter" methods that retrieve or modify that field respectively. This pattern, on the other hand, is not as common in functional languages because most do not support objects, and immutability makes a "setter" function irrelevant. OCaml would be a notable exception to this rule: OCaml supports objects and allows the programmer to mark variables as mutable, and so getter and setter methods are possible.
 
 \begin{figure}[t]
 \begin{lstlisting}[language=caml, morekeywords={object,method}]
@@ -1084,14 +1084,14 @@ let mInt init_i = object
 \label{ocamlObj}
 \end{figure}
 
-The OCaml object from Figure~\ref{ocamlObj} would be a valid target for this refactoring. However these methods are not as common as they are in imperative object-oriented languages with mutable data as the default, so a refactoring to remove a setter method is of limited value even for OCaml.
+The OCaml object from Figure~\ref{ocamlObj} would be a valid target for this refactoring. However these methods are not as common as they are in imperative object-oriented languages with mutable data as the default, so a refactoring to remove a setter method is of limited applicability even for OCaml.
 
 The second type of refactoring found in~\citep{fowler} is much more interesting to a functional programmer. The specifics of these refactorings are not directly applicable to functional programs but the underlying motivations are relevant to any programming paradigm. 
 
-For example here is the motivation for the "Replace Data Value with Object" refactoring in~\citep[pg. 175]{fowler}:
+For example, the motivation for the "Replace Data Value with Object" refactoring in~\citep[pg. 175]{fowler} reads as:
 
 \begin{displayquote}
-Often in early stages of development you make decisions about representing simple facts as simple data items. As development proceeds you realize that those simple items aren't so simple anymore. A telephone number may be represented as a string for a while, but later you realize that the telephone needs special behavior for formatting, extracting the area code, and the like. For one or two items you may put methods in the owning object, but quickly the code smells of duplication and feature envy\footnote{Feature envy is when the methods of a class are more interesting in a different object than the one it is in.}. When the smell begins, turn the data value into an object.
+Often in early stages of development you make decisions about representing simple facts as simple data items. As development proceeds you realize that those simple items aren't so simple anymore. A telephone number may be represented as a string for a while, but later you realize that the telephone needs special behavior for formatting, extracting the area code, and the like. For one or two items you may put methods in the owning object, but quickly the code smells of duplication and feature envy\footnote{Feature envy is when the methods of one class are more concerned with the features of another object than the one it is in. In this phone number as strings example feature envy would be seen when objects are doing the area code and formatting calculations for the object that contains the phone number.}. When the smell begins, turn the data value into an object.
 \end{displayquote}
 
 This refactoring extracts a field that was some primitive type into an object. The example from~\citep{fowler} works over an order class with a string that represents the customer that placed an order.
@@ -1117,7 +1117,7 @@ class Order {
 \caption{The Order class}
 \end{figure}
 
-The refactoring creates a new customer class that has a string field with a getter method as seen in Figure~\ref{custCls}. The customer class doesn't add any additional features but the extra layer of abstraction sets up the code base for further development. The customer object could have fields added that represent contact info or further demographic information without polluting the order class with order-irrelevant data.
+The refactoring creates a new customer class that has a string field with a getter method as seen in Figure~\ref{custCls}. The customer class doesn't add any additional features but the extra layer of abstraction that has been added sets up the code base for further development. The customer object could have fields added that represent contact info or further demographic information without polluting the order class with order-irrelevant data.
 
 \begin{figure}[t]
 \begin{lstlisting}[language = java,tabsize=4]
@@ -1153,9 +1153,9 @@ class Customer {
 \label{custCls}
 \end{figure}
 
-Functional programmers have to make similar data representation decisions as the object-oriented programmer. At the start of a project representing a customer just by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction is required. 
+Functional programmers have to make similar data representation decisions to those the object-oriented programmer. At the start of a project representing a customer by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction could be required. 
 
-This section introduced how object-oriented refactorings help build up the data model over the lifetime of a project. These sorts of refactorings for a language with a rich type system like Haskell offer many more choices for evolving the data model of a system. Though a Haskell programmer can take inspiration or directly reimplement several of the canonical Fowler refactorings there may be additional refactorings that are completely functional with no OO counterparts. The rest of this chapter will describe refactorings for Haskell that support data model evolution.  
+This section introduced how object-oriented refactorings help build up the data model over the lifetime of a project. These sorts of refactorings for a language with a rich type system like Haskell offer many more choices for evolving the data model of a system. Though a Haskell programmer can take inspiration or directly reimplement several of the canonical Fowler refactorings there may be additional refactorings that are completely functional with no OO counterparts, like monadification (Chapter~\ref{chp:monadification}) or abstraction of expressions into a local \texttt{where} or \texttt{let} clause. The rest of this chapter will describe refactorings for Haskell that support data model evolution.  
 
 %\begin{figure}[t]
 %\begin{lstlisting}
@@ -1166,9 +1166,9 @@ This section introduced how object-oriented refactorings help build up the data 
 %\end{figure}
 \section{Data-Driven Refactorings in Haskell}
 
-Haskell offers a rich environment for data representation. The Haskell 2010 standard defines several types that are included in the prelude, including tuples, lists, characters, strings (which are just lists of characters), several types of numbers, and the function type. Additionally, programmers can construct new types with algebraic and abstract data types or rename existing types with type synonyms. Type classes support overloading as well. The standard library of GHC comes with many type classes that can help produce powerful abstractions~\citep{typeclassopedia}. Contrast this with how most object-oriented type systems are either unified, where every type is a subclass of some top level \texttt{Object} class, (e.g. C\# or Ruby) or there are a fixed set of predefined primitive types as well as the object hierarchy (e.g. C++ and Java's type systems). 
+Haskell offers a rich environment for data representation. The Haskell 2010 standard defines several types that are included in the prelude, including tuples, lists, characters, strings (which are just lists of characters), several types of numbers, and the function type. GHC also provides more types than the standard requires and programmers can construct new algebraic and abstract data types or rename existing types with type synonyms. Type classes support overloading as well. The standard library of GHC comes with many type classes that can help produce powerful abstractions~\citep{typeclassopedia}. Contrast this with how most object-oriented type systems are either unified, where every type is a subclass of some top level \texttt{Object} class, (e.g. C\# or Ruby) or there are a fixed set of predefined primitive types as well as the object hierarchy (e.g. C++ and Java's type systems). 
 
-These two different approaches to type systems both have pros and cons, which have sparked a vigorous (and quite possibly eternal) debate. The goal of this thesis is not to add to this debate, instead it is to build from a number of general principles that transcend the debate.
+These two different approaches to type systems both have pros and cons, which have sparked a vigorous (and quite possibly protracted) debate. The goal of this thesis is not to add to this debate, instead it is to build from a number of general principles that transcend the debate.
 
 \begin{itemize}
 	\item Data representation is a language independent problem that must be answered in every project.
@@ -1178,7 +1178,7 @@ These two different approaches to type systems both have pros and cons, which ha
 	\item Data representation in a rich type system like Haskell's, in some sense, determines the structure of the program.
 \end{itemize} 
 
-\subsection{Introducing a Type Synonym}\label{introSyn}
+\section{Introducing a Type Synonym}\label{introSyn}
 
 Type synonyms in Haskell, as mentioned previously, are a way to name an existing type. A simple example can be seen in Figure~\ref{fooSyn}. 
 
@@ -1195,7 +1195,7 @@ f (str, i) = (tail str, i-1)
 
 Any place that where the \texttt{Foo} synonym is in scope the new name can be used to refer to any value of type \texttt{(String, Int)}. In fact "\texttt{Foo}s" and "\texttt{(String, Int)}s" are completely interchangeable. Introducing a synonym is a good way to quickly and simply name types to suggest their specific use in the current application.
 
-Returning to the example from~\citep{fowler} of an order type that keeps track of the customer who placed the order used in Section~\ref{ooRefs}, see Figure~\ref{haskellOrder} for a Haskell implementation of this type and a function that counts how many orders a particular customer has placed in a list of orders.
+Returning to the example, used in Section~\ref{ooRefs}, of an order type that keeps track of the customer who placed the order used in, from~\cite{fowler}, Figure~\ref{haskellOrder} shows a Haskell implementation of this type and a function that counts how many orders a particular customer has placed in a list of orders.
 
 \begin{figure}
 	\begin{lstlisting}
@@ -1208,7 +1208,9 @@ numberOfOrdersFor orders name = length (filter (\ord -> name == (customer ord)) 
 	\label{haskellOrder}
 \end{figure}
 
-The current representation of a customer as just a \texttt{String} is underdeveloped. Introducing a customer synonym is a simple step that sets up the code base for further development. The synonym will clearly mark which strings in the program stand for customers and which do not.
+The initial representation of a customer as just a \texttt{String} is underdeveloped. this representation of a customer only allows the system to store a single ``field'' of information per customer, as the system becomes more developed it will want to associate more information with a particular customer and this representation will need to change.
+
+ Introducing a customer synonym is a simple step that sets up the code base for further development. The synonym will clearly mark which strings in the program stand for customers and which do not.
 
 The ``introducing a type synonym'' refactoring works by taking a type and a valid synonym name (as per the Haskell 2010 standard~\citep{haskell2010}) and creates a new synonym. In this case the type is \texttt{String} and the synonym name should be something like "\texttt{Customer}." The only precondition of the refactoring is that the new synonym's name cannot cause a name clash with any other variables in the same module. Also if the synonym is exported in any client modules that define something with the same name, these modules will need to qualify the import of the synonym. 
 
