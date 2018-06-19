@@ -1279,7 +1279,7 @@ In an object oriented language generalisation refactorings deal mostly with eith
 
 In object oriented languages, moving elements ``up'' the hierarchy (as in from subclass to superclass) is a generalisation, and doing the opposite is specialisation. This should make intuitive sense; there are more fruits than just oranges, so moving a method from the orange class up to its superclass, the fruit class, makes that code more general because it can now be applied to all subclasses of fruit, not just the orange class.
 
-Code in functional languages doesn't inhabit the rigid hierarchy of objects that exists in OO languages, so what form can generalisation take in these languages? Haskell types can exist inside of small hierarchies because type classes can inherit from one another. The generalisation refactorings that are described in this thesis all work within specific types and type classes. 
+Code in functional languages doesn't inhabit the rigid hierarchy of objects that exists in OO languages, so generalisation can take on more forms. The core effect that a generalisation refactoring has is taking something specific (such as a sub-expression, or an instance of a particular type) and makes it more general in some way. A sub-expression may be extracted into a parameter, this makes the target function more general because the behaviour that was previously set by the extracted sub-expression is now determined by the expression passed in via the new parameter. Specific instances of types are generalised by being replaced with a type class. The purpose of type classes is to provide a generic interface for some behaviour, so replacing a specific type with a type class means that the target code is more general because now it can be applied to the set of types that implement that type class, not just a single type.
 
 This section describes refactoring functions that use the concrete \texttt{Maybe} type to instead use one of the type classes it is an instance of, either \texttt{Monad} or \texttt{MonadPlus}. These refactorings will take a function of type \texttt{a -> Maybe b} and rewrite it to become either \texttt{Monad m => a -> m b} or \texttt{MonadPlus m => a -> m b}. These refactored types are a generalisation of the original function because instead of only being applicable to a single type (\texttt{Maybe} in this case) the refactored function can now be used with data of type \texttt{Monad} or \texttt{MonadPlus}.
 
@@ -1287,7 +1287,7 @@ This section describes refactoring functions that use the concrete \texttt{Maybe
 
 This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. \texttt{Maybe} is a data type whose declaration is shown in Figure~\ref{maybeDecl}. \texttt{Maybe} represents a computation that can fail or return a value of type \texttt{a}. When a computation has failed \texttt{Maybe} represents this ``result'' with the \texttt{Nothing} constructor. When a calculation succeeds then \texttt{Maybe} returns the result wrapped with the \texttt{Just} constructor. \texttt{Maybe} is a commonly used type in Haskell programs, it also implements many common type classes including \texttt{Monad} and \texttt{MonadPlus}.
 
-Monads are a data type used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind's first argument is just some monadic value with a result of type \texttt{a} and its second is a function that takes in a value of type \texttt{a} and returns another monadic value with a result of type \texttt{b}
+Monads are a data type used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind's first argument is just some monadic value with a result of type \texttt{a} and its second argument is a function that takes in a value of type \texttt{a} and returns another monadic value that computes a result of type \texttt{b}. Bind computes the result of type \texttt{a} from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way\footnote{All instances of monad must abide by the three monad laws~\citep{monadLaws}} it can act as a way to specify how a particular set of computations are performed. In the case of \texttt{Maybe} bind is used to cause a chain of computations return \texttt{Nothing} if one of the steps of computation fail.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1323,7 +1323,7 @@ class Monad m => MonadPlus m where
 \label{maybeMonadPlus}
 \end{figure}
 
-Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from \texttt{Monad}, and that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. Figure~\ref{maybeMonadPlus} shows the class declaration for \texttt{MonadPlus} and \texttt{Maybe}'s instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a type class for monads that also have some concept of failure and choice. All instances of \texttt{MonadPlus} have an \texttt{mzero} value, which represents a failed computation, and an \texttt{mplus} function, which represents a way of making a "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
+Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from \texttt{Monad}, and that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. Figure~\ref{maybeMonadPlus} shows the class declaration for \texttt{MonadPlus} and \texttt{Maybe}'s instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a type class for monads that also have some concept of failure and choice. All instances of \texttt{MonadPlus} have an \texttt{mzero} value, which represents a failed computation, and an \texttt{mplus} function, which represents a way of making a left-biased "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
 
 
 \begin{figure}[t]
@@ -1340,7 +1340,7 @@ instance Monad Maybe where
 
 \subsection{Refactoring Maybe to MonadPlus} 
 
-\texttt{MonadPlus} is the obvious generalisation of \texttt{Maybe}. \texttt{Maybe} encodes failure with the \texttt{Nothing} constructor and its definition of bind chooses to discard failed computations in exchange for a possibly successful one. This behaviour is exactly what \texttt{MonadPlus} is designed to encapsulate. This section will describe a refactoring for rewriting functions that use \texttt{Maybe} to instead use the \texttt{MonadPlus} type class instead.
+\texttt{MonadPlus} is the obvious generalisation of \texttt{Maybe}. \texttt{Maybe} encodes failure using the \texttt{Nothing} constructor and its definition of \texttt{mplus} chooses to discard failed computations on the left in exchange for a possibly successful one. This behaviour is exactly what \texttt{MonadPlus} is designed to encapsulate. This section describes a refactoring for rewriting functions that use \texttt{Maybe} to use the \texttt{MonadPlus} type class instead.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1368,9 +1368,9 @@ showNat i =
 \label{mmp2Ref}
 \end{figure} 
  
-Figure~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. In this case the refactoring can simply replace the \texttt{Maybe}-specific calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from listing~\ref{mmp1Ref} was constructed by changing calls to \texttt{Just} to \texttt{return} and calls to \texttt{Nothing} to \texttt{mzero}. 
+Figure~\ref{mmp2Ref} shows the refactored version of \texttt{showNat}. In this case the refactoring can simply replace the \texttt{Maybe}-specific calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from Figure~\ref{mmp1Ref} was constructed by changing calls to \texttt{Just} to \texttt{return} and calls to \texttt{Nothing} to \texttt{mzero}. 
 
-Due to the \texttt{return} operator of \texttt{Monad} being equivalent to \texttt{Just} and \texttt{mzero} being supplied by \texttt{MonadPlus}, both of \texttt{Maybe}'s constructors can be replaced with a more general operation. Between these two type classes all of the functionality of \texttt{Maybe} can be replaced in functions that build \texttt{Maybe}s. However if a function deconstructs a \texttt{Maybe} type through pattern matching it may not be generalisable. Consider the function \texttt{printResult} in Figure~\ref{printRes}. \texttt{printResult} uses \texttt{Maybe}'s constructors for pattern matching rather than only in right hand side expressions; there is no way to generalise pattern matching on \texttt{Just}.
+Due to the \texttt{return} operator of \texttt{Monad} being equivalent to \texttt{Just} and \texttt{mzero} being supplied by \texttt{MonadPlus}, both of \texttt{Maybe}'s constructors can be replaced with more general operations. Between these two type classes all of the functionality of \texttt{Maybe} can be replaced in functions that build \texttt{Maybe}s. However if a function deconstructs a \texttt{Maybe} type through pattern matching it may not be generalisable. Consider the function \texttt{printResult} in Figure~\ref{printRes}. \texttt{printResult} performs a pattern match over the \texttt{Maybe} type constructors rather than only in right hand side expressions; there is no way to generalise pattern matching on \texttt{Just}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1386,7 +1386,7 @@ printResult m =
 
 \subsection{Refactoring Maybe to Monad}\label{genMonad}
 
-In some special cases, when programs use the \texttt{Maybe} type in a very specific way,\footnote{It may be more appropriate to say a ``very general way'' in this context.} it is possible to generalise a \texttt{Maybe} type to become \texttt{Monad} instead.
+In some cases it is possible to generalise a \texttt{Maybe} type to become \texttt{Monad} instead. When functions duplicate the work that is done by \texttt{Maybe}'s implementation of bind then that function can be generalised to use the monadic interface instead.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1398,7 +1398,7 @@ inc (Just i) = (Just (i + 1))
 \label{mmp1}
 \end{figure}
 
-The function \texttt{inc} can be rewritten to use the monadic operations bind (\texttt{>>=}) and \texttt{return} instead, this is because the definition of \texttt{inc} matches the definition of bind in the instance declaration of \texttt{Maybe} as a monad. Figure~\ref{incRewrite} has another version \texttt{inc} in which that relationship is clearer.
+The function \texttt{inc} from Figure~\ref{mmp1} can be rewritten to use the monadic operations bind (\texttt{>>=}) and \texttt{return} instead, this is because the definition of \texttt{inc} matches the definition of bind in the instance declaration of \texttt{Maybe} as a monad. Figure~\ref{incRewrite} has another version \texttt{inc} in which that relationship is clearer.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1428,8 +1428,9 @@ inc mi = mi >>= (\i -> (return (i+1)))
 \label{mmp1Ref}
 \end{figure}
 
-It is worth saying that if the right hand side of the \texttt{Just} case from the original implementation of \texttt{inc} contained calls to \texttt{Nothing} then this function could not be generalised to \texttt{Monad}. Instead, the anonymous function would replace the occurrences of \texttt{Nothing} with \texttt{mzero} instead.  
- 
+It is worth saying that if the right hand side of the \texttt{Just} case from the original implementation of \texttt{inc} contained calls to \texttt{Nothing} then this function could not be generalised to \texttt{Monad}. This is because \texttt{Monad}s do not have a built in concept that can represent \texttt{Nothing}. The refactored function could be generalised to \texttt{MonadPlus} by replacing the \texttt{Nothing}s with \texttt{mzero}s.
+
+Generalisation is a very common type of refactoring because it helps prevent repetition. A function with some specific behaviour can be generalised by extracting a sub-expression and passing that expression as a parameter instead. After the refactoring the target function's behaviour can be changed and applied in more places without having to repeat the implementation over again to change the extracted sub-expression. This section has discussed a refactoring to generalise a specific type, \texttt{Maybe}, to one of its type classes, \texttt{MonadPlus} or \texttt{Monad}. Doing this generalises the target functions so that they can be applied to different values, rather than needing to implement separate functions for each specific type.
  
 \section{``List to Hughes List'' Refactoring}\label{listToDlist}
 
