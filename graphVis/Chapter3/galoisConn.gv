@@ -1,0 +1,12 @@
+digraph G {
+subgraph _a {
+	 rank = "source";
+	 a [label = "A", shape = "ellipse"];
+	 }
+subgraph _b {
+	 rank = "source";
+	 b [label = "B", shape = "ellipse"];
+	 }
+a -> b [label = "proj",  fontname="courier"];
+b -> a [label = "abs",  fontname="courier"];
+}

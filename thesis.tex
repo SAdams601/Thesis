@@ -1436,11 +1436,11 @@ Generalisation is a very common type of refactoring because it helps prevent rep
 
 The previous section discussed a refactoring that is most useful in the early stages of development when the details of data representation are in their infancy. As a project develops more and more decisions must be made about how data is represented and processed. Mid-development it may become necessary to change which data structures the program uses in order to facilitate adding additional features or for performance reasons.
 
-This section will cover a refactoring for automatically replacing a type by "projecting" that type into another. The two types (the original and the new type) don't necessarily have a formal syntactic relationship from the compiler's point of view (e.g. both implement the same type class) but instead present a semantically similar interface. For example, a binary search tree and a list support the same basic operations, such as add, remove, and delete. Though the implementation details of lists and trees are very different, from the user's perspective all they need to know is what operations their chosen structure supports. The refactoring described in this section replaces one data type for another that supports similar operations.
+This section covers a refactoring for automatically replacing a type by projecting that type into another~\citep{galoisConnection}. The two types (the original and new type) don't necessarily have an explicit relationship from the compiler's point of view (e.g. both implement the same type class) but instead present a semantically similar interface. For example, a binary search tree and a list support the same basic operations, such as add, remove, and delete. Though the implementation details of lists and trees are very different, from the user's perspective all they need to know is what operations their chosen structure supports. The refactoring described in this section replaces one data type for another that supports similar operations.
 
 \subsection{Hughes Lists}
 
-Appending two lists into a single list is a fundamental operation over lists. The standard implementation of append is seen in Figure~\ref{append}.
+Appending two lists into a single list is a fundamental operation over lists. The standard implementation of append is shown in Figure~\ref{append}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1452,9 +1452,9 @@ Appending two lists into a single list is a fundamental operation over lists. Th
 \label{append}
 \end{figure}
 
-If the first argument to append is the empty list then append can just return the second argument. In the other case append traverses the first list popping off the head of the first list and recursively appending the tail of the first list and the second argument. The performance of append is proportional to the length of its first argument. This has the unfortunate side effect that if a program builds a list by repeatedly appending  to the end of a list, the program will spend significant amounts of time traversing the beginning of the list repeatedly. In total the performance of this function ends up being $O(n^2)$ where $n$ is the length of the final list.
+If the first argument to append is the empty list then append can just return the second argument. In the other case append traverses the first list popping off the head of the first list and recursively appending the tail of the first list and the second argument. The performance of append is therefore proportional to the length of its first argument. This has the unfortunate side effect that if a program builds a list by repeatedly appending a single element the end of a list, the program will spend significant amounts of time traversing the beginning of the list repeatedly. In total the performance of this function ends up being $O(n^2)$ where $n$ is the length of the final list.
 
-An example of a function that exhibits this behaviour is \texttt{countdown}, which is defined in Figure~\ref{countdown}. \texttt{countdown} constructs a string that lists the numbers starting at the argument \texttt{i} down to zero. During each recursive call the previously computed result is traversed but this parameter gets larger each time which is what causes the $O(n^2)$ performance.
+An example of a function that exhibits this behaviour is \texttt{countdown}, which is defined in Figure~\ref{countdown}. \texttt{countdown} constructs a string that lists the numbers starting at the argument \texttt{i} down to zero. During each recursive call the previously computed result is traversed, but this parameter gets larger each time.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1470,9 +1470,9 @@ countdown i = f i ""
 
 The poor performance of \texttt{countdown} quickly becomes noticable with \texttt{countdown 10000} taking around six seconds to run.\footnote{On an Intel i5 4690k processor with 16 GB of RAM}
 
-Fortunately there is an alternative representative of lists that allows $O(n)$ time for such nested appends. This alternative representation was first described by John Hughes in~\citep{hughesList} (hence ``Hughes-lists''), they are also known as difference lists~\citep{realWorldHaskell}; difference lists is the name that they are provided by in Hackage~\citep{dlist}. In Hughes lists elements are stored as partial applications of the append function, these partial applications can then be composed using function composition (the \texttt{(.)} operator in Haskell) to append the two lists together. 
+Fortunately there is an alternative representative of lists that allows $O(n)$ time for such nested appends. This alternative representation was first described by John Hughes in~\citep{hughesList} (hence ``Hughes-lists''), they are also known as difference lists~\citep{realWorldHaskell}; and this is the nomenclature used in Hackage~\citep{dlist}. In Hughes lists elements are stored as partial applications of the append function, these partial applications can then be composed using function composition (the \texttt{(.)} operator in Haskell) to append the two lists together. 
 
-Difference lists store the values \texttt{[1,2,3]} as \texttt{([1,2,3] ++)} which is of type \texttt{Num a => [a] -> [a]}. Appending \texttt{[4,5,6]} to \texttt{([1,2,3] ++)} first involves converting it to a difference lists (\texttt{([4,5,6] ++)} in this case) then these two difference lists can be appended with function composition which results in \texttt{([1,2,3] ++) . ([4,5,6] ++)}. 
+Difference lists store the values \texttt{[1,2,3]} as \texttt{([1,2,3] ++)} which is of type \texttt{Num a => [a] -> [a]}. Appending \texttt{[4,5,6]} to \texttt{([1,2,3] ++)} first involves converting it to a difference lists (\texttt{([4,5,6] ++)} in this case) then these two difference lists can be appended with function composition which results in: \\ \texttt{([1,2,3] ++) . ([4,5,6] ++)}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1514,15 +1514,23 @@ While difference lists support fast appends there is no such thing as a free lun
 
 For functional programmers, lists are a very familiar and versatile data structure. However, if an application requires repeated appends as described at the start of this section their performance becomes an issue. Difference lists provide a similar interface to lists but without this troublesome behaviour. This section will describe a refactoring to convert programs written using normal lists to use difference lists instead. 
 
-\subsubsection{Embeddable Types} 
+\subsection{Embeddable Types} 
 This refactoring takes the view that a type consists of some structure and a set of functions that operate on that structure. 
 
-This refactoring requires that a source type is ``reversibly embeddable'' into the target type. If the source type is some type $A$ and the target type is some type $B$ then for $A$ to be reversibly embeddable into $B$, two functions must exist: the projection function $proj :: A \rightarrow B$ and the abstraction function $abs :: B \rightarrow A$. The property in equation~\ref{eq1} must hold for $A$ to be embeddable in $B$. However, the reverse compositions of $proj . abs$ does not necessarily hold.   
+This refactoring requires that a source type is ``reversibly embeddable'' into the target type. If the source type is some type $A$ and the target type is some type $B$ then for $A$ to be reversibly embeddable into $B$, two functions must exist: the projection function $proj :: A \rightarrow B$ and the abstraction function $abs :: B \rightarrow A$, as shown in Figure~\ref{galois}. The property in equation~\ref{eq1} must hold for $A$ to be embeddable in $B$. However, the reverse compositions of $proj . abs$ is not necessarily $id_B$.   
 
 \begin{figure}[t]
 \begin{equation}\label{eq1}
-abs . proj = id
+abs . proj = id_A
 \end{equation}
+\end{figure}
+
+\begin{figure}[h]
+	\begin{center}
+		\includegraphics[scale=.5]{graphVis/Chapter3/galoisConn.png}
+	\end{center}
+	\caption{The relationship between the source type $A$ and target type $B$ and the respective projection and abstraction functions.}
+	\label{galois}
 \end{figure}
 
 Intuitively this means that it needs to be possible to retrieve the $A$ type from a $B$ exactly as it was when it was projected into the new type. The reverse does not need to be true because any values of type $B$ were introduced by the refactoring so any information lost converting a $B$ back into an $A$ wasn't in the original program and so does not need to be preserved to preserve behaviour.
@@ -1551,7 +1559,7 @@ In the "list to Hughes list" case the projection function is \texttt{fromList} (
 \end{table}
 
 
-From this list the two bold functions are the only functions without normal list counterparts. In the case of \texttt{snoc}, which appends a single element to the end of a \texttt{DList}, there is no normal list equivalent presumably because Hughes lists are specifically designed for append-heavy operations so making a function specifically for appending a single element onto the end of a \texttt{DList} is not useful. The \texttt{list} function, shown in Figure~\ref{dListList}, makes up for the lack of pattern matching over \texttt{DList}s.
+From this list the two bold functions are the only functions without normal list counterparts. In the case of \texttt{snoc}, which appends a single element to the end of a \texttt{DList}, a normal list equivalent is not provided by the prelude because of the linear time performance of this operation. The \texttt{list} function, shown in Figure~\ref{dListList}, makes up for the lack of pattern matching over \texttt{DList}s. The first two arguments to \texttt{list} are values that handle the two standard pattern match cases over lists, an empty list, and when the list contains at least a single element. The third argument to \texttt{list}, ``\texttt{dl}'', is the difference list that pattern matching should be performed on. If \texttt{dl} is empty than \texttt{list}'s first argument ``\texttt{nill}'' is returned. In the other case \texttt{list} will pass the head and the tail of \texttt{dl} to it's second argument a function that performs the computation when the list is non-empty.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1565,15 +1573,13 @@ list nill consit dl =
 \label{dListList}
 \end{figure}
 
-The rest of the \texttt{DList} API could be paired with equivalent list functions. However, it's not necessarily a good idea for every normal list function to be refactoring to its \texttt{DList} equivalent. As was mentioned earlier, certain \texttt{DList} functions are less efficient than the corresponding normal function, so the primary purpose of this refactoring is defeated if the refactored code runs slower than the original source.
+The rest of the \texttt{DList} API could be paired with equivalent list functions. However, it's not necessarily a good idea for every normal list function to be refactored to its \texttt{DList} equivalent. As was mentioned earlier, certain \texttt{DList} functions are less efficient than the corresponding normal function, so the primary purpose of this refactoring is defeated if the refactored code runs slower than the original source.
 
-Fortunately different versions of the refactoring can be made by defining separate sets depending on the behaviour that is desired. For example one set could only include the \texttt{DList} constant time operations (\texttt{append}, \texttt{empty}, and \texttt{cons}) and another set could include all possible pairings.
+Fortunately different versions of the refactoring can be made by defining separate sets depending on the behaviour that is desired. For example one set could only include the \texttt{DList} constant time operations (\texttt{append}, \texttt{empty}, and \texttt{cons}) and another set could include all possible pairings of operations in Table~\ref{dlistApi}.
 
-The obvious choice for the set is to just include every possible pairing. However, it may be beneficial to limit which functions can be replaced based on the motivation for the refactoring and what list functions are being used in the source program. In the list to Hughes list case, this refactoring is performed to increase the performance of append operations. In this case it may be beneficial to only allow append to be swapped for the DList append. Another possibility in this case would be to only allow the \texttt{DList} functions that run in constant time to be introduced.\footnote{\texttt{empty}, \texttt{cons}, and \texttt{append}.}. 
+Which functions should be changed is highly dependent on the relationship between the source and target types, the motivation for the refactoring, and how the source program is constructed. The list to Hughes replacement is motivated for performance reasons so limiting the replacements to only operations that run in constant time makes sense. If the refactoring is being used to completely upgrade a system from using one type to another then the programmer will want to make sure that every function used by the source type can be replaced. The implementation of this refactoring in HaRe is as adaptable as possible so that users can customize it to meet their specific needs (see Chapter~\ref{chp:generalImp}).
 
-The composition of the set of functions is highly dependent on the relationship between the source and target types and which functions the source program is using. For this reason the implementation of this refactoring in HaRe is as adaptable as possible so that users can customize the set for their own needs (see Chapter~\ref{chp:generalImp}).
-
-\subsubsection{Transforming functions}
+\subsection{Transforming functions}
 
 The refactoring breaks into three different cases depending on the type of the target function. 
 
@@ -1590,7 +1596,7 @@ insComma s1 s2 = s1 ++ "," ++ s2
 
 When refactoring both of the arguments and the result type of \texttt{insComma} to become \texttt{DList Char} there are multiple ways to refactor this function. Figure~\ref{commaRef} shows two possibilities; which one should the refactoring produce and why?
 
-To make this decision, the refactoring is designed to reflect the assumption that because this function is being refactored to use the new type, the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends, whereas the second example converts the two arguments into lists, appends everything together and then converts the result back into a \texttt{DList}. The refactoring prioritises minimising the amount of conversion introduced into the refactored program.  
+To make this decision, the refactoring is designed to reflect the assumption that because this function is being refactored to use the new type, the user wants the new type to be used in as many places as possible. This makes the first definition preferable to the second one because it only converts a single item using \texttt{fromList} and replaces the appends, whereas the second example converts the two arguments into lists, appends everything together and then converts the result back into a \texttt{DList}. The refactoring prioritises minimising the number of conversion introduced into the refactored program.  
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1604,7 +1610,7 @@ insComma_2 s1 s2 = fromList ((toList s1) ++ (",") ++ (toList s2))
 \label{commaRef}
 \end{figure}
 
-\subsection{Modifying the Type of a Parameter}
+\subsection{Modifying the Type of an Input}
 
 The simplest case of this refactoring is modifying the type of a parameter. Consider the example in Figure~\ref{mean} that calculates the mean of list of numbers. 
 
@@ -1617,7 +1623,7 @@ mean lst = foldr (+) 0 lst / length lst
 \label{mean}
 \end{figure}
 
-Refactoring \texttt{means}' first argument to become a Hughes list is fairly straight forward matter of wrapping the, now of type \texttt{DList}, parameter \texttt{lst} with the abstraction function \texttt{toList}. The refactored version of \texttt{mean} is in Figure~\ref{meanRef}. The \texttt{DList} functions have been prefaced with the ``\texttt{DL}'' qualifier, to differentiate which functions come from which API. This convention will be used through the remainder of the section. You'll also notice that \texttt{toList lst} is calculated twice; this is a good candidate for further refactoring by extracting this expression into a \texttt{let} or a \texttt{where} clause. 
+Refactoring \texttt{means}' first argument to become a Hughes list is fairly straight forward matter of wrapping the, now of type \texttt{DList}, parameter \texttt{lst} with the abstraction function \texttt{toList}. The refactored version of \texttt{mean} is in Figure~\ref{meanRef}. The functions from the \texttt{DList} library have been prefaced with the ``\texttt{DL}'' qualifier, to differentiate which functions come from which API. This convention will be used through the remainder of the section. You'll also notice that \texttt{toList lst} is calculated twice; this is a good candidate for further refactoring by extracting this expression into a \texttt{let} or a \texttt{where} clause. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1628,18 +1634,18 @@ mean lst = foldr (+) 0 (DL.toList lst) / length (DL.toList lst)
 \label{meanRef} 
 \end{figure}
 
-This example is one of the cases where there are multiple possible refactorings. Figure~\ref{meanRef2} shows a different version of a refactored mean. Because \texttt{foldr} is defined both for difference lists and normal lists, the abstraction function could be added around that expression instead. Which version should the refactoring produce?
+This example is one of the cases where there are multiple possible refactorings. Figure~\ref{meanRef2} shows a different version of a refactored \texttt{mean}. Because \texttt{foldr} is defined both for difference lists and normal lists, the abstraction function could be added around that expression instead. Which version should the refactoring produce?
 
 \begin{figure}[t]
 \begin{lstlisting}
 mean :: Fractional a => DList a -> a
-mean lst = DL.toList (DL.foldr (+) 0 lst) / length (DL.toList lst)
+mean lst = (DL.foldr (+) 0 lst) / length (DL.toList lst)
 \end{lstlisting}  
 \caption{\texttt{mean} refactored another way.}
 \label{meanRef2}
 \end{figure}  
 
-In this case, where the refactoring targets a parameter and the result is a type other than a Hughes list, the refactoring assumes that the programmer wants the Hughes list converted as soon as possible in the function. 
+In this case, where the refactoring targets a parameter and the result is a type other than a Hughes list, the refactoring assumes that the programmer wants the Hughes list converted as soon as possible in the function so the \texttt{fromList} conversions will be wrapped around the parameters. 
 
 \subsection{Modifying the Result Type}
 \label{hugesListResTy}
@@ -1669,7 +1675,7 @@ Changing the type of the AST's root requires the refactoring to traverse the tre
 
 \texttt{enumerate}'s first case is simple enough to refactor. There is only a single value in the tree the empty list literal. This node's current type is \texttt{[a]} and it needs to become \texttt{DList a}. When the refactoring reaches the \texttt{[]} value it searches to see if it is paired with some difference list operation in the set of pairs. The empty list literal is paired with the difference list operation \texttt{empty}, the refactoring sees this and replaces the empty list with \texttt{DL.empty :: DList a}.
 
-After the replacement of \texttt{[]}, \texttt{enumerate}'s first case is successfully refactored. The second case of \texttt{enumerate} is more complex than the first. Figure~\ref{enumAST} shows a syntax tree for \texttt{enumerate}'s second case. 
+After the replacement of \texttt{[]}, \texttt{enumerate}'s first case is successfully refactored. The second case of \texttt{enumerate} is more complex than the first. Figure~\ref{enumAST} shows the syntax tree for \texttt{enumerate}'s second case. 
 
 \begin{figure}[h]
 	\begin{center}
@@ -1679,7 +1685,7 @@ After the replacement of \texttt{[]}, \texttt{enumerate}'s first case is success
 	\label{enumAST}
 \end{figure}
 
-The refactoring begins the traversal at the top of the syntax tree with the goal of modifying the entire tree to have a result type of \texttt{DList a}. The root node of the tree is the operator application of the left-hand append operation. This append's result type is the type that determines the whole tree's result type. The standard append operation is paired with the difference list \texttt{DL.append} operation. The refactoring checks to ensure that the difference list append has the correct result type and, because it does, makes the replacement.\footnote{The refactoring will automatically make \texttt{DL.append} infix by surrounding the call with backtick characters since this replacement is modifying an operator application.} After replacing \texttt{++} with \texttt{DL.append}, the result type is correct but the function will no longer type check because \texttt{++} and \texttt{DL.append}'s arguments are not the same types. 
+The refactoring begins the traversal at the top of the syntax tree with the goal of modifying the entire tree to have a result type of \texttt{DList a}. The root node of the tree is the operator application of the left-hand append operation. The result type of this instance of append is the type that determines the whole tree's result type. The standard append operation is paired with the difference list \texttt{DL.append} operation. The refactoring checks to ensure that the difference list append has the correct result type and, because it does, makes the replacement.\footnote{The refactoring will automatically make \texttt{DL.append} infix by surrounding the call with backtick characters since this replacement is modifying an operator application.} After replacing \texttt{++} with \texttt{DL.append}, the result type is correct but the function will no longer type check because \texttt{++} and \texttt{DL.append}'s arguments are not the same types. 
 
 The refactoring then must recurse down both the left and right subtrees to change their types from \texttt{[a]} (the type of \texttt{(++)}'s arguments) to \texttt{DList a} (the type \texttt{append}'s arguments). 
 
@@ -1701,7 +1707,7 @@ The left subtree of the root node is shown in Figure~\ref{enumLeft}. The refacto
 	\label{enumRight}
 \end{figure}
 
-After refactoring the left subtree, the right subtree needs to be modified to be of type \texttt{DList a} as well. Shown in Figure~\ref{enumRight}, the right subtree's root is the second call to \texttt{(++)}. Once again the refactoring replaces \texttt{++} with \texttt{DL.append} because \texttt{append}'s result type is also \texttt{DList a}. Doing this replacement sets off additional traversals that need to ensure that the two arguments to the root node become typed \texttt{DList a} as well. The right argument to the root of this subtree is the \texttt{(enumerate right)} expression which is handled in the same way the \texttt{(enumerate left)} call was handled. The left subtree of Figure~\ref{enumRight}  is the list literal \texttt{[x]}. This can be replaced with a call to \texttt{(DL.singleton :: a -> DList a)} the equivalent difference list function. At this point the refactoring is finished modifying \texttt{enumerate} and the result can be seen in listing~\ref{enumRef}.
+After refactoring the left subtree, the right subtree needs to be modified to be of type \texttt{DList a} as well. Shown in Figure~\ref{enumRight}, the right subtree's root is a second call to \texttt{(++)}. Once again the refactoring replaces \texttt{++} with \texttt{DL.append} because \texttt{append}'s result type is also \texttt{DList a}. Doing this replacement sets off additional traversals that are designed to ensure that the two arguments to the root node become typed \texttt{DList a} as well. This is possible because the original program is well-typed and the arguments to append are of type list so at the very least the arguments can be converted to \texttt{DList}s with \texttt{fromList}. The right argument to the root of this subtree is the \texttt{(enumerate right)} expression which is handled in the same way the \texttt{(enumerate left)} call was handled. The left subtree of Figure~\ref{enumRight}  is the list literal \texttt{[x]}. This can be replaced with a call to \texttt{(DL.singleton :: a -> DList a)} the equivalent difference list function. At this point the refactoring is finished modifying the definition of \texttt{enumerate} and the result can be seen in listing~\ref{enumRef}.
 
 \begin{figure}[t]
 \begin{lstlisting}
