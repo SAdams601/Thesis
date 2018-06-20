@@ -1740,7 +1740,7 @@ printEnumTree tree = let lst = toList (enumerate tree) in
 
 \subsection{Modifying Parameter and Result Types}
 
-The final case of this refactoring involves modifying both the result type and one (or more) of the parameters of the target function. This example will use the \texttt{explode} function from Figure~\ref{explode} to refactor both its argument and result type to become \texttt{DList a}. \texttt{explode} is a silly function that replicates each of its elements the number of the length of the list, for example, \texttt{explode [1,2,3]} returns \texttt{[1,1,1,2,2,2,3,3,3}. This is an odd function but is has two characteristics we are interested in both its parameter and result type are of type list and it uses the \texttt{map} higher ordered function which is an interesting case for this refactoring. The abstract syntax tree of \texttt{explode} is in Figure~\ref{explode}.
+The final case of this refactoring involves modifying both the result type and one (or more) of the parameters of the target function. This example will use the \texttt{explode} function from Figure~\ref{explode} and will refactor both its argument and result type to become \texttt{DList a}. \texttt{explode} is a silly function that replicates each of its elements a number of times equal to the length of the list, for example, \texttt{explode [1,2,3]} returns \texttt{[1,1,1,2,2,2,3,3,3]}. This is an odd function but is has two characteristics we are interested in, (a), both its parameter and result type are of type list and, (b), it uses the \texttt{map} higher ordered function which is an interesting case for this refactoring. The abstract syntax tree of \texttt{explode} is in Figure~\ref{explode}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1762,11 +1762,23 @@ explode lst = concat (map (\x -> replicate (length lst) x) lst)
 
 Much like the previous case where just the result type was modified, the refactoring will start working on the syntax tree in a top-down manner modifying the function definition to have the correct result type. This case could also be implemented in a bottom-up manner but the top-down method allows for more code reuse from the implementation of the case when the result type is modified.
 
-The refactoring starts on the left subtree with the call to \texttt{concat :: Foldable t => t [a] -> [a]}. The equivalent difference list function is \texttt{DL.concat :: Foldable t => t (DList a) -> DList a} since the result type of this version of \texttt{DL.concat} is \texttt{DList a} the refactoring performs the switch between which function to use. 
+The refactoring starts on the left subtree with the call to: 
+
+\texttt{concat :: Foldable t => t [a] -> [a]}. 
+
+The equivalent difference list function is: 
+
+\texttt{DL.concat :: Foldable t => t (DList a) -> DList a} 
+
+Since the result type of this version of \texttt{DL.concat} is \texttt{DList a} the refactoring performs the switch between the two functions. 
 
 After the change on the left subtree, the refactoring needs to modify the right subtree so that it is of type \texttt{Foldable t => t (DList a)} rather than its current type of \texttt{Foldable t => t [a]}. The leftmost child of the right subtree is the call to \texttt{map :: (a -> b) -> [a] -> [b]}. The difference list equivalent map is appropriately typed \texttt{DL.map :: (a -> b) -> DList a -> DList b}. Should the refactoring change this node to the difference list version? And if so what changes will be need to made to other subtrees?
 
-The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (the type of \texttt{DL.concat}'s parameter) can be the same type as \texttt{DList b}~(\texttt{DL.map}'s result type); since \texttt{DList} is a member of the \texttt{Foldable} type class, the swap can happen as long as the \texttt{b} type variable in \texttt{map}'s type is equal to \texttt{DList a}. This node's type after the swap and filling in the known type variables is: \texttt{DL.map :: (a -> DList b) -> DList a -> DList (DList b)}. This new type's arguments' types are both different from the original types so the refactoring will need to check both of these subtrees as well. 
+The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (the type of \texttt{DL.concat}'s parameter) can be the same type as \texttt{DList b}~(\texttt{DL.map}'s result type); since \texttt{DList} is a member of the \texttt{Foldable} type class, the swap can happen as long as the \texttt{b} type variable in \texttt{map}'s type is equal to \texttt{DList a}. This node's type after the swap and filling in the known type variables is: 
+
+\texttt{DL.map :: (a -> DList b) -> DList a -> DList (DList b)}
+
+This new type's arguments' types are both different from the original types so the refactoring will need to check both of these subtrees as well. 
 
 \begin{figure}[h]
 	\begin{center}
@@ -1775,9 +1787,9 @@ The refactoring will swap this node out if \texttt{Foldable t => t (DList a)} (t
 	\caption{The syntax tree of the lambda expression in \texttt{explode}.}\label{explodeLam}
 \end{figure}
 
-Starting with the lambda expression (the syntax tree in Figure~\ref{explodeLam}) the refactoring needs to modify its type to become \texttt{a -> DList b}\footnote{\texttt{a} and \texttt{b} could be the same type.}. The current type of the lambda expression is \texttt{a -> [a]} so the refactoring only needs to modify its result type. The refactoring can then proceed to the left-most child of this expression, the call to \texttt{replicate :: Int -> a -> [a]}. The refactoring swaps this call for the difference list version of \texttt{DL.replicate :: Int -> a -> DList a}. 
+Starting with the lambda expression (the syntax tree in Figure~\ref{explodeLam}) the refactoring needs to modify this expression's type to become \texttt{a -> DList b}\footnote{\texttt{a} and \texttt{b} could be the same type.}. The current type of the lambda expression is \texttt{a -> [a]} so the refactoring only needs to modify its result type. The refactoring can then proceed to the left-most child of this expression, the call to \texttt{replicate :: Int -> a -> [a]}. The refactoring swaps this call for the difference list version of \texttt{DL.replicate :: Int -> a -> DList a}. 
 
-If this refactoring were only modifying the result type of \texttt{explode}, the refactoring would be done modifying the lambda expression because the type change affects the syntax tree in a top down manner. In this case, however, because  the type of \texttt{explode}'s argument was also changed so leaves of the syntax tree can also have changed type. This means that every subtree needs to be checked to ensure that it still type checks.
+If this refactoring were only modifying the result type of \texttt{explode}, the refactoring would be done working with the lambda expression because the type change affects the syntax tree in a top down manner. In this case, however, because  the type of \texttt{explode}'s argument was also changed, so leaves of the syntax tree can also have changed type. This means that every subtree needs to be checked to ensure that it still type checks.
 
 The untouched sections of this expression's syntax tree are \texttt{replicate}'s arguments. The second argument is just the variable \texttt{x} which hasn't changed type. The first argument on the other hand is the expression \texttt{(length lst)} and \texttt{lst} is the argument of \texttt{explode} that is now a difference list rather than a normal list. Ideally the refactoring would rewrite this expression by replacing the normal list functions (\texttt{length} in this case) with difference list equivalents. Unfortunately there is no difference list version of \texttt{length} so the refactoring will have to introduce the abstraction function to convert back to a normal list to calculate its length. 
 
@@ -1813,9 +1825,9 @@ The final result of this case of the Hughes list refactoring is in listing~\ref{
 
 \section{Summary}
 
-This chapter has introduced the concept of data-driven refactorings for the object-oriented programming paradigm and described three of the data-driven refactorings developed for this thesis. The first, ``introducing a type signature'', creates an additional abstraction to better describe what types are representing. ``Generalising Maybe'' takes code written for a specific type and generalises it so that it is applicable to more types. Finally the ``list to Hughes list'' refactoring replaces one type with another equivalent type. This refactoring allows a project to be retyped mid-development because it's not always clear from the beginning of a project what the correct data representation should be.
+This chapter has introduced the concept of data-driven refactorings for the object-oriented programming paradigm and described three of the data-driven refactorings developed for this thesis. The first, ``introducing a type signature'', creates an additional abstraction to better describe what types are representing. ``Generalising Maybe'' takes code written for a specific type and generalises it so that it is applicable to more types. Finally the ``list to Hughes list'' refactoring replaces one type with another equivalent type. This refactoring allows a project to be retyped mid-development because it is not always clear at the beginning of a project what the correct data representation should be.
 
-The following chapters will expand on some of these ideas. The next chapter will describe another form of generalisation that rewrites monadic code into its equivalent applicative functor code. The applicative code can be much cleaner and descriptive in certain cases. It can also allow programmers to take advantage of a different way of executing their programs. Chapter~\ref{chp:monadification} discusses introducing effectful abstractions into pure code. This process helps a code base add additional features, such as shared state, mid-development.
+The following chapters will expand on some of these ideas. The next chapter will describe another form of generalisation that rewrites monadic code into its equivalent applicative functor code. The applicative code can be much cleaner and descriptive in certain cases. It can also allow programmers to take advantage of a different way of executing their programs. Chapter~\ref{chp:monadification} discusses introducing effectful abstractions into pure code. This process helps to add additional features to a code base, such as shared state, mid-development.
 
 \chapter{Implementing Data-Driven Refactorings in HaRe}
 \label{chp:generalImp}
