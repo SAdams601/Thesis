@@ -1339,7 +1339,6 @@ instance Monad Maybe where
 \end{figure}
 
 
-
 \subsection{Refactoring Maybe to MonadPlus} 
 
 \texttt{MonadPlus} is the obvious generalisation of \texttt{Maybe}. \texttt{Maybe} encodes failure using the \texttt{Nothing} constructor and its definition of \texttt{mplus} chooses to discard failed computations on the left in exchange for a possibly successful one. This behaviour is exactly what \texttt{MonadPlus} is designed to encapsulate. This section describes a refactoring for rewriting functions that use \texttt{Maybe} to use the \texttt{MonadPlus} type class instead.
@@ -1512,10 +1511,6 @@ append xs ys = DL (unDL xs . unDL ys)
 While difference lists support fast appends there is no such thing as a free lunch: speedups for certain functions are paid for by slowdowns in other places. Getting the head and tail of a normal list are both constant time operations but become linear time for difference lists because the difference lists will have to be converted back to normal lists. 
 
 
-\subsection{Refactoring lists to Hughes lists}
-
-For functional programmers, lists are a very familiar and versatile data structure. However, if an application requires repeated appends as described at the start of this section their performance becomes an issue. Difference lists provide a similar interface to lists but without this troublesome behaviour. This section will describe a refactoring to convert programs written using normal lists to use difference lists instead. 
-
 \subsection{Embeddable Types} 
 This refactoring takes the view that a type consists of some structure and a set of functions that operate on that structure. 
 
@@ -1581,11 +1576,23 @@ Fortunately different versions of the refactoring can be made by defining separa
 
 Which functions should be changed is highly dependent on the relationship between the source and target types, the motivation for the refactoring, and how the source program is constructed. The list to Hughes replacement is motivated for performance reasons so limiting the replacements to only operations that run in constant time makes sense. If the refactoring is being used to completely upgrade a system from using one type to another then the programmer will want to make sure that every function used by the source type can be replaced. The implementation of this refactoring in HaRe is as adaptable as possible so that users can customize it to meet their specific needs (see Chapter~\ref{chp:generalImp}).
 
-\subsection{Transforming functions}
 
-The refactoring breaks into three different cases depending on the type of the target function. 
+\subsection{Refactoring functions to use Hughes lists}
 
-In ``introduce type synonym'' refactoring from Section~\ref{introSyn}, there was a point when the refactoring required the user to tell HaRe where the new synonym should be used because the tool does not, and indeed cannot, know what is the user's intention for the synonym. Many data-driven refactorings need to either make assumptions about the user's intent or to directly solicit information from them. This refactoring is no different: for any given function there are multiple possible ``correct" definitions the refactoring could produce. Take for example the function \texttt{insComma} in Figure~\ref{insComma}.
+For functional programmers, lists are a very familiar and versatile data structure. However, if an application requires repeated appends as described at the start of this section their performance becomes an issue. Difference lists provide a similar interface to lists but without this troublesome behaviour and provide projection (\texttt{fromList}) and abstraction (\texttt{toList}) functions between themselves and normal lists. This section will describe a refactoring to convert programs written using normal lists to use difference lists instead. 
+
+
+The refactoring is different depending on which types of the target function are lists. There are three different cases:
+
+\begin{enumerate}
+		\item A list is the type of parameters only 
+		\item A list is the result type
+		\item Both the result type and at least one parameter are lists
+\end{enumerate} 
+
+Each of these cases differs in the way that the Hughes list type is introduced to the function. In the first case the type changes begin at the leaves and the refactoring needs to fix any type errors from the bottom towards the top of the tree. When the result type is the only list instance in the type signature the opposite process must happen, the new type needs to be ``pushed'' down the AST from the root. In the final case the refactoring will attempt to convert the entire AST to use Hughes lists.
+
+Though the general scheme the refactoring takes to transform the target function is simple to understand, how the refactoring actually goes about transforming is more challenging. This is because for any given function there are multiple possible ``correct" definitions the refactoring could produce. Take for example the function \texttt{insComma} in Figure~\ref{insComma}.
 
 \begin{figure}[t]
 \begin{lstlisting}
