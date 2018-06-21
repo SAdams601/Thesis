@@ -1338,6 +1338,8 @@ instance Monad Maybe where
 \label{maybeMonad}
 \end{figure}
 
+
+
 \subsection{Refactoring Maybe to MonadPlus} 
 
 \texttt{MonadPlus} is the obvious generalisation of \texttt{Maybe}. \texttt{Maybe} encodes failure using the \texttt{Nothing} constructor and its definition of \texttt{mplus} chooses to discard failed computations on the left in exchange for a possibly successful one. This behaviour is exactly what \texttt{MonadPlus} is designed to encapsulate. This section describes a refactoring for rewriting functions that use \texttt{Maybe} to use the \texttt{MonadPlus} type class instead.
@@ -1843,6 +1845,8 @@ The previous chapter described three refactorings, ``introducing a type synonym,
 The design of the generalising \texttt{Maybe} refactoring was discussed in the previous chapter (see Section~\ref{genMaybe}). This section will describe its implementation in the HaRe refactoring tool. 
 
 This refactoring tries to generalise something of type \texttt{Maybe} to become either of type \texttt{Monad} or \texttt{MonadPlus}. The implementation of this refactoring attempts to produce the ``most general" version of the source program. This means that when possible the refactoring will replace the targetted \texttt{Maybe} type with a value of type \texttt{Monad}; if this is not possible the value will be of type \texttt{MonadPlus}, and finally if that also is not possible the refactoring cannot continue and the source and target programs of the refactoring are identical.
+
+The implementation of the ``Generalising Maybe'' refactoring in HaRe attempts to convert the \texttt{Maybe} types in a function to the ``most general'' type class possible. This means that if the \texttt{Maybe} type can be replaced with \texttt{Monad} it will be, otherwise the function will be rewritten using \texttt{MonadPlus} instead. First the refactoring will replace all of the \texttt{Maybe} constructors in right hand side expressions with the corresponding \texttt{MonadPlus} operation (\texttt{Just} becomes \texttt{return} and \texttt{Nothing} becomes \texttt{mempty}). At this point the refactoring checks if the target function's computations were done entirely inside of \texttt{Maybe}, that is the function receives a \texttt{Maybe} value as a parameter, returns a value of type \texttt{Maybe}, and handles the \texttt{Nothing} constructor by just returning \texttt{Nothing}; when all of these things are true the target function is really just replicating the functionality of \texttt{Maybe}'s bind instance. In this case the refactoring rewrites the function body to use bind instead. Finally depending on how generalisable the target function was, the refactoring will update the type signature by replacing the \texttt{Maybe}s with ``\texttt{m}'' type variables that are bound the appropriate type class, either \texttt{MonadPlus} or \texttt{Monad}.
 
 \begin{figure}[t]
 \begin{lstlisting}
