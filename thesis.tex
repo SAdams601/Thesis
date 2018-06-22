@@ -2,7 +2,7 @@
 %
 % The UoK class file extends the standard report style to follow the Registry
 % guidelines for laying out a thesis. It sets the margins, interline spacing,
-% the page, figure and table numbering style, and disallows page breaks at
+% the page, Figure and table numbering style, and disallows page breaks at
 % hyphens. The class file consists of setting one and an half line spacing text
 % with a 4cm left margin, at least a 2.5cm right margin, approximately 2cm top
 % and bottom margin, on A4 paper.
@@ -18,7 +18,7 @@
 %     draft - Puts the entire document into draft mode. Applies all the effect
 %             of draftmark above, but also propergates to other packages used.
 %     copyright - Adds a copyright page between the title page and the preface.
-%     nofig - Disables output of the list of figures in the preface.
+%     nofig - Disables output of the list of Figures in the preface.
 %     notab - Disables output of the list of tables in the preface.
 % All options passed to UoKthesis will be passed along to included packages:
 %    natbib, draftwatermark, setspace, hyperref, lmodern
@@ -39,7 +39,7 @@
 % The preface environment allows for the use of sections that precede the main
 % document; such as Abstract and  Acknowlegements. These sections should be
 % defined using \section{Preface Section Title}. The contents page (and list of
-% figures and tables if in use) will be automatically inserted at the end of the
+% Figures and tables if in use) will be automatically inserted at the end of the
 % preface environment.
 %
 % The thesis style invokes the setspace package to set the commands:
@@ -52,7 +52,7 @@
 % \doublespace command where you want to start using double spacing. Just call
 % the appropriate spacing command at where you want to use them.
 % 
-% In the figure and table environments, single spacing is used. If you want to
+% In the Figure and table environments, single spacing is used. If you want to
 % use any other size rather than one and an half spacing, then do:
 % 	\renewcommand{\baselinestretch}{1.6} (or whatever you want instead of 1.6)
 % This command won't take effect unless it comes before the \begin{document} or
@@ -210,7 +210,7 @@ First class functions mean that functions are allowed to be treated like any oth
 \label{haskell}
 Haskell is a statically typed, lazily evaluated, pure functional language. Haskell is strongly and statically typed, and supports Hindley-Milner type inference(\cite{hindley};\cite{milner}). Type inference means that Haskell programs do not need every type to be explicitly listed in the source code. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
 
-Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is a list containing all of the natural numbers. 
+Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is a list containing all of the natural numbers. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -386,7 +386,7 @@ The template-based API of Wrangler allows users to define program analyses and t
 \label{templates}
 \end{figure}
 
-The first template in figure~\ref{templates} matches applications of \texttt{erlang:spawn} when it is called with one argument whereas the second template will match the same function with any number of arguments.
+The first template in Figure~\ref{templates} matches applications of \texttt{erlang:spawn} when it is called with one argument whereas the second template will match the same function with any number of arguments.
 
 Composite refactorings are refactorings that are made up of multiple refactorings run, in sequence, one after the other. It can be challenging to develop composite refactorings if they are not explicitly handled by the refactoring tool. The naive solution just chains refactorings together with the output from one refactoring in a composite refactoring becoming the input to the next refactoring. However, what if the second refactoring fails in a chain of four? Composite refactoring definitions, without tool support, become filled with error handling code to manage the situation when one of the component refactorings fail. Wrangler defines a domain specific language that helps describe the various facets of a composite refactoring.
 
@@ -405,7 +405,7 @@ An opportunity of the ROTOR project is that it has an partner in industry, Jane 
 The reasons to refactor source code have also expanded beyond code quality. This section will describe two different projects that have developed refactorings to change the execution of a program from single to multi-threaded. Functional programming languages are well suited to parallel execution due to immutability by default and in some languages (such as Erlang) first-class concurrency features. This section will first describe the ``ParaForming'' which uses refactoring to introduce parallel abstractions into Haskell code, then it will describe work done to refactor Erlang code to introduce algorithmic skeletons.
 
 \subsection{ParaForming}  
-ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\citep{paraforming}. The ParaForming work targets Glasgow parallel Haskell (GpH), an extension to Haskell, and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see figure~\ref{strategy}). 
+ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\citep{paraforming}. The ParaForming work targets Glasgow parallel Haskell (GpH), an extension to Haskell, and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see Figure~\ref{strategy}). 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -417,7 +417,7 @@ type Strategy a = a -> Eval a
 
 A strategy takes its argument and determines how it will be evaluated inside of the \texttt{Eval} monad. The \texttt{rpar} strategy introduces parallelism by "sparking" its argument. Sparks are tasks that are collected into a pool which is managed by the runtime. The spark pool is a source of work that GHC can pull from when there are idle processors. Sparks may be evaluated in parallel or not at all depending on the availability of spare cores.
 
-The simplest parallel refactoring is to introduce data parallelism. This refactoring is applied to an expression that works over a list and evaluates each member of that list in a spark. A sequential function that sums the Euler totient function is in figure~\ref{eulerSeq} and the refactored program is in figure~\ref{eulerPar1}
+The simplest parallel refactoring is to introduce data parallelism. This refactoring is applied to an expression that works over a list and evaluates each member of that list in a spark. A sequential function that sums the Euler totient function is in Figure~\ref{eulerSeq} and the refactored program is in Figure~\ref{eulerPar1}
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -434,20 +434,20 @@ sumEulerSeq n = sum (map euler (mkList n))
 sumEulerPar1 :: Int -> Int
 sumEulerPar1 n = sum (map euler (mkList n) `using` parList rdeepseq)
 \end{lstlisting}
-\caption{A refactored version of the function from figure~\ref{eulerSeq}}
+\caption{A refactored version of the function from Figure~\ref{eulerSeq}}
 \label{eulerPar1}
 \end{figure} 
   
 This refactoring evaluates the calculation of \texttt{map euler (mkList n)} using\footnote{The (\texttt{using :: a -> Strategy a -> a}) function just evaluates some expression with the given strategy.} the \texttt{parList rdeepseq} strategy. The \texttt{parlist}\footnote{\texttt{parlist :: Strategy a -> Strategy [a]}} function evaluates each element of a list in parallel according to a given strategy and \texttt{rdeepseq} is the strategy the fully evaluates its argument. 
   
-The refactored program in figure~\ref{eulerPar1} is highly parallel but not very efficient because the parallelism is too fine grained. Another refactoring can help in this case instead of sparking every element of a list another strategy can be introduced, one that separates the list into "chunks" and each of the chunks of the list is executed in parallel. This refactoring adds an additional argument to the function that determines how many chunks the list will be split into, as seen in figure~\ref{eulerChunk}.
+The refactored program in Figure~\ref{eulerPar1} is highly parallel but not very efficient because the parallelism is too fine grained. Another refactoring can help in this case instead of sparking every element of a list another strategy can be introduced, one that separates the list into "chunks" and each of the chunks of the list is executed in parallel. This refactoring adds an additional argument to the function that determines how many chunks the list will be split into, as seen in Figure~\ref{eulerChunk}.
   
 \begin{figure}[t]
 \begin{lstlisting}
 sumEulerChunk :: Int -> Int -> Int
 sumEulerChunk c n = sum (map euler (mkList n) `using` parListChunk c rdeepseq)
 \end{lstlisting}
-\caption{A "chunked" version of the function from figure~\ref{eulerSeq}}
+\caption{A "chunked" version of the function from Figure~\ref{eulerSeq}}
 \label{eulerChunk}
 \end{figure}  
 
@@ -520,7 +520,7 @@ Refactoring is a type of program transformation but it does not constitute the w
 
 \subsection{Type and transform systems}
 
-The type-and-transform system described in~\citep{typeAndTransformSemantics} is a system for a semantics preserving and type changing program transformations over the typed lambda calculus with let polymorphism. The type-and-transform system is limited to isomorphic types, there must be a way to convert between the two types and back again as described in figure~\ref{transformIso}.
+The type-and-transform system described in~\citep{typeAndTransformSemantics} is a system for a semantics preserving and type changing program transformations over the typed lambda calculus with let polymorphism. The type-and-transform system is limited to isomorphic types, there must be a way to convert between the two types and back again as described in Figure~\ref{transformIso}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -540,7 +540,7 @@ This work emphasises formalisation and its correctness and the work is done in t
 
 \subsection{Automatic Monadification}\label{erwigMonad}
 
-Monadification is not a new problem and various solutions have been presented in the literature. In~\citep{lammelReuse} monadification is performed in two steps. First the program is transformed into A-normal form\footnote{This is also known as sequencing}, which flattens applications into let expressions. The first line of figure~\ref{anormal} shows a normal expression and line 3 of the same figure shows that expression in A-normal form.
+Monadification is not a new problem and various solutions have been presented in the literature. In~\citep{lammelReuse} monadification is performed in two steps. First the program is transformed into A-normal form\footnote{This is also known as sequencing}, which flattens applications into let expressions. The first line of Figure~\ref{anormal} shows a normal expression and line 3 of the same Figure shows that expression in A-normal form.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -675,7 +675,7 @@ Rather than being a monolithic executable, the Glasgow Haskell Compiler (GHC) is
 	\label{compilerStages}
 \end{figure}
 
-Some of the major components and the order in which they are used in GHC are shown in Figure~\ref{compilerStages} which has been adapted from~\cite{ghcDesign}. This figure is not a complete description of all of GHC's components, just the parts relevant to HaRe. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
+Some of the major components and the order in which they are used in GHC are shown in Figure~\ref{compilerStages} which has been adapted from~\cite{ghcDesign}. This Figure is not a complete description of all of GHC's components, just the parts relevant to HaRe. The full diagram can be found in~\citep{ghcDesign}. The label after each compiler stage indicates the type of AST that is produced by that stage.
 
 The top level data type for all of the GHC abstract syntax is \texttt{HsSyn} ~\citep{ghcDesign}. \texttt{HsSyn} is parameterised by some identifier type; each compiler stage produces a different type of identifier with the additional information that stage produces. For example the typechecker takes in an AST parameterised by \texttt{Name} and returns an AST parameterised by \texttt{Id} which is a \texttt{Name} with additional type information.
 
@@ -1881,7 +1881,7 @@ doMaybeToPlus fileName pos@(row,col) funNm argNum = do
 \label{genMaybeTopLevel}
 \end{figure}
 
-This refactoring, at the top level (defined in figure~\ref{genMaybeTopLevel}), determines which type the target program can be generalised to. This is determined by whether the target function contains a ``\texttt{Nothing} to \texttt{Nothing}" case. When this is true then the function can be rewritten with the \texttt{Monad} interface. This check is defined in the \texttt{containsNothingToNothing} function, which traverses the AST of the target function searching for a case where the \texttt{Pat} on the left hand side pattern is only \texttt{Nothing} and the \texttt{HsExpr} on the right hand side of the match is only \texttt{Nothing}. If this is true for the target function then \texttt{doRewriteAsBind} modifies the other case(s) of the function.
+This refactoring, at the top level (defined in Figure~\ref{genMaybeTopLevel}), determines which type the target program can be generalised to. This is determined by whether the target function contains a ``\texttt{Nothing} to \texttt{Nothing}" case. When this is true then the function can be rewritten with the \texttt{Monad} interface. This check is defined in the \texttt{containsNothingToNothing} function, which traverses the AST of the target function searching for a case where the \texttt{Pat} on the left hand side pattern is only \texttt{Nothing} and the \texttt{HsExpr} on the right hand side of the match is only \texttt{Nothing}. If this is true for the target function then \texttt{doRewriteAsBind} modifies the other case(s) of the function.
 
 The other case has the refactoring checking if its possible to replace all of \texttt{Maybe}'s constructors with the equivalent \texttt{MonadPlus} values. This is checked in \texttt{isOutputType} which checks whether the target type of the refactoring is also the result type of the function. When this is the case \texttt{MonadPlus}' constructors can be substituted for \texttt{Maybe}'s \texttt{Nothing} and \texttt{Just}. This is done by the \texttt{replaceConstructors} function.
 
@@ -1918,7 +1918,7 @@ doRewriteAsBind fileName pos funNm = do
 \label{doRewriteAsBind}
 \end{figure}
 
-Figure~\ref{doRewriteAsBind} shows the implementation of \texttt{doRewriteAsBind} the function that rewrites a function of type \texttt{Maybe} to use the monadic bind interface instead. The first three lines of \texttt{doRewriteAsBind} (lines 3-6 in figure~\ref{doRewriteAsBind}) extract the list of matches that make up every Haskell function. A match consists of the left hand side pattern binding and the right hand side expression. For example, in figure~\ref{matchExample}, the \texttt{last} function's AST representation consists of three matches, one for each function body, whereas the AST of \texttt{doRewriteAsBind} only has one match because its definition contains only a single body.
+Figure~\ref{doRewriteAsBind} shows the implementation of \texttt{doRewriteAsBind} the function that rewrites a function of type \texttt{Maybe} to use the monadic bind interface instead. The first three lines of \texttt{doRewriteAsBind} (lines 3-6 in Figure~\ref{doRewriteAsBind}) extract the list of matches that make up every Haskell function. A match consists of the left hand side pattern binding and the right hand side expression. For example, in Figure~\ref{matchExample}, the \texttt{last} function's AST representation consists of three matches, one for each function body, whereas the AST of \texttt{doRewriteAsBind} only has one match because its definition contains only a single body.
 
 Once the target function's list of matches is retrieved \texttt{doRewriteAsBind} can then perform the appropriate refactoring for a target function with a single match or multiple matches\footnote{It's important to note that \texttt{containsNothingToNothing}, the function that checks if the target function has a \texttt{Nothing} to \texttt{Nothing} case, also removes this case from the AST. This means that the \texttt{matches} list excludes this case.}. Currently this implementation does not support multiple matches but the refactoring could be expanded to automatially wrap the target function's pattern matches in a \texttt{case} statement. Another way to allow HaRe to support this case is to create a separate refactoring that rewrites functions with multiple bindings to use a \texttt{case} statement instead, which would allow the refactoring to proceed.
 
@@ -1933,7 +1933,7 @@ last (x:xs) = last xs
 \label{matchExample}
 \end{figure}
 
-After checking that there is only a single match in the AST of the target function, \texttt{doRewriteAsBind} can start modifying that function. The rest of \texttt{doRewriteAsBind} (from line 10 in figure~\ref{doRewriteAsBind}) constructs a lambda expression and variable to make up the new right hand side of the target function. 
+After checking that there is only a single match in the AST of the target function, \texttt{doRewriteAsBind} can start modifying that function. The rest of \texttt{doRewriteAsBind} (from line 10 in Figure~\ref{doRewriteAsBind}) constructs a lambda expression and variable to make up the new right hand side of the target function. 
 
 This is done by taking the right hand side expression from the target function's match and replacing any calls to \texttt{Just} with \texttt{return}. This generalised version of the right hand side expression can then be wrapped in a lamdba expression with the original pattern being the binding for this expression (line 14's call to \texttt{wrapInLambda}). This new lambda expression can be bound to the newly created variable \texttt{newNm}. This new variable keeps the name given to the original pattern if it was just a simple name (e.g. ``\texttt{x}'') and appends ``\texttt{m\char`_}'' to this name to prevent a naming conflict with the variable inside of the lambda expression. In the case that the pattern was more complex, like when matching a data type constructor (e.g. \texttt{Just x}) or a list \texttt{(x:xs)}, then a generic variable name is created using the target function's name.\footnote{The user of the refactoring will most likely want to apply the renaming refactoring to this variable to give it a more appropriate name.}
 
@@ -1981,9 +1981,9 @@ replaceConstructors pos funNm argNum = do
 
 Figure~\ref{replaceConstructors} shows the top level function \texttt{replaceConstructors} that modifies a target function to replace the \texttt{Maybe} specific values with \texttt{mzero} and \texttt{return}. This function primarily consists of two traversal patterns, the ``stop top down traversal'' (\texttt{stop\_tdTP}) in \texttt{applyInGRHSs} and the \texttt{everywhereM} in \texttt{runGRHSFun}. The only parts of the function that need to be changed are in the right hand side of the target function; the first traversal (from \texttt{applyInGRHSs}) descends to this level and then stops when the guarded right hand side type is found. From there the other traversal continues down the tree replacing the instances \texttt{Just} and \texttt{Nothing}.
 
-After the right hand side binding has been rewritten, the target function's original binding is replaced with the new binding in the call to \texttt{replaceBind} on line six of figure~\ref{replaceConstructors}. Replacing the original binding of a function with a refactoring one is a common operation that many refactorings need to perform. Due to its re-usability \texttt{replaceBind} is a function from HaRe's API and will be discussed in section~\ref{hareAPI}. 
+After the right hand side binding has been rewritten, the target function's original binding is replaced with the new binding in the call to \texttt{replaceBind} on line six of Figure~\ref{replaceConstructors}. Replacing the original binding of a function with a refactoring one is a common operation that many refactorings need to perform. Due to its re-usability \texttt{replaceBind} is a function from HaRe's API and will be discussed in section~\ref{hareAPI}. 
 
-The final step of this refactoring changes the type signature of the target function. The instances of \texttt{Maybe} in the type signature need to be replaced with a type variable that is bound to the \texttt{MonadPlus} typeclass. The \texttt{fixType'} function performs this rewriting. The definition of \texttt{fixType'} is shown in figure~\ref{fixTypePrime}.
+The final step of this refactoring changes the type signature of the target function. The instances of \texttt{Maybe} in the type signature need to be replaced with a type variable that is bound to the \texttt{MonadPlus} typeclass. The \texttt{fixType'} function performs this rewriting. The definition of \texttt{fixType'} is shown in Figure~\ref{fixTypePrime}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2007,7 +2007,7 @@ fixType' funNm argPos = do
 \label{fixTypePrime}
 \end{figure}
 
-The definition of \texttt{fixType'} is shown in figure~\ref{fixTypePrime}, this functions follows the following steps:
+The definition of \texttt{fixType'} is shown in Figure~\ref{fixTypePrime}, this functions follows the following steps:
 
 \begin{itemize}
 \item \textit{Line 5:} Retrieve the signature from the parsed abstract syntax
@@ -2018,7 +2018,7 @@ The definition of \texttt{fixType'} is shown in figure~\ref{fixTypePrime}, this 
 \item \textit{Line 15:} Updates the refactoring state with the modified parsed source
 \end{itemize}
 
-The \texttt{fixTypeClass} and \texttt{replaceMaybeWithVariable} functions transform the abstract syntax of the type signature, and the rest of \texttt{fixType'} creates and modifies the associated annotations so that all of its elements appear in the target program and are well formatted. For example, the call to \texttt{addNewKeyword} on line 10 of figure~\ref{fixTypePrime} associates the \texttt{AnnDcolon} annotation with the new type signature. This annotation represents the ``\texttt{::}'' operator that is otherwise not represented explicitly in the abstract syntax tree. These annotations are what is used by ghc-exactprint to determine where syntax elements that are not located by the abstract syntax are and how the target module should be formatted. This was discussed in more detail in section~\ref{ghcExactprint}.
+The \texttt{fixTypeClass} and \texttt{replaceMaybeWithVariable} functions transform the abstract syntax of the type signature, and the rest of \texttt{fixType'} creates and modifies the associated annotations so that all of its elements appear in the target program and are well formatted. For example, the call to \texttt{addNewKeyword} on line 10 of Figure~\ref{fixTypePrime} associates the \texttt{AnnDcolon} annotation with the new type signature. This annotation represents the ``\texttt{::}'' operator that is otherwise not represented explicitly in the abstract syntax tree. These annotations are what is used by ghc-exactprint to determine where syntax elements that are not located by the abstract syntax are and how the target module should be formatted. This was discussed in more detail in section~\ref{ghcExactprint}.
 
 This section has covered the implementation of the generalising \texttt{Maybe} refactoring. This is a fairly straightforward refactoring implementation, the preconditions are checked up front and depending on the structure of the target function the correct transformation is chosen. The next section will describe the implementation of the ``list to Hughes list'' refactoring. This refactoring must descend the entire syntax tree of each target function and transformations may occur based on the type of the AST's subtrees.  
 
@@ -2029,7 +2029,7 @@ The ``list to Hughes list'' refactoring was first described in section~\ref{list
 
 Though ``list to Hughes list'' is the specific refactoring outlined in this thesis and implemented in HaRe, this sort of refactoring can be applied to any pair of types that hold the properties described in section~\ref{listToDlist}. HaRe's implementation of the ``list to Hughes list'' refactoring keeps this in mind and efforts were made to build reusable components so that similar refactorings can be easily implemented for different types.
 
-The \texttt{doHughesList} function shown in figure~\ref{doHughesList} is main function that performs the ``list to Hughes list'' refactoring. This function performs four primary tasks, adding the import declaration for the difference list library, transforming the function definition, replacing the existing function definition, and wrapping the call points of the target function with the abstraction function.
+The \texttt{doHughesList} function shown in Figure~\ref{doHughesList} is main function that performs the ``list to Hughes list'' refactoring. This function performs four primary tasks, adding the import declaration for the difference list library, transforming the function definition, replacing the existing function definition, and wrapping the call points of the target function with the abstraction function.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2063,7 +2063,7 @@ doHughesList fileName funNm pos argNum fStrs = do
 \label{doHughesList}
 \end{figure}
 
-The most interesting part of this refactoring is the transformation of the function definition. The other steps are handled by HaRe's API which is discussed in section~\ref{hareAPI}. The transformation occurs on lines 16 and 17 of figure~\ref{doHughesList}. The transformation runs within its own state and line 16 creates the initial value of this state while line 17 actually runs the stateful computation. The state's type is shown in figure~\ref{embState}.
+The most interesting part of this refactoring is the transformation of the function definition. The other steps are handled by HaRe's API which is discussed in section~\ref{hareAPI}. The transformation occurs on lines 16 and 17 of Figure~\ref{doHughesList}. The transformation runs within its own state and line 16 creates the initial value of this state while line 17 actually runs the stateful computation. The state's type is shown in Figure~\ref{embState}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2085,9 +2085,9 @@ data EmbeddableFuncs = IF {
 
 The state consists of three fields, \texttt{funcs} keeps track of the functions that operate over the source type and their equivalent functions that operate on the target type, and the names of the projection and abstraction functions. The \texttt{typeStack} field is a stack that keeps track of what changes need to be made further down the abstract syntax tree. The type stack is described in more detail in section~\ref{typeStack} below. Finally, the \texttt{insertAbs} field keeps track of when the abstraction function needs to be applied to certain values.
 
-The call to \texttt{getInitState} on line 16 of figure~\ref{doHughesList} takes in the import declaration of the target type, a list of pairs of strings that represent the equivalent functions over the source and target types, the names of the projection and abstraction functions, the target type's import qualifier if it exists, and the final result type of the target function. In the ``list to Hughes list'' case the import declaration is ``\texttt{import Data.DList qualified as DList}.'' Because many of the Hughes list functions have the same names as their normal list counterparts a qualifier is required so \texttt{DList} is chosen. 
+The call to \texttt{getInitState} on line 16 of Figure~\ref{doHughesList} takes in the import declaration of the target type, a list of pairs of strings that represent the equivalent functions over the source and target types, the names of the projection and abstraction functions, the target type's import qualifier if it exists, and the final result type of the target function. In the ``list to Hughes list'' case the import declaration is ``\texttt{import Data.DList qualified as DList}.'' Because many of the Hughes list functions have the same names as their normal list counterparts a qualifier is required so \texttt{DList} is chosen. 
 
-The list of pairs associates the normal list functions with the appropriate Hughes list functions. A single pair in this list contains, first, the normal list function name followed by the Hughes list function that performs the same operation. For example, ``\texttt{(:)}'' is paired with its Hughes list equivalent ``\texttt{cons}'' because both functions add a single element to the beginning of a list. The full list of pairs for the ``list to Hughes list'' refactoring is shown in figure~\ref{assocFuns}.
+The list of pairs associates the normal list functions with the appropriate Hughes list functions. A single pair in this list contains, first, the normal list function name followed by the Hughes list function that performs the same operation. For example, ``\texttt{(:)}'' is paired with its Hughes list equivalent ``\texttt{cons}'' because both functions add a single element to the beginning of a list. The full list of pairs for the ``list to Hughes list'' refactoring is shown in Figure~\ref{assocFuns}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2099,7 +2099,7 @@ The list of pairs associates the normal list functions with the appropriate Hugh
 
 The projection and abstraction functions are ``\texttt{toList}'' and ``\texttt{fromList}'' respectively in the ``list to Hughes list'' case. The final result type of the target function depends on the result type of the source function. If the result type of the source function is \texttt{[Int]} then the result type of the target function will be \texttt{DList Int}, if the source function's result type is \texttt{[a]} then the target function's result type will be \texttt{DList a}.
 
-Once the initial state has been created the transformation is performed in a top down, left to right manner with the call to \texttt{embRefact} on line 17 of figure~\ref{doHughesList}. As seen in figure~\ref{embRefact} the definition of \texttt{embRefact} simply calls the API function \texttt{modMGAltsRHS} which applies a function that modifies an expression to each of the right hand side values of the given function binding. The ``real'' work of the transformation occurs in \texttt{doEmbRefact} which is defined in figure~\ref{doEmbRefact}.
+Once the initial state has been created the transformation is performed in a top down, left to right manner with the call to \texttt{embRefact} on line 17 of Figure~\ref{doHughesList}. As seen in Figure~\ref{embRefact} the definition of \texttt{embRefact} simply calls the API function \texttt{modMGAltsRHS} which applies a function that modifies an expression to each of the right hand side values of the given function binding. The ``real'' work of the transformation occurs in \texttt{doEmbRefact} which is defined in Figure~\ref{doEmbRefact}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2129,14 +2129,14 @@ doEmbRefact expr = do
 \label{doEmbRefact}
 \end{figure}
 
-The top level, \texttt{doEmbRefact}, function controls when the traversal stops, the helper function \texttt{doEmbRefact'} is what actually transforms the given expression based on its constructor. The two stop conditions, \texttt{b1} and \texttt{b2} from figure~\ref{doEmbRefact} lines three and four, are determined by the state of the ``type stack''.
+The top level, \texttt{doEmbRefact}, function controls when the traversal stops, the helper function \texttt{doEmbRefact'} is what actually transforms the given expression based on its constructor. The two stop conditions, \texttt{b1} and \texttt{b2} from Figure~\ref{doEmbRefact} lines three and four, are determined by the state of the ``type stack''.
 
 \subsection{The goal type stack}
 \label{typeStack}
 
 The type stack is part of the refactoring's state and is of type \texttt{[Maybe GHC.Type]} each member of the stack represents the type that a sub tree must be changed to. The stack will be initialised with a single value ``\texttt{Just (DList a)}'' where \texttt{a} is the type of list from the source function this is because the result type of the entire syntax tree needs to be changed to \texttt{Just (DList a)}. The stack keeps track the ``goal types'' of each sub-tree. 
 
-Consider the \texttt{enumerate} example from section~\ref{hugesListResTy}, which is shown here again in figure~\ref{enumerate2}.
+Consider the \texttt{enumerate} example from section~\ref{hugesListResTy}, which is shown here again in Figure~\ref{enumerate2}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2152,7 +2152,7 @@ enumerate (Node left x right) = (enumerate left) ++ [x] ++ (enumerate right)
 \label{enumerate2}
 \end{figure}
 
-When refactoring the result type of \texttt{enumerate} to become \texttt{DList a} the refactoring begins at the root of \texttt{enumerate}'s abstract syntax tree and the goal type stack is initialised as \texttt{[Just (DList a)]}. At the start of this refactoring the goal type stack holds the single type that the root node needs to become. The initial state of the stack and the abstract syntax tree is shown in figure~\ref{initASTStack}.
+When refactoring the result type of \texttt{enumerate} to become \texttt{DList a} the refactoring begins at the root of \texttt{enumerate}'s abstract syntax tree and the goal type stack is initialised as \texttt{[Just (DList a)]}. At the start of this refactoring the goal type stack holds the single type that the root node needs to become. The initial state of the stack and the abstract syntax tree is shown in Figure~\ref{initASTStack}.
 
 \begin{figure}[t]
 	\begin{subfigure}{\linewidth}
@@ -2168,7 +2168,7 @@ When refactoring the result type of \texttt{enumerate} to become \texttt{DList a
 \label{initASTStack}
 \end{figure} 
 
-In this case the root node of the AST can be replaced with a call to \texttt{DList.append} because this functions result type matches the goal type for the node and \texttt{DList.append} is paired with \texttt{++} the current value of the node. Once the root node is replaced with the call to \texttt{DList.append} the current value of the stack is popped off and \texttt{Just (DList a)} is pushed onto the stack twice. This is because \texttt{(++)} takes in two arguments both of type \texttt{[a]} whereas \texttt{DList.append}'s two arguments need to be of type \texttt{DList a}. The refactoring continues by changing the root node's left child first. The goal type of this subtree is \texttt{DList a} and so the refactoring traverses down to the leftmost child of this subtree. The state of the refactoring at this point in shown in figure~\ref{enumStateL1}.
+In this case the root node of the AST can be replaced with a call to \texttt{DList.append} because this functions result type matches the goal type for the node and \texttt{DList.append} is paired with \texttt{++} the current value of the node. Once the root node is replaced with the call to \texttt{DList.append} the current value of the stack is popped off and \texttt{Just (DList a)} is pushed onto the stack twice. This is because \texttt{(++)} takes in two arguments both of type \texttt{[a]} whereas \texttt{DList.append}'s two arguments need to be of type \texttt{DList a}. The refactoring continues by changing the root node's left child first. The goal type of this subtree is \texttt{DList a} and so the refactoring traverses down to the leftmost child of this subtree. The state of the refactoring at this point in shown in Figure~\ref{enumStateL1}.
 
 \begin{figure}[t]
 	\begin{subfigure}{\linewidth}
@@ -2184,7 +2184,7 @@ In this case the root node of the AST can be replaced with a call to \texttt{DLi
 \label{enumStateL1}
 \end{figure} 
 
-When the refactoring reaches the call to \texttt{enumerate}, it realises that this is a recursive call so the result type is already \texttt{DList a} so no change needs to be made and the top of the goal type stack can be popped off. Also since \texttt{enumerate}'s argument is not a target of the refactoring, those subtrees will not need to be traversed. This is indicated by pushing \texttt{Nothing} onto the stack (see figure~\ref{enumStateL2}). This means that the entire left child of the root node is correct after the change to the root node and the refactoring can begin working on the right child of the root node.
+When the refactoring reaches the call to \texttt{enumerate}, it realises that this is a recursive call so the result type is already \texttt{DList a} so no change needs to be made and the top of the goal type stack can be popped off. Also since \texttt{enumerate}'s argument is not a target of the refactoring, those subtrees will not need to be traversed. This is indicated by pushing \texttt{Nothing} onto the stack (see Figure~\ref{enumStateL2}). This means that the entire left child of the root node is correct after the change to the root node and the refactoring can begin working on the right child of the root node.
 
 \begin{figure}[t]
 	\begin{subfigure}{\linewidth}
@@ -2200,7 +2200,7 @@ When the refactoring reaches the call to \texttt{enumerate}, it realises that th
 \label{enumStateL2}
 \end{figure}
 
-The first node that the refactoring encounters when traversing the right child of the root node is another application of \texttt{++}. This is handled in the same that its parent node was, with \texttt{DList.append} replacing \texttt{++} and the new types of its subtrees (\texttt{DList a} in this case) pushed onto the stack. In the same way that the root node was handled, the refactoring begins by traversing the left subtree. The state of the refactoring at this point is shown in figure~\ref{enumStateR1}.
+The first node that the refactoring encounters when traversing the right child of the root node is another application of \texttt{++}. This is handled in the same that its parent node was, with \texttt{DList.append} replacing \texttt{++} and the new types of its subtrees (\texttt{DList a} in this case) pushed onto the stack. In the same way that the root node was handled, the refactoring begins by traversing the left subtree. The state of the refactoring at this point is shown in Figure~\ref{enumStateR1}.
 
 \begin{figure}[t]
 	\begin{subfigure}{\linewidth}
@@ -2216,7 +2216,7 @@ The first node that the refactoring encounters when traversing the right child o
 \label{enumStateR1}
 \end{figure}
 
-The node that the refactoring is at is a singleton list expression and according to the goal type stack it must be re-typed to \texttt{DList a}. Fortunately the \texttt{DList} library provides a \texttt{singleton} function that produces a Hughes list of length one from a single parameter. The explicit list can be replaced with a call to \texttt{DList.singleton} and this subtree is now correctly typed and the top of the goal type stack can be popped (see figure ~\ref{enumStateR2}).
+The node that the refactoring is at is a singleton list expression and according to the goal type stack it must be re-typed to \texttt{DList a}. Fortunately the \texttt{DList} library provides a \texttt{singleton} function that produces a Hughes list of length one from a single parameter. The explicit list can be replaced with a call to \texttt{DList.singleton} and this subtree is now correctly typed and the top of the goal type stack can be popped (see Figure ~\ref{enumStateR2}).
 
 \begin{figure}[t]
 	\begin{subfigure}{\linewidth}
@@ -2263,7 +2263,7 @@ Though the top level \texttt{doEmbRefact} function determines if a subtree shoul
 \label{embRefactApp}
 \end{figure}
 
-The way that function applications are transformed is shown in figure~\ref{embRefactApp}. The refactoring will transform the left hand side of the application first, then it checks if the entire application needs to be wrapped with a call to the projection function because the leftmost child of the subtree does not have an equivalent function over the target type. After that the right sub tree is refactored and this refactored expression is applied to the refactored left hand expression.
+The way that function applications are transformed is shown in Figure~\ref{embRefactApp}. The refactoring will transform the left hand side of the application first, then it checks if the entire application needs to be wrapped with a call to the projection function because the leftmost child of the subtree does not have an equivalent function over the target type. After that the right sub tree is refactored and this refactored expression is applied to the refactored left hand expression.
 
 If the projection function needs to be introduced at this layer then another application is wrapped around the already modified syntax tree. Otherwise the application with its modified sub trees can just be returned.
 
@@ -2323,11 +2323,11 @@ The new operator may not be allowed in an infix position and in this case backqu
 \label{embRefactVar}
 \end{figure}
 
-The major changes that the refactoring makes are performed when \texttt{doEmbRefact'} encounters a variable. This logic is shown in figure~\ref{embRefactVar}. The first six lines of this case (lines 2 through 7 in figure~\ref{embRefactVar}) retrieve the type of the current variable from the typed abstract syntax. 
+The major changes that the refactoring makes are performed when \texttt{doEmbRefact'} encounters a variable. This logic is shown in Figure~\ref{embRefactVar}. The first six lines of this case (lines 2 through 7 in Figure~\ref{embRefactVar}) retrieve the type of the current variable from the typed abstract syntax. 
 
-Next (line 10 of figure~\ref{embRefactVar}) the refactoring checks if there is a possible replacement function. If a replacement is not available then the transformation can pop the top element from the stack and any parameters that are applied to this value don't have to be searched. This is done through the call to \texttt{dontSearchSubTrees} which puts \texttt{Nothing} values onto the type stack. For example, if the current variable was ``\texttt{f :: a -> b -> c}'' and there was no possible replacement for \texttt{f}, then \\ \texttt{dontSearchSubTrees} would push two \texttt{Nothing}s onto the type stack so that the subtrees of type \texttt{a} and \texttt{b} aren't modified. Finally in this case the boolean ``\texttt{insertProj}'' in the refactoring state is flipped, which informs the refactoring that higher up the tree the application of this value needs to be wrapped with the projection function. 
+Next (line 10 of Figure~\ref{embRefactVar}) the refactoring checks if there is a possible replacement function. If a replacement is not available then the transformation can pop the top element from the stack and any parameters that are applied to this value don't have to be searched. This is done through the call to \texttt{dontSearchSubTrees} which puts \texttt{Nothing} values onto the type stack. For example, if the current variable was ``\texttt{f :: a -> b -> c}'' and there was no possible replacement for \texttt{f}, then \\ \texttt{dontSearchSubTrees} would push two \texttt{Nothing}s onto the type stack so that the subtrees of type \texttt{a} and \texttt{b} aren't modified. Finally in this case the boolean ``\texttt{insertProj}'' in the refactoring state is flipped, which informs the refactoring that higher up the tree the application of this value needs to be wrapped with the projection function. 
 
-When a possible replacement for the current value is found (this case begins on line 19 of figure~\ref{embRefactVar}), the refactoring first calculates which parameters of the new function have different types from the original function which is stored in the \texttt{changedTypes} variable. This variable is a list of \texttt{Maybe GHC.Type}s where the \texttt{Nothing} values mean that the type of that parameter has not changed and ``\texttt{Just \_}'' values indicate the new type that the parameter must become. This list represents each parameter of the variable from left to right order. This list of type changes that need to be handled is pushed onto the type stack in line 29 of figure~\ref{embRefactVar} after the current goal type is popped from the stack. 
+When a possible replacement for the current value is found (this case begins on line 19 of Figure~\ref{embRefactVar}), the refactoring first calculates which parameters of the new function have different types from the original function which is stored in the \texttt{changedTypes} variable. This variable is a list of \texttt{Maybe GHC.Type}s where the \texttt{Nothing} values mean that the type of that parameter has not changed and ``\texttt{Just \_}'' values indicate the new type that the parameter must become. This list represents each parameter of the variable from left to right order. This list of type changes that need to be handled is pushed onto the type stack in line 29 of Figure~\ref{embRefactVar} after the current goal type is popped from the stack. 
 
 The rest of this case constructs the new expression and copies over the annotation from the old piece of abstract syntax so that any formatting associated with the original call is preserved in the new source code. Finally the new expression can be returned.
 
@@ -2363,9 +2363,9 @@ The rest of this case constructs the new expression and copies over the annotati
 
 One of the goals that influenced the design of this system was to produce a reusable system so that more embeddable type refactorings could easily be created. A tricky situation arises with Haskell's support for explicit list syntax (e.g. ``\texttt{[1,2,3]}''). Because lists are the source type of the ``list to Hughes list'' refactoring, the explicit list syntax may need to be transformed during the refactoring, so this type-specific bit of code remains in the otherwise generic function. Ideally this function could remain completely type agnostic but because the ``list to hughes list'' refactoring works over the list type it needs to descend into this type specific constructor of the abstract syntax tree.
 
-The case that handles explicit lists is shown in figure~\ref{embRefactExpLst} and is simple enough. If the explicit list is just a single element long (e.g. ``\texttt{[3]}'') then that value will be passed to the difference list's \texttt{singleton} function, otherwise the projection function is wrapped around longer lists. 
+The case that handles explicit lists is shown in Figure~\ref{embRefactExpLst} and is simple enough. If the explicit list is just a single element long (e.g. ``\texttt{[3]}'') then that value will be passed to the difference list's \texttt{singleton} function, otherwise the projection function is wrapped around longer lists. 
 
-Finally \texttt{doEmbRefact'} has a simple catch-all case that handles all the other constructors of \texttt{HsExpr}. This case shown in figure~\ref{doEmbCatchAll} uses the \texttt{gmapM} generic combinator to recursively call \texttt{doEmbRefact} on all of the given expression's children. 
+Finally \texttt{doEmbRefact'} has a simple catch-all case that handles all the other constructors of \texttt{HsExpr}. This case shown in Figure~\ref{doEmbCatchAll} uses the \texttt{gmapM} generic combinator to recursively call \texttt{doEmbRefact} on all of the given expression's children. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2386,7 +2386,7 @@ These contributions took two forms ``queries'' and ``transformations.'' Queries 
 
 One thing that many refactorings have in common is the need to extract the same AST elements. In an effort to reduce the amount of duplicated code, the \texttt{Query} module was created to hold functions that extract or check properties of syntax elements.
 
-Common queries do things like retrieve the function binding based on function name, as seen in figure~\ref{getHsBind}. Many refactorings have function names as a input argument so \texttt{getHsBind} is useful for retrieving the appropriate binding.
+Common queries do things like retrieve the function binding based on function name, as seen in Figure~\ref{getHsBind}. Many refactorings have function names as a input argument so \texttt{getHsBind} is useful for retrieving the appropriate binding.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2458,18 +2458,18 @@ The next chapters will continue to introduce more complex data driven refactorin
 \chaptermark{Generalising Monads to Applicative}
 \label{chp:applicative}
 
-The previous chapter introduced the concept of a functional data refactoring and gave three examples of data driven refactorings: introducing a type synonym, generalising maybe to MonadPlus, and list to Hughes lists. This chapter will cover another generalising refactoring, rewriting monadic functions to use applicative functors. 
+The previous chapter introduced the concept of a functional data refactoring and gave three examples of data driven refactorings: introducing a type synonym, generalising Maybe, and list to Hughes lists. This chapter will cover another generalising refactoring, generalising monadic functions to use applicative functors if certain conditions are met. 
 
-In their 2008 functional pearl "Applicative Programming with Effects," Conor McBride and Ross Paterson introduced a new type class that they called Idioms but are more commonly known as Applicative Functors~\citep{mcbrideIdioms}. Applicative functors, like monads, provide a way to run computations within some context, and collect their results. Applicative functors are more expressive than functors but more general than monads. 
+In their 2008 functional pearl ``Applicative Programming with Effects,~\citep{mcbrideIdioms}'' Conor McBride and Ross Paterson introduced a new type class that they called Idioms but are more commonly known as Applicative Functors. Applicative functors, like monads, provide a way to run computations within some context, and collect their results. Applicative functors are more expressive than functors but more general than monads. 
 
-Applicative functors were implemented in GHC as the type class \texttt{Applicative}. Interestingly, even though McBride and Paterson proved that all monads are also applicative functors in their original functional pearl~\citep{mcbrideIdioms}, but GHC did not actually require instances of \texttt{Monad} to also be instances of \texttt{Applicative} until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there now exist a large amount of code which could potentially be rewritten using the applicative operators rather than the monadic ones. 
+Applicative functors are implemented in GHC as the type class \texttt{Applicative}. Interestingly, even though McBride and Paterson proved that all monads are also applicative functors in their original functional pearl~\citep{mcbrideIdioms}, GHC did not actually require instances of \texttt{Monad} to also be instances of \texttt{Applicative} until GHC's 7.10.1 release~\citep{ghc7.10Release}. Now that every monad must also be an applicative functor there is now a large body of code which could potentially be rewritten using the applicative operators rather than the monadic ones. 
 
-This chapter will discuss the design and implementation of a refactoring which automatically refactors code written in a monadic style to use the applicative operators instead. Section~\ref{sec:appOverview} is a brief overview of the \texttt{Applicative} typeclass's operators, section~\ref{sec:appProgStyle} will discuss the applicative programming style and, in general, how programs are constructed using the applicative operators. Next, section~\ref{sec:appInPractice} describes how the Haskell community uses the applicative typeclass. Then section~\ref{sec:appRefact} describes in detail the refactoring. Section~\ref{sec:refacImp} discusses the refactoring's implementation in HaRe and some additional refactorings that can be used to get around the preconditions. Finally some applications that are good candidates for this refactoring are discussed in section~\ref{sec:appApps}.
+This chapter will discuss the design and implementation of a refactoring which automatically refactors code written in a monadic style to use the applicative operators instead given it meets certain conditions that we will spell out. Section~\ref{sec:appOverview} is a brief overview of the operations of the \texttt{Applicative} typeclass, Section~\ref{sec:appProgStyle} discusses the applicative programming style and, in general, how programs are constructed using the applicative operators. Next, Section~\ref{sec:appInPractice} describes how the Haskell community uses the applicative typeclass, and Section~\ref{sec:appRefact} describes in detail the refactoring and its preconditions. Section~\ref{sec:refacImp} discusses the refactoring's implementation in HaRe and some additional refactorings that can be used to transform the code to meet the preconditions. Finally some applications that are good candidates for this refactoring are discussed in Section~\ref{sec:appApps}.
 
 \section{The Applicative Type Class}
 \label{sec:appOverview}
-This section is a short introduction to the \texttt{Applicative} type class and some other functions that are commonly used to write functions in an applicative style. 
-This section begins by discussing functors first. Functors are the type class that applicative functors inherit from. The definition of GHC's \texttt{Functor} type class is shown in figure~\ref{functor}. The \texttt{Functor} type class defines a single function that must be implemented: \texttt{fmap}.
+This section is a short introduction to the \texttt{Applicative} type class and some related functions that are commonly used to write functions in an applicative style. 
+To discuss applicative functors we first have to cover functors. Functors originate from category theory and are a natural generalisation of maps over lists. The definition of GHC's \texttt{Functor} type class is shown in Figure~\ref{functor}. The \texttt{Functor} type class defines a single function that must be implemented: \texttt{fmap}.
 
 \begin{figure}
 \begin{lstlisting}
@@ -2480,21 +2480,21 @@ class Functor f where
 \label{functor}
 \end{figure}
 
-\texttt{fmap} allows for a pure function to be applied to the values inside the functor \texttt{f}. Essentially \texttt{fmap} as a function that runs other functions within the \texttt{Functor}'s context. Functors do have a serious limitation, for example, lists are one of the simplest functors, \texttt{fmap} is just defined as \texttt{map :: (a -> b) -> [a] -> [b]}. Now consider the function \texttt{g} and the two lists \texttt{x} and \texttt{y} whose types are shown in figure~\ref{gxy}. With these three values the obvious goal would be to compute a value of type \texttt{[c]}. When \texttt{g} is mapped over   \texttt{x}, a value of type \texttt{[(b -> c)]} is returned.
+\texttt{fmap} allows for a pure function to be applied to the values inside the functor \texttt{f}. Essentially \texttt{fmap} as a function that runs other functions within the \texttt{Functor}'s context. Functors do have a serious limitation, consider Figure~\ref{gxy} which shows the types of the function \texttt{g} and two values \texttt{x} and \texttt{y}, which are some functor \texttt{f} that contains values of type \texttt{a} and \texttt{b} respectively. With these three values the obvious goal would be to compute a value of type \texttt{f c}. When \texttt{g} is mapped over   \texttt{x}, a value of type \texttt{f (b -> c)} is returned.
 
 \begin{figure}[t]
 \begin{lstlisting}
 g :: a -> b -> c
-x :: [a]
-y :: [b]
+x :: f a
+y :: f b
 \end{lstlisting}
-\caption{A function and two.}
+\caption{A function and two functors.}
 \label{gxy}
 \end{figure}
 
-Unfortunately there is no way to either extract the function of type \texttt{(b -> c)} from the list or apply \texttt{y} to the \texttt{[(b -> c)]} value using the \texttt{Functor} type class alone. Sequencing commands in this way requires a more powerful abstraction. Applicative functors allow for this sort of sequencing of commands within a context~\citep{realWorldHaskell}. 
+Unfortunately there is no way to either extract the function of type \texttt{(b -> c)} from the fuctor or apply \texttt{f (b -> c)} to the values in \texttt{y} using the \texttt{Functor} type class alone. Sequencing commands in this way requires a more powerful abstraction. Applicative functors allow for this sort of sequencing of commands within a context~\citep{realWorldHaskell}. 
 
-In Haskell applicative functors are implemented by the \texttt{Applicative} type class. \texttt{Applicative} declares two functions, \texttt{pure} and \texttt{(<*>)}. The types of these two functions are shown in figure~\ref{appTypes}. 
+In Haskell applicative functors are implemented by the \texttt{Applicative} type class. \texttt{Applicative} declares two functions, \texttt{pure} and \texttt{(<*>)}, the types of these two functions are shown in Figure~\ref{appTypes}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2506,16 +2506,26 @@ class Functor f => Applicative f where
 \label{appTypes}
 \end{figure}
 
-The \texttt{pure} function corresponds to monad's \texttt{return}: it simply lifts a value into the applicative context. The other function \texttt{(<*>)}, which is typically pronounced "applied over" or just "apply", takes in two arguments, both of which are applicative values. The first argument is a function, from types \texttt{a} to \texttt{b}, within the applicative context, and the second argument is an \texttt{Applicative} over type \texttt{a}. Apply will return an \texttt{Applicative} over \texttt{b}.
+The \texttt{pure} function is the same type as monad's \texttt{return}: it simply lifts a value into the applicative context. The other function \texttt{(<*>)}, which is typically pronounced "applied over" or just "apply", takes in two arguments, both of which are applicative values\footnote{That is these values are of a type that is an instance of applicative.}. The first argument is a function, from types \texttt{a} to \texttt{b}, within the applicative context, and the second argument is an \texttt{Applicative} over type \texttt{a}. Apply will return an \texttt{Applicative} over \texttt{b}.
 
 \subsection{Other useful functions}
 \label{sec:useful}
-Though \texttt{pure} and apply are the only two functions that are required to be defined to declare an instance of \texttt{Applicative} there are several other useful functions that can either be derived from these two functions or come from other type classes which will be briefly covered here. First, there are two variations of apply, whose types are listed in figure~\ref{appVars}.
+Though \texttt{pure} and apply are the only functions that are required to be defined to declare an instance of \texttt{Applicative} there are several other useful functions that can either be derived from these two functions or come from other type classes which will be briefly covered here. First, there are two special cases of apply, whose definitions are shown in Figure~\ref{appVars} along with the definitions of some helper functions.\footnote{\texttt{liftA2} and \texttt{(<\$)} are used in these definitions for performance reasons. The reasoning behind these decisions is described in the comments in the declaration of the \texttt{Applicative} type class, which can be found here: \url{http://hackage.haskell.org/package/base-4.11.1.0/docs/src/GHC.Base.html#liftA2}}
 
 \begin{figure}[t]
 \begin{lstlisting}
-(*>) :: f a -> f b -> f b
-(<*) :: f a -> f b -> f a
+(*>) :: Applicative f => f a -> f b -> f b
+a1 *> a2 = (id <$ a1) <*> a2
+
+(<*) :: Applicative f => f a -> f b -> f a
+(<*) = liftA2 const
+
+(<$) :: Functor f => a -> f b -> f a
+(<$) = fmap . const
+
+liftA2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
+liftA2 f x = (<*>) (fmap f x)
+
 \end{lstlisting}
 \caption{Variations on apply.}
 \label{appVars}
@@ -2532,9 +2542,9 @@ f id = writeToLog id *> getCustomerById id
 \label{logApp}
 \end{figure}
 
-The function \texttt{f}, from figure~\ref{logApp}, looks up a customer data type from the \texttt{IO} context and logs all of the customer ids that are looked up. We don't really care what \texttt{writeToLog} returns but we do want the effects that it causes (writing a log file) so we compose the calls to \texttt{writeToLog} and \texttt{getCustomerById} with the \texttt{*>} operator to cause both of the functions' effects to happen but only return the value of \texttt{getCustomerById}.
+The function \texttt{f}, from Figure~\ref{logApp}, looks up a customer data type from the \texttt{IO} context and logs all of the customer ids that are looked up. We don't really care what \texttt{writeToLog} returns but we do want the effects that it causes (writing a log file) so we compose the calls to \texttt{writeToLog} and \texttt{getCustomerById} with the \texttt{*>} operator to cause both of the functions' effects to happen but only return the value of \texttt{getCustomerById}.
 
-Another useful function is the infix version of \texttt{fmap}, \texttt{(<\$>)}. A consequence of the applicative laws is functor instance of every \texttt{Applicative} will satisfy the equation in figure~\ref{fmapLaw}~\citep{control.applicative}. This means that instead of explicitly lifting every pure function, the infix version of \texttt{fmap} can be used instead. The next section will cover how these functions can be used in an applicative style of programming.
+Another useful function is the infix version of \texttt{fmap}, \texttt{(<\$>)}. A consequence of the applicative laws is that the functor instance of every \texttt{Applicative} will satisfy the equation in  Figure~\ref{fmapLaw}~\citep{control.applicative}. This means that instead of explicitly lifting a pure function, the infix version of \texttt{fmap} can be used instead. The next section will cover how these functions can be used in an applicative style of programming.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2554,13 +2564,17 @@ f <$> x = pure f <*> x
 \begin{lstlisting}
 pure f <*> is_1 <*> ... <*> is_n
 \end{lstlisting}
-\caption{The applicative functor canonical form.}
+\caption{The applicative functor in canonical form.}
 \label{canonForm}
 \end{figure}
 
-McBride and Paterson proved that any expression built from the applicative combinators can take the canonical form in figure~\ref{canonForm}~\citep{mcbrideIdioms}:\footnote{This notation is taken from~\citep{mcbrideIdioms} where applicatives were called "idioms", hence the use of "\texttt{is}".} The \texttt{is}'s in Figure~\ref{canonForm} are computations within the applicative context. These computations are applied to some pure function ``\texttt{f}'' which has been lifted into the context with the \texttt{pure} function. 
+McBride and Paterson proved that any expression built from the applicative combinators can take the canonical form in Figure~\ref{canonForm}~\citep{mcbrideIdioms}:\footnote{This notation is taken from~\citep{mcbrideIdioms} where applicatives were called "idioms", hence the use of "\texttt{is}".} The \texttt{is}'s in Figure~\ref{canonForm} are computations within the applicative context. These computations are the arguments of some pure function ``\texttt{f}'' that has been lifted into the context with the \texttt{pure} function. 
 
- Context-free parsing is a good ``use case'' of the applicative style and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function, from figure~\ref{parseMoney}, that parses money amounts of the form \texttt{<currency symbol><whole currency amount>.<decimal amount>}. This parser would recognise "\$4.59" or "\textsterling64.56" and parse it into the \texttt{Money} data type as defined in figure~\ref{parseMoney}. The \texttt{parseMoney} function is in the canonical form as defined by~\citep{mcbrideIdioms}. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount respectively. 
+Context-free parsing is a good ``use case'' of the applicative style and many examples in this chapter are taken from parsers defined using the parsec library~\citep{parsec}. The first example of the applicative programming style is a function, from Figure~\ref{parseMoney}, that parses money amounts of the form:
+ 
+ \texttt{<currency symbol><whole currency amount>.<decimal amount>}
+  
+This parser would recognise "\$4.59" or "\textsterling64.56" and parse it into the \texttt{Money} data type as defined in Figure~\ref{parseMoney}. The \texttt{parseMoney} function is in the canonical form as defined by McBride and Paterson. The pure function \texttt{M} is lifted into the \texttt{CharParser} context and its three arguments are provided by three smaller parsers that handle the currency symbol, the whole amount, and the decimal amount respectively. 
 
 
 \begin{figure}[t]
@@ -2579,7 +2593,7 @@ parseMoney = M <$> parseCurrency <*> readWhole <*> readDecimal
  \label{parseMoney}
  \end{figure}
  
-The only difference between the \texttt{readWhole} and \texttt{readDecimal} is that \texttt{readDecimal} has to consume the decimal point before reading the number. Instead of duplicating that number code, a small refactoring that lifts the parsing of the decimal into the \texttt{parseMoney} function will allow us to reuse the \texttt{readWhole} function, as seen in figure~\ref{altParseMoney}. In this definition of \texttt{parseMoney} the parsed decimal character is discarded because of the use of \texttt{<*} rather than the normal apply.
+The only difference between the \texttt{readWhole} and \texttt{readDecimal} is that \texttt{readDecimal} has to consume the decimal point before reading the number. Instead of duplicating that number code, a small refactoring that lifts the parsing of the decimal into the \texttt{parseMoney} function will allow us to reuse the \texttt{readWhole} function, as seen in Figure~\ref{altParseMoney}. In this definition of \texttt{parseMoney} the parsed decimal character is discarded because of the use of \texttt{<*} rather than the normal apply.
 
 \begin{figure}[t]
  \begin{lstlisting}
@@ -2596,13 +2610,17 @@ parseMoney = M <$> parseCurrency <*> readWhole <* char '.' <*> readWhole
 parseMoney :: CharParser () Money
 parseMoney = M <$> parseCurrency <*> readWhole <*> char '.' *> readWhole
  \end{lstlisting}
- \caption{The definition of \texttt{parseMoney} is not well typed.}
+ \caption{A non-well typed definition of \texttt{parseMoney}.}
  \label{typeParseErr}
  \end{figure}
  
-All of the variations of apply\footnote{As in \texttt{(<*>)}, \texttt{(<*)}, and \texttt{(*>)}.} are left associative so the definition of \texttt{parseMoney} in figure~\ref{typeParseErr} causes a type error. This error can be corrected by parenthesising the subexpression\\ "\texttt{char \textquotesingle.\textquotesingle~*> readWhole}".
+All of the variations of apply\footnote{As in \texttt{(<*>)}, \texttt{(<*)}, and \texttt{(*>)}.} are left associative so that the definition of \texttt{parseMoney} in Figure~\ref{typeParseErr} causes a type error. This error can be corrected by parenthesising the subexpression:
+
+\begin{center}
+	 \texttt{char \textquotesingle.\textquotesingle~*> readWhole}
+\end{center}
  
-The canonical style of applicative functions, as defined by~\citep{mcbrideIdioms}, may not be the most idiomatic way to define things. The function from figure~\ref{strParse} parses strings surrounded by double quotes. \texttt{parseStr} does not match the canonical form because no lifted pure function is applied to the rest of the applicative chain. This function could be transformed to canonical form by prepending "\texttt{id <\$>}."
+The canonical style of applicative functions, as defined by~\citep{mcbrideIdioms}, may not be the most idiomatic way to define things. The function from Figure~\ref{strParse} parses strings surrounded by double quotes. \texttt{parseStr} does not match the canonical form because no lifted pure function is applied to the rest of the applicative chain. This function could be transformed to canonical form by prepending "\texttt{id <\$>}", in practice this has no purpose but it shows that any expression constructed using the applicative operators can be transformed to the canonical form.
 
 
 \begin{figure}[t]
@@ -2620,9 +2638,9 @@ The examples covered in this section give a basic introduction to programming in
 \section{Applicative in practice}
 \label{sec:appInPractice}
 
-It is helpful to understand how the Haskell community has adopted and uses the applicative interface to help inform the development of refactorings. If the Haskell community has fully embraced the addition of applicative functors and use them regularly, then a refactoring that rewrites the monadic operations to use applicative ones is not as useful.  
+It is helpful to understand how the Haskell community has adopted and uses the applicative interface to help inform the development of the refactorings in this chapter. If the Haskell community has fully embraced the addition of applicative functors and use them regularly, then a refactoring that rewrites the monadic operations to use applicative ones is not as useful.\footnote{It could still be useful for updating a legacy code base.} 
 
-The simplest question we wanted to answer was how many projects are actually taking advantage of the \texttt{Applicative} interface versus using the suggested implementation. When \texttt{Applicative} was made a superclass of \texttt{Monad} an implementation of the \texttt{Applicative} interface was suggested~\citep{applicativeProposal}. This implementation allowed programmers to get their existing \texttt{Monad} instances to re-compile successfully with minimum effort. We are interested in how many instances use this suggested implementation, which is defined in figure~\ref{appSugImp}.
+The simplest question we wanted to answer was how many projects are actually taking advantage of the \texttt{Applicative} interface versus using the suggested implementation. When \texttt{Applicative} was made a superclass of \texttt{Monad} an implementation of the \texttt{Applicative} interface was suggested~\citep{applicativeProposal}. This implementation allowed programmers to get their existing \texttt{Monad} instances to re-compile successfully with minimum effort. We are interested in how many instances use this suggested implementation, which is defined in Figure~\ref{appSugImp}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2637,21 +2655,19 @@ pure = return
 
 Hackage is the main package repository for open source Haskell code~\citep{hackage}. The code in Hackage is broken up into 12,601 packages\footnote{As of 14 May 2018.} and within these packages there are 144,413 Haskell source files, of which 133,246 (about 92\% of the total) were successfully parsed and searched. 
 
-Parsing failures were caused by two main reasons. First \textit{ghc-exactprint} cannot parse C or C++ code so any files with  embedded C/C++ code blocks were not searched. The second major reason for failure was modules not including language pragmas at the top of each file. A feature of the Cabal build system allows turning on language extensions at the package level rather than the module level: since we are parsing individual files rather than entire projects the parser does not realise that certain language extensions may be turned on.
+Parsing failures were caused by two main reasons. First \textit{ghc-exactprint} cannot parse C or C++ code so any files with  embedded C/C++ code blocks were not searched. The second major reason for failure was modules not including language pragmas at the top of each file. A feature of the Cabal build system allows turning on language extensions at the package level rather than the module level: since we are parsing individual files rather than entire projects the parser does not realise that certain language extensions may be turned on. Parsing failures only happened about in about 8\% of the files so there was no great need to modify ghc-exactprint to handle these cases.
 
-Within each package every "\texttt{.hs}" file was parsed using the \textit{ghc-exactprint} library.\footnote{Unfortunately \textit{ghc-exactprint} cannot parse literate Haskell ("\texttt{.lhs}") files so they were excluded} Once we had the abstract syntax tree we could use generic traversal combinators provided by \textit{Scrap Your Boilerplate} (SYB) to search the parsed files for implementations of the \texttt{Monad} and \texttt{Applicative} type classes.
-
-Even with these failures we were still able to parse more than 90\% of the Haskell source files contained in Hackage. From the successfully parsed files a total of 2,376 \texttt{Applicative} and 2,126 \texttt{Monad} instance declarations were found.
+Within each package every "\texttt{.hs}" file was parsed using the \textit{ghc-exactprint} library.\footnote{Unfortunately \textit{ghc-exactprint} cannot parse literate Haskell ("\texttt{.lhs}") files so they were excluded} Once we had the abstract syntax tree we could use generic traversal combinators provided by \textit{Scrap Your Boilerplate} (SYB) to search the parsed files for implementations of the \texttt{Monad} and \texttt{Applicative} type classes. From the successfully parsed files a total of 2,376 \texttt{Applicative} and 2,126 \texttt{Monad} instance declarations were found.
 
 \subsection{Search Results}
 
-Once all of the \texttt{Applicative} instances were discovered it was much easier to search through them to try and understand how the Haskell community is using this type class. The \texttt{Applicative} type class is an interesting case of programming language design and management. A language feature, in this case \texttt{Monads}, was accepted and even celebrated by the language's community. Then, twenty-five years into the language's life, to continue use this popular feature user's have to modify their code. 
+Once all the \texttt{Applicative} instances were discovered it was much easier to search through them to try and understand how the Haskell community has been using this type class. The \texttt{Applicative} type class is an interesting case of programming language design and management. A language feature, in this case \texttt{Monads}, was accepted and even celebrated by the language's community. Then, twenty-five years into the language's life, to continue use this popular feature users have to modify their code. 
 
 The question that this search is trying to answer is: how has the Haskell community adapted to having to write \texttt{Applicative} instances for every \texttt{Monad} instance? Are programmers taking advantage of what the new type class can offer? 
 
 So, how has the Haskell community adapted to the forced introduction to applicative functors? The reaction seems to be mixed. Of those 2,376 \texttt{Applicative} instances the search discovered 841 directly defined apply as: \texttt{(<*>) = ap}. This is the suggested implementation for apply. 
  
-Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other instances that essentially copy the definition of \texttt{ap}. For example, Figure~\ref{sousitAp} shows the \texttt{Applicative} definition of \texttt{Sink} from the Sousit library. This definition is an exact duplicate of the definition of \texttt{ap}. There are other ways that this functionality can be duplicated, the applicative instance in Figure~\ref{appWithBind} shows another pattern that several packages used. 
+Beyond the instances of \texttt{Applicative} that simply define apply to be \texttt{ap} there are several other instances that essentially copy the definition of \texttt{ap}. For example, Figure~\ref{sousitAp} shows the \texttt{Applicative} definition of \texttt{Sink} from the Sousit library. This definition is an exact duplicate of the definition of \texttt{ap}. There are other ways that this functionality can be duplicated, for example, the applicative instance in Figure~\ref{appWithBind} shows another pattern that several packages used. 
 
 There could be other \texttt{Monad} and \texttt{Applicative} instances that this search couldn't pick up. With the \texttt{GeneralizedNewtypeDeriving} language extension \texttt{Applicative} and \texttt{Monad} instances can be automatically derived by the compiler with their most obvious implementations~\citep{genDeriveBlog}. Though it is unclear how often this extension is used, as there seems to be some community pushback about using it because it could cause unsafe type coercions~\citep{genDeriveUnsafe}. 
 
@@ -2678,9 +2694,9 @@ instance Applicative TypeCheckMonad where
 \label{appWithBind}
 \end{figure}
 
-One interesting thing that the search discovered is that only 697 instances of \texttt{Applicative} defined \texttt{pure} as \texttt{return}. This is less than the number of instances that define apply as \texttt{ap}. It is surprising that implementers take the time to define a pure instance but then define apply as \texttt{ap}.
+One interesting thing that the search discovered is that only 697 instances of \texttt{Applicative} defined \texttt{pure} as \texttt{return}. This is fewer than the number of instances that define apply as \texttt{ap}. It is surprising that implementers take the time to define a pure instance but then define apply as \texttt{ap}. Though, it's impossible to know exactly why people are doing this but it maybe has to do with the Haskell communities understanding and comfort with how to define \texttt{pure} for their types versus apply. 
 
-In total this search discovered 868 instances of \texttt{Applicative} where either apply was directly defined to be \texttt{ap} or \texttt{ap}'s definition was replicated in some way. This means that roughly 35\% of the \texttt{Applicative} definitions aren't doing anything beyond the suggested implementation. The following subsection will look at some other common patterns that go beyond the most basic \texttt{Applicative} implementation.
+In total this search discovered 868 instances of \texttt{Applicative} where either apply was directly defined to be \texttt{ap} or \texttt{ap}'s definition was replicated in some way. This means that roughly 35\% of the \texttt{Applicative} definitions simply use the suggested implementation. The following subsection will look at some other common patterns that go beyond the most basic \texttt{Applicative} implementation.
 
 \subsection{Common Implementation Patterns}
 
@@ -2688,7 +2704,7 @@ In addition to searching how many instances use the standard implementation, the
 
 Finding general patterns like this is a much more complex task than just searching for calls to \texttt{ap} in the definition of apply. All of the Applicative implementations were written into a report and the report was manually analysed for implementation patterns that cropped up multiple times. 
 
-The first common implementation pattern simply pattern matches on the type's constructor to unwrap inner values and apply them to each other. The \texttt{Applicative} instance definition in figure~\ref{sgplusPair} is an example of this approach. 
+The first common implementation pattern simply pattern matches on the type's constructor to unwrap inner values and apply them to each other. The \texttt{Applicative} instance definition in Figure~\ref{sgplusPair} is an example of this approach. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2700,7 +2716,7 @@ instance Applicative Pair where
 \label{sgplusPair}
 \end{figure}
 
-Another pattern that was used several times constrains an inner type to be \texttt{Applicative} as well and just passes off the work to that inner \texttt{Applicative} instance. The example in figure~\ref{dockerApp} shows how this can be defined.
+Another pattern that was used several times constrains an inner type to be \texttt{Applicative} as well and just passes off the work to that inner \texttt{Applicative} instance. The example in Figure~\ref{dockerApp} shows how this can be defined.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2714,16 +2730,14 @@ instance Applicative m => Applicative (DockerT m) where
 
 \subsection{Conclusions}
 
-The search results are a bit inconclusive. It is hard to make firm judgements about people's familiarity with a complex type class just from the implementation of the type class alone. However taken in combination with other results, such as the work done in~\cite{applicativeDo} which takes the approach that a single universal notation is easier to use, and the long history of people having trouble understanding monads~\citep{monadTutorialFallacy}, suggests that programmers do struggle with type classes like monads and applicative functors. Additionally, the popularity of the default \texttt{Applicative} definition could suggest that the Haskell community has not completely adjusted to the type class.
+The search results are inconclusive. It is hard to make firm judgements about people's familiarity with a complex type class just from the implementation of the type class alone. However taken in combination with other results, such as the work done in~\cite{applicativeDo}, which takes the approach that a single universal notation is easier to use, and the long history of people having trouble understanding monads~\citep{monadTutorialFallacy}, it appears that programmers do struggle with type classes like monads and applicative functors. Additionally, the popularity of the default \texttt{Applicative} definition could suggest that the Haskell community has not completely adjusted to the type class.
 
-At the same time it is possible that most monad instances are more monadic than applicative and so the applicative operations are only useful for a few implementations. This is why a refactoring can be a powerful tool for assisting programmers in adopting new language features. A refactoring tool is opt-in and explicit about the changes it makes to a code base. It is up to the programmer to identify that their code is a candidate for refactoring and opt-into using it and once the tool has been used, what was changed is literally written into the target file. Programmers can attempt to use the the refactoring to see if their monadic code can or should be rewritten with the \texttt{Applicative} operators instead.
-
-The rest of this chapter will describe this refactoring, its implementation, preconditions, and some related refactorings that transforms code so that it may be able to pass the preconditions. The next section will describe the design of this refactoring.
+At the same time it is possible that most monad instances are more monadic than applicative and so spending time defining unique applicative instances may only be useful for a few types. The rest of this chapter will describe this refactoring, its implementation, preconditions, and some related refactorings that transforms code so that it may be able to pass the preconditions. The next section will describe the design of this refactoring.
 
 \section{Refactoring Monadic Programs to use Applicative}
 \label{sec:appRefact}
 
-This section will describe how the refactoring of monadic code to the applicative style works via a series of examples. Many of these examples are taken from the parser for money amounts and a JSON parser.\footnote{The full source code for these parsers can be found at \url{https://goo.gl/mrCdFh} and \url{https://goo.gl/ysWmSS}} 
+This section will describe how the refactoring of monadic code to the applicative style works via a series of examples. Many of these examples are taken from case studies of the parser for money amounts and a JSON parser.\footnote{The full source code for these parsers can be found at \url{https://goo.gl/mrCdFh} and \url{https://goo.gl/ysWmSS}} 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2738,7 +2752,7 @@ parseStr = do
 \label{strLit}
 \end{figure}
 
-The first example will refactor a parser for string literals, which is defined in figure~\ref{strLit}. This parser first consumes a double quote character(\texttt{char \textquotesingle"\textquotesingle}) then parses one or more characters that are not double quotes and assigns those characters to the variable named \texttt{str}\footnote{This line is composed of two parser combinators, \texttt{many1}, and \texttt{noneOf}. \texttt{many1} takes another parser as its argument and applies it one or more times returning a list of the results. \texttt{noneOf} takes in a list of characters and succeeds if the current character is not in the provided list; that character is then returned.}. Finally the closing quote is consumed and \texttt{str} is returned. The refactored version of the function is shown in figure~\ref{strLit_ref}.
+The first example will refactor a parser for string literals, which is defined in Figure~\ref{strLit}. This parser first consumes a double quote character(\texttt{char \textquotesingle"\textquotesingle}) then parses one or more characters that are not double quotes and assigns those characters to the variable named \texttt{str}\footnote{This line is composed of two parser combinators, \texttt{many1}, and \texttt{noneOf}. \texttt{many1} takes another parser as its argument and applies it one or more times returning a list of the results. \texttt{noneOf} takes in a list of characters and succeeds if the current character is not in the provided list; that character is then returned.}. Finally the closing quote is consumed and \texttt{str} is returned. The refactored version of the function is shown in Figure~\ref{strLit_ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2749,10 +2763,10 @@ parseStr = char '"' *> (many1 (noneOf "\"")) <* char '"'
 \label{strLit_ref}
 \end{figure}
 
-The refactoring in this case is relatively simple. Since the third and fifth lines of the original function are not bound to a variable, we know that the values returned by those functions will be ignored, hence the use of the \texttt{*>} and \texttt{<*} operators. This way the double quotes characters will still be parsed but the values returned by those parsers will be discarded. The original 
-function just returns the variable \texttt{str}, without calling any pure functions. There will therefore be no pure function application to the left of the effectful functions. 
+The refactoring in this case is relatively simple. Since the third and fifth lines of the original function are not bound to a variable, we know that the values returned by those functions will be ignored, hence the use of the \texttt{*>} and \texttt{<*} operators. This way the double quote characters will still be parsed but the values returned by those parsers will be discarded. The original 
+function returns the variable \texttt{str}, without calling any pure functions on it. There will therefore be no pure function application to the left of the effectful functions. 
 
-This is a fairly simple function to convert to applicative style. The next example is a little more complex. The function in figure~\ref{pMoney2} is a slight modification of the money parser from Section~\ref{sec:appProgStyle} as well. This version of the parser makes the decimal amount optional, so it will recognize both "\textsterling 10.35" and "\texteuro 4".
+This is a straightforward function to convert to applicative style. The next example is a little more complex. The function in Figure~\ref{pMoney2} is a slight modification of the money parser from Section~\ref{sec:appProgStyle} as well. This version of the parser makes the decimal amount optional, so it will recognize both "\textsterling 10.35" and "\texteuro 4".
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2771,7 +2785,7 @@ parseMoney = do
 \label{pMoney2}
 \end{figure}
 
-The \texttt{parseMoney} function parses text into the same \texttt{Money} data type from Section~\ref{sec:appProgStyle}. The \texttt{option} parser allows for the decimial to become optional. The \texttt{option} combinator will attempt to apply the parser which is given as its second argument first. If this parser fails then \texttt{option} returns the value it was given in it's first argument.
+The \texttt{parseMoney} function parses text into the \texttt{Money} data type from Section~\ref{sec:appProgStyle}. The \texttt{option} parser allows for the decimial to become optional. The \texttt{option} combinator will first attempt to apply the parser which is given as its second argument. If this parser fails then \texttt{option} returns the value it was given in its first argument.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2788,9 +2802,9 @@ parseMoney = M <$> parseCurrency
 \end{figure}
 
 
-The return statement in the monadic definition of \texttt{parseMoney} calls the function \texttt{M} with the three values that come from the monadic context. Since \texttt{M} is a pure function, it is placed at the front of the chain of applicative operations, composed with \texttt{(<\$>)}. The \texttt{whole} and \texttt{decimal} variables are being applied to \texttt{read}, a pure function, so these values will be composed with \texttt{read} using the \texttt{(<\$>)} operator. The refactored definition of \texttt{parseMoney} is defined in figure~\ref{parseMon_ref1}.
+The return statement in the monadic definition of \texttt{parseMoney} calls the constructor \texttt{M} with the three values that come from the monadic context. Since \texttt{M} is a pure function, it is placed at the front of the chain of applicative operations, composed with \texttt{(<\$>)}. The \texttt{whole} and \texttt{decimal} variables are passed as arguments to \texttt{read}, a pure function, so these values will be composed with \texttt{read} using the \texttt{(<\$>)} operator. The refactored definition of \texttt{parseMoney} is defined in Figure~\ref{parseMon_ref1}.
 
-The inner \texttt{do} block that is passed as the second argument to \texttt{option} is also a valid target of this refactoring. The result from applying this refactoring to this \texttt{do} block is shown in figure~\ref{parseMon_ref2}.
+The inner \texttt{do} block that is passed as the second argument to \texttt{option} is also a valid target of this refactoring. The result from applying this refactoring to this \texttt{do} block is shown in Figure~\ref{parseMon_ref2}.
 
 \begin{figure}[t]
  \begin{lstlisting}%[frame=tlrb]
@@ -2806,7 +2820,7 @@ parseMoney =
 \end{figure}
 
 \subsection{Splitting the Applicative Chain}
-As chains of applicative computations can get more complicated it is useful or indeed mandatory to parenthesize parts of the function. The \texttt{objEntry} function in figure~\ref{objEntry} parses a single entry from a JSON object. Each entry consists of a string key and a value which can be any valid JSON value, separated by a colon, and stores the key and value in a tuple. 
+As chains of applicative computations can get more complicated it is useful or indeed mandatory to parenthesize parts of the function. The \texttt{objEntry} function in Figure~\ref{objEntry} parses a single entry from a JSON object. Each entry consists of a string key and a value which can be any valid JSON value, separated by a colon, and stores the key and value in a tuple. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2818,7 +2832,7 @@ objEntry = (,)
 \label{objEntry}
 \end{figure}
 
-When there are a large amount of computations that do not affect the final value of the function, there can be multiple valid ways to add parenthesis to the function. The two definitions of \texttt{objEntry} in Figure~\ref{objEntry2} are equivalent.
+When the applicative chain has a number of functions composed with the \texttt{(*>)} or \texttt{(<*)} operators, there are often multiple valid ways to add parentheses to the function. For example, the two definitions of \texttt{objEntry} in Figure~\ref{objEntry2} are equivalent.
 
 The refactoring will produce the first version of this function, and in general will group each of the value-producing expressions (\texttt{parseStr} and \texttt{parseJVal} in this case) with the closest non-value producing statements. Every group contains a single value producing expression and zero or more non-value producing expressions on either side of the value producing expression. Each of these groups will then be surrounded by parentheses if it contains non-value producing statements, and the groups will be composed using the \texttt{<*>} operator. A more formal description of this is provided in Section~\ref{sec:refacImp}.
 
@@ -2841,7 +2855,7 @@ objEntry = (,)
 \subsection{Preconditions}
 \label{sec:appPrecons}
 
-This refactoring has two fairly simple preconditions: first, the target function must be definable with the applicative interface not just the monadic interface and secondly, the order that variables are bound in the \texttt{do} block must correspond to the order in which they are used in the return statement.
+This refactoring has two (simple) preconditions: first, the target function must be definable with the applicative interface (which will be explained below) and secondly, the order that variables are bound in the \texttt{do} block must correspond to the order in which they are used in the return statement.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2855,9 +2869,9 @@ This refactoring has two fairly simple preconditions: first, the target function
 \label{appBind}
 \end{figure} 
 
-What does this first condition actually mean? Where is the line between applicative functors and monads? Let's start by comparing the type signatures of the bind and apply functions, they are shown in figure~\ref{appBind}. One thing to keep in mind is that these two functions' arguments are in opposite order where the function type is the first argument to apply whereas the second argument to bind is a function. The difference between bind and apply is in the type of this function argument. The second argument of bind is a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value returned by a computation in the monad, while all of the arguments to apply are fully within the applicative context.
+What does this first condition actually mean? Where is the line between applicative functors and monads? Let's start by comparing the type signatures of the bind and apply functions, they are shown in Figure~\ref{appBind}. One thing to keep in mind is that these two functions' arguments are in opposite order where the function type is the first argument to apply whereas the second argument to bind is a function. The difference between bind and apply is in the type of this function argument. The second argument of bind is a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value returned by a computation in the monad, while all of the arguments to apply are fully within the applicative context.
 
-What does this mean in practice? Take for example the function \texttt{f} from figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is applied to \texttt{parseNThings} as a pure value. The implementation of the first precondition checks that any values bound in the \texttt{do} statement are not used in a right hand side expression before the \texttt{return} statement. 
+What does this mean in practice? Take for example the function \texttt{f} from Figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is applied to \texttt{parseNThings} as a pure value. The implementation of the first precondition checks that any values bound in the \texttt{do} statement are not used in a right hand side expression before the \texttt{return} statement. 
 
 
 \begin{figure}[t]
@@ -2871,7 +2885,7 @@ f = do
 \label{parseNThings}
 \end{figure}
 
-The second precondition is a bit more intuitive to grasp. Consider the function \texttt{g} in figure~\ref{outOrd}. The naive implementation of the refactoring is in Figure~\ref{outOrd_ref1}. This version of the refactoring maintains the order of statements from the \texttt{do} block but this causes a type error. Instead, if the refactoring swaps the order of the statements (Figure~\ref{outOrd_ref2}) the order that the contextual effects are performed changes, and the meaning of the refactored program is no longer the same as the source program so the refactoring is not valid. 
+The second precondition is a bit more intuitive to grasp. Consider the function \texttt{g} in Figure~\ref{outOrd}. The naive implementation of the refactoring is in Figure~\ref{outOrd_ref1}. This version of the refactoring maintains the order of statements from the \texttt{do} block but this causes a type error. Instead, if the refactoring swaps the order of the statements (Figure~\ref{outOrd_ref2}) the order that the contextual effects are performed changes, and the meaning of the refactored program is no longer the same as the source program so the refactoring is not valid. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2933,7 +2947,7 @@ f = do
 \end{figure}
 
 
-The \texttt{f} function from figure~\ref{fMonad} will not pass the preconditions because both \texttt{b} and \texttt{y} are extracted from the monadic context and used in a right hand side expression. However, lines three through five do not really affect the rest of the function so they could be refactored to their own function and then f could be rewritten applicatively. 
+The \texttt{f} function from Figure~\ref{fMonad} will not pass the preconditions because both \texttt{b} and \texttt{y} are extracted from the monadic context and used in a right hand side expression. However, lines three through five do not really affect the rest of the function so they could be refactored to their own function and then f could be rewritten applicatively. 
 
 The extraction of monadic code does not have to create a top level variable; if the developer preferred the extracted definition could be in a \texttt{let} or \texttt{where} clause.
 
@@ -2966,7 +2980,7 @@ f = do
 
 Instead of extracting an entire function as in subsection~\ref{subSec:extract} a developer may prefer just to inline a do block. This is useful if the monadic section of code is small.
 
-Normally the variable \texttt{z} being used again in line five would prevent the function from being refactored. Merging lines four and five into an inline do block would allow this function pass the preconditions as seen in figure~\ref{inlineDo}. Now the entire function can be refactored to the version defined in figure~\ref{inlineDo_ref}. Additional refactoring can take place with the inner \texttt{do} block also undergoing refactoring.
+Normally the variable \texttt{z} being used again in line five would prevent the function from being refactored. Merging lines four and five into an inline do block would allow this function pass the preconditions as seen in Figure~\ref{inlineDo}. Now the entire function can be refactored to the version defined in Figure~\ref{inlineDo_ref}. Additional refactoring can take place with the inner \texttt{do} block also undergoing refactoring.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2993,7 +3007,7 @@ f = (,)
 \subsubsection{Introduce lambdas to reorder statements}
 \label{lambdaIntro}
 
-The other precondition to the generalise applicative refactoring is the condition that all bound variables need to be extracted from the monadic context in the order they appear in the return statement. Take the example given at the end of Section~\ref{sec:appPrecons} repeated in figure~\ref{ordering}.
+The other precondition to the generalise applicative refactoring is the condition that all bound variables need to be extracted from the monadic context in the order they appear in the return statement. Take the example given at the end of Section~\ref{sec:appPrecons} repeated in Figure~\ref{ordering}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3034,7 +3048,7 @@ Finally the function \texttt{f}, after applying the lambda reordering refactorin
 
 The previous three refactorings are designed to help expand the scope over which the refactoring for generalising to applicative would work. As we said at the beginning of this section, we feel that the composite refactoring approach is better than for generalise applicative automatically to apply the refactorings described in this section. In many cases, though technically correct, the refactorings in this section can produce very verbose and complicated code: for example, imagine a lambda expression with many more arguments than two, or trying to inline more complicated \texttt{do} expressions. Producing less readable code  defeats the purpose of refactoring in the first place. By taking this composite approach,  a software engineer is required to be much more involved in each step of the refactoring, and so to be more aware of the output at each step, too. 
 
-The composite approach also makes it much easier for the refactoring to be extended by others. If there are other similar refactorings than we discussed here it is much simpler for another programmer to just implement their own stand-alone refactoring  than figure out where in our implementation of the generalise applicative refactoring their code should be inserted. 
+The composite approach also makes it much easier for the refactoring to be extended by others. If there are other similar refactorings than we discussed here it is much simpler for another programmer to just implement their own stand-alone refactoring  than Figure out where in our implementation of the generalise applicative refactoring their code should be inserted. 
 
 \section{Implementation of the Refactoring}
 \label{sec:refacImp}
@@ -3166,7 +3180,7 @@ In the \texttt{objEntry} parser in Figure~\ref{objEntry} only lines four and eig
 
 Within each cluster we then decide which applicative operator goes between each expression. Since there is only one binding statement per cluster we know that the only options are \texttt{(*>)} or \texttt{(<*)}. We simply go through the list and if an statement occurs before the binding statement we know that it will be followed by a \texttt{(*>)} operator and once the binding statement comes up all the remaining expressions are composed with the \texttt{(<*)} operator. The first cluster from the \texttt{objEntry} example is: \texttt{(spaces *> parseStr <* spaces <* char ':')}
 
-Once every cluster has been refactored separately all of the clusters are wrapped in parentheses and then composed with the full apply operator (\texttt{<*>}), as seen in figure~\ref{effectObjEntry},
+Once every cluster has been refactored separately all of the clusters are wrapped in parentheses and then composed with the full apply operator (\texttt{<*>}), as seen in Figure~\ref{effectObjEntry},
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3232,7 +3246,7 @@ zipperM lst = do
 \label{zipperM}
 \end{figure}
 
-If the pure expression is just a function call such as in \texttt{zipperM} from figure~\ref{zipperM} then the pure part of the expression is built by extracting the expression being returned and removing all of the bound variables from this expression. In the \texttt{zipperM} example this is just~\texttt{zip lst} after removing the \texttt{lst2} which was bound in the \texttt{do} block. Finally this expression is what is added to the front of the chain.
+If the pure expression is just a function call such as in \texttt{zipperM} from Figure~\ref{zipperM} then the pure part of the expression is built by extracting the expression being returned and removing all of the bound variables from this expression. In the \texttt{zipperM} example this is just~\texttt{zip lst} after removing the \texttt{lst2} which was bound in the \texttt{do} block. Finally this expression is what is added to the front of the chain.
 
 Once the pure expression has been added to the front of the applicative chain the new function definition can replace the source function's right hand side. The refactored functions from both examples used in this section are shown in Figure \ref{final-fns}.
 
@@ -3259,7 +3273,7 @@ This section will discuss some libraries where this refactoring could be useful.
 \subsection{Parsing}
 Many of the examples in this paper are parsers using parser combinator libraries. This has been a classic domain of applicative functors. The first examples of applicative-like developments come from papers on parsing~\citep{efficientParsing,errParsers}.
 
-Indeed, when looking through projects on Hackage that are labeled as parsers, examples of where our refactoring could be applied are numerous. Html-tokenizer is a project that tokenizes HTML code to provide a base for HTML parsers~\citep{htmlTok}. Within it there were several functions that are can be generalised. These functions look very much like what we have already seen before. Take for example the following function that matches an opening tag in figure~\ref{openingTag} and the same function refactoring using this refactoring in figure~\ref{openingTag_ref}.
+Indeed, when looking through projects on Hackage that are labeled as parsers, examples of where our refactoring could be applied are numerous. Html-tokenizer is a project that tokenizes HTML code to provide a base for HTML parsers~\citep{htmlTok}. Within it there were several functions that are can be generalised. These functions look very much like what we have already seen before. Take for example the following function that matches an opening tag in Figure~\ref{openingTag} and the same function refactoring using this refactoring in Figure~\ref{openingTag_ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3291,7 +3305,7 @@ openingTag = (,,)
 \label{openingTag_ref}
 \end{figure}
 
-Another parser that has several functions that can be refactored is in the implementation of pi-forall, a simple dependently typed language created by Stephanie Weirich~\citep{piForall}. The function that parses a module definition and its refactored equivalent are shown in figures~\ref{piParse} and ~\ref{piParse_ref}.
+Another parser that has several functions that can be refactored is in the implementation of pi-forall, a simple dependently typed language created by Stephanie Weirich~\citep{piForall}. The function that parses a module definition and its refactored equivalent are shown in Figures~\ref{piParse} and ~\ref{piParse_ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3354,7 +3368,7 @@ This chapter will describe a monadification refactoring. First will be a very br
 \section{The Monad type class}
 \label{monTC}
 
-The monad type class as it exists in GHC is defined in figure~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} type classes for reference. The two canonical monad functions are \texttt{return} and ``\texttt{(>>=)}'' which is pronounced bind. \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
+The monad type class as it exists in GHC is defined in Figure~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} type classes for reference. The two canonical monad functions are \texttt{return} and ``\texttt{(>>=)}'' which is pronounced bind. \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3382,7 +3396,7 @@ class Applicative m => Monad m where
 \label{monadDef}
 \end{figure}
 
-The other two functions are part of the Haskell language standard for the \texttt{Monad} type class. The \texttt{(>>)} operator allows for sequential composition, when the second operation is not dependent on the outcome of the first. \texttt{fail} is called when a pattern match failure occurs inside of a \texttt{do} statement. In figure~\ref{failCall} \texttt{fail} would be called if the function \texttt{f} returns a \texttt{Nothing} rather than a \texttt{Just}.
+The other two functions are part of the Haskell language standard for the \texttt{Monad} type class. The \texttt{(>>)} operator allows for sequential composition, when the second operation is not dependent on the outcome of the first. \texttt{fail} is called when a pattern match failure occurs inside of a \texttt{do} statement. In Figure~\ref{failCall} \texttt{fail} would be called if the function \texttt{f} returns a \texttt{Nothing} rather than a \texttt{Just}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3416,7 +3430,7 @@ The rest of this chapter will describe these monadification styles in more detai
 
 \subsection{Full Call-by-Value Monadification}
 
-A call-by-value monadification will ensure that all arguments are evaluated before being passed to a function and a function will also be evaluated before having arguments passed to it. Consider the definition of mergesort in figure~\ref{mergesrt}.
+A call-by-value monadification will ensure that all arguments are evaluated before being passed to a function and a function will also be evaluated before having arguments passed to it. Consider the definition of mergesort in Figure~\ref{mergesrt}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3436,7 +3450,7 @@ merge (x:xs) (y:ys) =
 \label{mergesrt}
 \end{figure}
 
-The full call-by-value monadification when applied to \texttt{mergesort} is defined in figure~\ref{fcbv}
+The full call-by-value monadification when applied to \texttt{mergesort} is defined in Figure~\ref{fcbv}
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3459,7 +3473,7 @@ mergesort = return (\ lst -> case lst of
 
 \subsection{Full Call-by-Name Monadification}
 
-The full call-by-name monadification ensures arguments are unevaluated when they are passed to the function. The full call-by-name version of \texttt{mergesort} is defined in figure~\ref{fcbn}.
+The full call-by-name monadification ensures arguments are unevaluated when they are passed to the function. The full call-by-name version of \texttt{mergesort} is defined in Figure~\ref{fcbn}.
 
 
 \begin{figure}[t]
@@ -3486,7 +3500,7 @@ mergesort = return (\ mlst -> do
 The two "full" monadification styles monadify not only the arguments to a function but also the function itself. The remaining styles are restrictions of these full modifications where only some of the arguments are modified not the functions. 
 
 \subsection{Restricted Call-by-Name Monadification}
-This style of monadification is where every argument is contained within the monad. Using the mergesort example again, figure~\ref{resCBN} shows the restricted call-by-name monadification.
+This style of monadification is where every argument is contained within the monad. Using the mergesort example again, Figure~\ref{resCBN} shows the restricted call-by-name monadification.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3507,10 +3521,10 @@ mergesort ml = do
 \label{resCBN}
 \end{figure}
 
-All of the arguments to \texttt{mergesort} in figure~\ref{resCBN} are within the monad so the arguments will be evaluated; hence the call-by-name "flavour" as~\citep{monadSurvey} describes it.
+All of the arguments to \texttt{mergesort} in Figure~\ref{resCBN} are within the monad so the arguments will be evaluated; hence the call-by-name "flavour" as~\citep{monadSurvey} describes it.
 
 \subsection{Data-Directed Monadification}
-This style refactors a certain type to be replaced by a monadic computation over that type. This example becomes clearer when working with functions that have more than a single type like the \texttt{mergesort} example. This style will be explained using the example from~\cite{lammelReuse}. The example is a simple arithmetic expression interpreter as seen in figure~\ref{fig:interpreter}.
+This style refactors a certain type to be replaced by a monadic computation over that type. This example becomes clearer when working with functions that have more than a single type like the \texttt{mergesort} example. This style will be explained using the example from~\cite{lammelReuse}. The example is a simple arithmetic expression interpreter as seen in Figure~\ref{fig:interpreter}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3532,7 +3546,7 @@ evalOp Div v1 v2 = v1 `div` v2
 \label{fig:interpreter}
 \end{figure}
 
-With this particular example the programmer wants the expressions to be evaluated within a monad to add effects. Since \texttt{Int} represents the result of an expression in this program this type is monadified as seen in figure~\ref{fig:monInterp}. Importantly this refactoring makes the type of \texttt{evalOp} change to \texttt{Monad m => Op -> m Int -> m Int -> m Int} in addition to monadifying the result type of \texttt{eval}. 
+With this particular example the programmer wants the expressions to be evaluated within a monad to add effects. Since \texttt{Int} represents the result of an expression in this program this type is monadified as seen in Figure~\ref{fig:monInterp}. Importantly this refactoring makes the type of \texttt{evalOp} change to \texttt{Monad m => Op -> m Int -> m Int -> m Int} in addition to monadifying the result type of \texttt{eval}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3565,7 +3579,7 @@ This style of monadification would pair well with the ``introduce a type synonym
 
 The final monadification style simply monadifies the result type of the target function(s). This is the style of monadification that is produced by the algorithm described in~\cite{monadification} and that is implemented in HaRe as part of this thesis work.
 
-Returning to the mergesort example that was used earlier in this section, the restricted call-by-value monadification implementation of this can be seen in figure~\ref{rCBV}.
+Returning to the mergesort example that was used earlier in this section, the restricted call-by-value monadification implementation of this can be seen in Figure~\ref{rCBV}.
 
 This style of monadification meshes nicely with the bind operator which expects functions whose arguments are pure values and returns a monadic type. This style of monadification has been implemented in HaRe and the next section will go into greater detail about the implementation of this refactoring.
 
@@ -3649,7 +3663,7 @@ stringHandler mi s =
 \label{strHan}
 \end{figure}
 
-Like the many of the preconditions for the ``generalise monad to applicative'' refactoring other refactorings can help transform programs to pass the preconditions. The \texttt{stringHandler} in figure~\ref{strHan} has calls to \texttt{f} that are not fully saturated. Fortunately $\eta$-expansion can be used to fully saturate the calls to \texttt{f} (see figure~\ref{etaHan}) allowing \texttt{stringHandler} and \texttt{f} to be monadified.\footnote{The original definition of \texttt{stringHandler} could be monadified alone.} This expansion involves introducing abstraction over a function so given some function: \texttt{f :: a -> b -> c} which is used in the expression: \texttt{f x}, this can be $\eta$-expanded to: \texttt{(\textbackslash y -> f x y)} so now all of \texttt{f}'s parameters at this call site are a named variable. 
+Like the many of the preconditions for the ``generalise monad to applicative'' refactoring other refactorings can help transform programs to pass the preconditions. The \texttt{stringHandler} in Figure~\ref{strHan} has calls to \texttt{f} that are not fully saturated. Fortunately $\eta$-expansion can be used to fully saturate the calls to \texttt{f} (see Figure~\ref{etaHan}) allowing \texttt{stringHandler} and \texttt{f} to be monadified.\footnote{The original definition of \texttt{stringHandler} could be monadified alone.} This expansion involves introducing abstraction over a function so given some function: \texttt{f :: a -> b -> c} which is used in the expression: \texttt{f x}, this can be $\eta$-expanded to: \texttt{(\textbackslash y -> f x y)} so now all of \texttt{f}'s parameters at this call site are a named variable. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3679,7 +3693,7 @@ The simplest case of this refactoring is when the target function is defined usi
 \item Replace the body of the target function with the generated expression from step three. The final result of the refactoring is \texttt{f x = (g x) >>= (\\v1 -> f v1)}
 \end{enumerate}
 
-A concrete example is shown in figure~\ref{simpleMon}. The functions \texttt{f}, \texttt{g}, and \texttt{h} are all targets of the refactoring.
+A concrete example is shown in Figure~\ref{simpleMon}. The functions \texttt{f}, \texttt{g}, and \texttt{h} are all targets of the refactoring.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3693,15 +3707,15 @@ f x y = f (h x) (g y)
 	\begin{center}
 		\includegraphics[scale=.5]{graphVis/Chapter6/simpF.png}
 	\end{center}
-	\caption{The syntax tree of \texttt{f} from figure~\ref{simpleMon}}
+	\caption{The syntax tree of \texttt{f} from Figure~\ref{simpleMon}}
 	\label{simpF}
 \end{figure}
 
-The syntax tree of the right hand side of \texttt{f} is shown in figure~\ref{simpF}. The transformation starts by top down checking the right subtrees for monadic computations. It will first check the call to \texttt{g} (shaded with grey in figure~\ref{simpF}) then it will check the call to \texttt{h} (the corresponding nodes are inside the box). Both of these subtrees are monadic calls so they will be replaced in the tree with unique generated variables. The refactoring implementation contains a queue where the monadic expressions are paired with the variables that replace them and then stored. After this step the expression is \texttt{f v2 v1} and the queue contains two elements \texttt{[(v1,"(g y)"),(v2,"(h x)")]}. The final step checks if the left most child of the current expression is a call to a monadic function. In this case it is because \texttt{f} is a target of the refactoring but if it wasn't then the expression would be composed with \texttt{return}.
+The syntax tree of the right hand side of \texttt{f} is shown in Figure~\ref{simpF}. The transformation starts by top down checking the right subtrees for monadic computations. It will first check the call to \texttt{g} (shaded with grey in Figure~\ref{simpF}) then it will check the call to \texttt{h} (the corresponding nodes are inside the box). Both of these subtrees are monadic calls so they will be replaced in the tree with unique generated variables. The refactoring implementation contains a queue where the monadic expressions are paired with the variables that replace them and then stored. After this step the expression is \texttt{f v2 v1} and the queue contains two elements \texttt{[(v1,"(g y)"),(v2,"(h x)")]}. The final step checks if the left most child of the current expression is a call to a monadic function. In this case it is because \texttt{f} is a target of the refactoring but if it wasn't then the expression would be composed with \texttt{return}.
 
 At this point the expression is ready to be part of the right hand side of a lambda expression. The first element is popped from the queue, in this case it's \texttt{(v1,"(g y)")}, the variable name becomes the argument in a lambda expression and the expression is the left argument to bind, \texttt{(g y) >>=(\v1 -> f v2 v1)}. In this manner the refactoring keeps popping elements off of the queue wrapping the previous expression in a lambda with the variable name as its argument and composing this lambda with the expression from the queue using bind until the queue is empty.
 
-The final result of refactoring \texttt{f} is shown in figure~\ref{simpF_ref}.
+The final result of refactoring \texttt{f} is shown in Figure~\ref{simpF_ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3715,7 +3729,7 @@ At this point the refactoring is capable of transforming simple function applica
 
 \section{Let Expressions}
 
-The previous section details how the refactoring works over simple function applications. This section will describe how a function with a let expression is refactored. This section will use the expression evaluator in figure~\ref{evalExpr} as a motivating example.
+The previous section details how the refactoring works over simple function applications. This section will describe how a function with a let expression is refactored. This section will use the expression evaluator in Figure~\ref{evalExpr} as a motivating example.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3749,7 +3763,7 @@ eval (Assign x e) env = let (v,env1) = eval e env
 
 The idea is that at this point in the project the explicit passing of the state is unwanted so refactoring \texttt{eval} to become monadic so that the \texttt{Env} can be passed around using the \texttt{State} monad instead. The first two cases that handle the \texttt{Var} and \texttt{N} constructors can simply be wrapped with \texttt{return} because no recursive calls to \texttt{eval} happen in those cases. The three other cases contain let bindings that all call (the now monadic) \texttt{eval}. 
 
-In those cases the local bindings can be used as the variables inside of a lambda expression. This seems simple enough but what order should the bindings be processed in? Consider the let binding in figure~\ref{intLet}, assuming that the \texttt{f} and \texttt{x} variables are in scope. Due to lazy evaluation this is a valid Haskell let binding despite \texttt{v1} being referenced on line one before it's defined on line two. However if the let bindings are processed in the obvious way from top to bottom\footnote{In this case: \texttt{g v1 >>= ($\backslash$v2 -> f x >>= ($\backslash$v1 -> ...))}} \texttt{v1} will not be in scope when it's passed to \texttt{g}.  
+In those cases the local bindings can be used as the variables inside of a lambda expression. This seems simple enough but what order should the bindings be processed in? Consider the let binding in Figure~\ref{intLet}, assuming that the \texttt{f} and \texttt{x} variables are in scope. Due to lazy evaluation this is a valid Haskell let binding despite \texttt{v1} being referenced on line one before it's defined on line two. However if the let bindings are processed in the obvious way from top to bottom\footnote{In this case: \texttt{g v1 >>= ($\backslash$v2 -> f x >>= ($\backslash$v1 -> ...))}} \texttt{v1} will not be in scope when it's passed to \texttt{g}.  
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3763,7 +3777,7 @@ let v2 = g v1
 
 Fortunately GHC offers a solution: the renamer of GHC, which checks for lexical errors, also performs dependency analysis on local bindings and orders them so that later bindings may depend on earlier ones but not vice versa when there is no mutually recursive bindings~\citep{ghcApi}. This renamed ordering is used to lookup the parsed bindings in dependency analysed order.
 
-Returning to the evaluator example the monadified version is shown in figure~\ref{monEval}.\footnote{Line breaks have been added to aid readability in this setting but the refactoring would not actually do this.} The let bindings in \texttt{eval} can be processed from top to bottom. In the \texttt{Add} case this means that the expression bound on line 16 in figure~\ref{evalExpr} makes up the outermost call to bind and the pattern it was originally bound to becomes the pattern that matches the argument passed to the first lambda expression. 
+Returning to the evaluator example the monadified version is shown in Figure~\ref{monEval}.\footnote{Line breaks have been added to aid readability in this setting but the refactoring would not actually do this.} The let bindings in \texttt{eval} can be processed from top to bottom. In the \texttt{Add} case this means that the expression bound on line 16 in Figure~\ref{evalExpr} makes up the outermost call to bind and the pattern it was originally bound to becomes the pattern that matches the argument passed to the first lambda expression. 
 \begin{figure}[t]
 \begin{lstlisting}
 eval :: Monad m => Expr -> Env -> m (Int,Env)
@@ -3787,7 +3801,7 @@ eval (Assign x e) env = eval e env >>=
 \label{monEval}
 \end{figure}
 
-If there were pure expressions on the right hand side of the let binding those bindings will remain in a let expression. For example the function starting on line one in figure~\ref{mixLet} contains two let bindings \texttt{pureF} is a pure function and so it remains inside of a let expression whereas \texttt{monF} is a target of the refactoring and it is lifted from the let and passed to bind. 
+If there were pure expressions on the right hand side of the let binding those bindings will remain in a let expression. For example the function starting on line one in Figure~\ref{mixLet} contains two let bindings \texttt{pureF} is a pure function and so it remains inside of a let expression whereas \texttt{monF} is a target of the refactoring and it is lifted from the let and passed to bind. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3806,7 +3820,7 @@ With this section the refactoring supports the transformation of the core of Has
 
 \section{Adding Syntactic Sugar}
 
-The refactored program from figure~\ref{monEval} is rewritten in a restricted call-by-value monadification style. However, idiomatic monadic Haskell is not often written in this style. Haskell also supports a piece of syntactic sugar called \texttt{do} notation. This notation allows for a series of bind computations to be written in a more compact and easier to read style. Figure~\ref{doEx} shows how the bind expression on line one can be sugared into the do statement on lines four through six.
+The refactored program from Figure~\ref{monEval} is rewritten in a restricted call-by-value monadification style. However, idiomatic monadic Haskell is not often written in this style. Haskell also supports a piece of syntactic sugar called \texttt{do} notation. This notation allows for a series of bind computations to be written in a more compact and easier to read style. Figure~\ref{doEx} shows how the bind expression on line one can be sugared into the do statement on lines four through six.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3823,7 +3837,7 @@ do
 
 \textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are (\cite{realWorldHaskell}; \cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
 
-The sugaring of bind syntax into \texttt{do} syntax is a separate refactoring in HaRe. This allows for the programmer to choose exactly which functions should be written with \texttt{do} syntax and when functions are clearer remaining as binds. The refactoring takes in a single parameter, the position where the target function is declared. The sugared version of \texttt{eval} from figure~\ref{monEval} is shown in figure~\ref{finEval}. The first two cases weren't bind expressions so they remain just calls to return. The three other cases have been refactored into the equivalent \texttt{do} statements.
+The sugaring of bind syntax into \texttt{do} syntax is a separate refactoring in HaRe. This allows for the programmer to choose exactly which functions should be written with \texttt{do} syntax and when functions are clearer remaining as binds. The refactoring takes in a single parameter, the position where the target function is declared. The sugared version of \texttt{eval} from Figure~\ref{monEval} is shown in Figure~\ref{finEval}. The first two cases weren't bind expressions so they remain just calls to return. The three other cases have been refactored into the equivalent \texttt{do} statements.
 
 \begin{figure}[t]
 \begin{lstlisting}
