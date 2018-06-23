@@ -2510,7 +2510,7 @@ The \texttt{pure} function is the same type as monad's \texttt{return}: it simpl
 
 \subsection{Other useful functions}
 \label{sec:useful}
-Though \texttt{pure} and apply are the only functions that are required to be defined to declare an instance of \texttt{Applicative} there are several other useful functions that can either be derived from these two functions or come from other type classes which will be briefly covered here. First, there are two special cases of apply, whose definitions are shown in Figure~\ref{appVars} along with the definitions of some helper functions.\footnote{\texttt{liftA2} and \texttt{(<\$)} are used in these definitions for performance reasons. The reasoning behind these decisions is described in the comments in the declaration of the \texttt{Applicative} type class, which can be found here: \url{http://hackage.haskell.org/package/base-4.11.1.0/docs/src/GHC.Base.html#liftA2}}
+Though \texttt{pure} and apply are the only functions that are required to be defined to declare an instance of \texttt{Applicative} there are several other useful functions that can either be derived from these two functions or come from other type classes which will be briefly covered here. First, there are two special cases of apply, whose definitions are shown in Figure~\ref{appVars} along with the definitions of some helper functions.\footnote{\texttt{liftA2} and \texttt{(<\$)} are used in these definitions for performance reasons. The reasoning behind these decisions is described in the comments in the declaration of the \texttt{Applicative} type class, which can be found here: \url{http://hackage.haskell.org/package/base-4.11.1.0/docs/src/GHC.Base.html\#Applicative}}
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -2871,7 +2871,7 @@ This refactoring has two (simple) preconditions: first, the target function must
 
 What does this first condition actually mean? Where is the line between applicative functors and monads? Let's start by comparing the type signatures of the bind and apply functions, they are shown in Figure~\ref{appBind}. One thing to keep in mind is that these two functions' arguments are in opposite order where the function type is the first argument to apply whereas the second argument to bind is a function. The difference between bind and apply is in the type of this function argument. The second argument of bind is a function that takes in a value of type \texttt{a} and returns an \texttt{m b} whereas apply receives an applicative functor that contains a function from \texttt{a} to \texttt{b}. This means that within a monadic context bind allows access to the pure value returned by a computation in the monad, while all of the arguments to apply are fully within the applicative context.
 
-What does this mean in practice? Take for example the function \texttt{f} from Figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is applied to \texttt{parseNThings} as a pure value. The implementation of the first precondition checks that any values bound in the \texttt{do} statement are not used in a right hand side expression before the \texttt{return} statement. 
+What does this mean in practice? Take for example the function \texttt{f} from Figure~\ref{parseNThings}. The function \texttt{f} first parses a number \texttt{n} then parses \texttt{n} ``things.'' This function is not definable using applicative functors because \texttt{n} is an argument to \texttt{parseNThings} as a pure value. The implementation of the first precondition checks that any values bound in the \texttt{do} statement are not used in a right hand side expression before the \texttt{return} statement. 
 
 
 \begin{figure}[t]
@@ -2921,11 +2921,11 @@ These preconditions enforce subtly different things. The first precondition, tha
 
 The second precondition, especially when described as naively as it has been in this section, seems to also be mandatory for the refactoring to not change the behaviour of the target function. However, an additional transformation could be applied to \texttt{g} that would allow the generalisation refactoring to continue without type errors and preserve the ordering of effects, the introduction of a lambda expression into the \texttt{return} statement. The details of this transformation are described in Section~\ref{lambdaIntro}.
 
-The next section will discuss further refactorings that help modify potential target functions so that they can pass the preconditions discussed in this chapter. The second precondition can always be ``avoided'' if the programmer so chooses by applying an additional refactoring first. The first precondition on the other hand cannot be simply avoided. The next section will discuss refactorings that can help maximise the amount of code that can be refactored, but code that does not pass the first precondition cannot be refactored.
+The next section will discuss further refactorings that help modify potential target functions so that they can meet the preconditions discussed in this chapter. The second precondition can always be ``avoided'' if the programmer so chooses by applying an additional refactoring that wraps the expression that is applied to \texttt{return} in a lambda expression. The first precondition on the other hand cannot be simply avoided. The next section will discuss refactorings that can help maximise the amount of code that can be refactored, but code that does not pass the first precondition cannot be refactored.
 
 \subsection{Additional Refactorings}
 \label{sec:otherRefs}
-The preconditions described in the previous section, and the second one in particular, may seem overly strict and needlessly limit the scope of code to which the refactoring could be applied. Instead of developing a single monolithic refactoring that contains many separate cases the approach HaRe takes is to develop multiple small refactorings that can be composed together. Composing refactorings together in this way is known as a composite refactoring~\citep{wranglerDomain}.
+The preconditions described in the previous section, and the second one in particular, may seem overly strict and needlessly limit the scope of code to which the refactoring could be applied. Instead of developing a single monolithic refactoring that contains many separate cases, the approach that HaRe takes is to develop multiple small refactorings that can be composed together. Composing refactorings together in this way is known as a composite refactoring~\citep{wranglerDomain}.
 
 This section will describe a number of refactorings that will help transform (or ``prefactor'') code so that it is capable of passing the preconditions for the generalising applicative refactoring. 
 
@@ -2947,13 +2947,29 @@ f = do
 \end{figure}
 
 
-The \texttt{f} function from Figure~\ref{fMonad} will not pass the preconditions because both \texttt{b} and \texttt{y} are extracted from the monadic context and used in a right hand side expression. However, lines three through five do not really affect the rest of the function so they could be refactored to their own function and then f could be rewritten applicatively. 
+The \texttt{f} function in Figure~\ref{fMonad} will not pass the preconditions because both \texttt{b} and \texttt{y} are extracted from the monadic context and used in a right hand side expression. However, lines three through five do not really affect the rest of the function so they could be refactored to their own function. The result of extracting these lines into their own function, \texttt{g}, is shown in Figure~\ref{gExtracted}. Now \texttt{f} is a valid target for generalising to the \texttt{Applicative} interface, the final version of this function is in Figure~\ref{fToApp}.
 
-The extraction of monadic code does not have to create a top level variable; if the developer preferred the extracted definition could be in a \texttt{let} or \texttt{where} clause.
+The extraction of monadic code does not have to create a top level variable; if the developer preferred the extracted definition could be in a \texttt{let} or \texttt{where} clause instead.
 
-\begin{figure}[h]
-\begin{lstlisting}%[frame=tblr]
+\begin{figure}[t]
+\begin{lstlisting}
+f = do
+	x <- getX
+	y <- g
+	return (x,y)
 
+g = do
+	b <- getB
+	y <- if b then getY1 else getY2
+	log y
+	return y
+\end{lstlisting}
+\caption{\texttt{g} was extracted from the original function \texttt{f} in Figure~\ref{fMonad}}.
+\label{gExtracted}
+\end{figure}
+
+\begin{figure}[t]
+\begin{lstlisting}
 f = (,) <$> getX <*> g
 
 g = do
@@ -2962,12 +2978,14 @@ g = do
 	log y
 	return y
 \end{lstlisting}
-\caption{\texttt{g} was extracted from the original function \texttt{f} in Figure~\ref{fMonad}. Now \texttt{f} can be rewritten using applicative.}
+\caption{The final result of the refactoring with \texttt{f} rewritten using the \texttt{Applicative} interface.}
+\label{fToApp}
 \end{figure}
+
 \subsubsection{Inline do blocks}
 
 \begin{figure}[h]
-\begin{lstlisting}%[frame=tblr]
+\begin{lstlisting}
 f = do
 	x <- result1
 	y <- result2
@@ -2976,11 +2994,12 @@ f = do
 	return (x,y)
 \end{lstlisting}
 \caption{Lines four and five can be merged into a single do block.}
+\label{logZFun}
 \end{figure}
 
-Instead of extracting an entire function as in subsection~\ref{subSec:extract} a developer may prefer just to inline a do block. This is useful if the monadic section of code is small.
+Instead of extracting an entire function as in the previous section, a developer may prefer just to inline a do block. This is useful if the monadic section of code is small.
 
-Normally the variable \texttt{z} being used again in line five would prevent the function from being refactored. Merging lines four and five into an inline do block would allow this function pass the preconditions as seen in Figure~\ref{inlineDo}. Now the entire function can be refactored to the version defined in Figure~\ref{inlineDo_ref}. Additional refactoring can take place with the inner \texttt{do} block also undergoing refactoring.
+Consider the function in Figure~\ref{logZFun}, normally the variable \texttt{z} being used again in line five would prevent the function from being refactored. Merging lines four and five into an inline do block would allow this function pass the preconditions as seen in Figure~\ref{inlineDo}. Now the entire function can be refactored to the version shown in Figure~\ref{inlineDo_ref}. Additional refactoring can then take place with the inner \texttt{do} block also undergoing refactoring, see Figure~\ref{zLog}
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3004,10 +3023,20 @@ f = (,)
 \label{inlineDo_ref}
 \end{figure}
 
+\begin{figure}[t]
+\begin{lstlisting}
+f = (,) 
+    <$> result1
+    <*> (result2 <* (log <*> result3))
+\end{lstlisting}
+\caption{The inline do block can also be refactored to use the applicative interface.}
+\label{zLog}
+\end{figure}
+
 \subsubsection{Introduce lambdas to reorder statements}
 \label{lambdaIntro}
 
-The other precondition to the generalise applicative refactoring is the condition that all bound variables need to be extracted from the monadic context in the order they appear in the return statement. Take the example given at the end of Section~\ref{sec:appPrecons} repeated in Figure~\ref{ordering}.
+The other precondition to the ``generalise applicative'' refactoring is the condition that all bound variables need to be extracted from the monadic context in the order they appear in the return statement. Reconsider the example given at the end of Section~\ref{sec:appPrecons} (repeated in Figure~\ref{ordering}).
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3046,14 +3075,14 @@ f = (\ b a -> (a,b)) <$> getB <*> getA
 Finally the function \texttt{f}, after applying the lambda reordering refactoring, can be fully rewritten using the \texttt{Applicative} interface. The final result of this chain of refactorings can be seen in Figure~\ref{finalF}.
 
 
-The previous three refactorings are designed to help expand the scope over which the refactoring for generalising to applicative would work. As we said at the beginning of this section, we feel that the composite refactoring approach is better than for generalise applicative automatically to apply the refactorings described in this section. In many cases, though technically correct, the refactorings in this section can produce very verbose and complicated code: for example, imagine a lambda expression with many more arguments than two, or trying to inline more complicated \texttt{do} expressions. Producing less readable code  defeats the purpose of refactoring in the first place. By taking this composite approach,  a software engineer is required to be much more involved in each step of the refactoring, and so to be more aware of the output at each step, too. 
+The previous three refactorings are designed to help expand the scope over which the ``generalising applicative'' refactoring would work. As we said at the beginning of this section, we feel that the composite refactoring approach is better than for generalise applicative automatically to apply the refactorings described in this section. In many cases, though technically correct, the refactorings in this section can produce verbose and complicated code: for example, a lambda expression with many more arguments than two, or an inlined complex \texttt{do} expression. Producing less readable code  defeats the purpose of refactoring in the first place. By taking this composite approach,  a software engineer is required to be involved in each step of the refactoring, and so to be in control of the output at each step, too. 
 
-The composite approach also makes it much easier for the refactoring to be extended by others. If there are other similar refactorings than we discussed here it is much simpler for another programmer to just implement their own stand-alone refactoring  than Figure out where in our implementation of the generalise applicative refactoring their code should be inserted. 
+The composite approach also makes it much easier for the refactoring to be extended by others. If there are other similar refactorings than we discussed here it is much simpler for another programmer to implement their own stand-alone refactoring  than Figure out where in our implementation of the generalise applicative refactoring their code should be inserted. 
 
 \section{Implementation of the Refactoring}
 \label{sec:refacImp}
 
-The previous section informally discussed how the generalise monad to applicative refactoring in general. In practice there are quite a few options that implementers will make when writing this refactoring, including how parentheses are inserted, for example. This section will discuss more formally how HaRe implements the ``generalise to applicative'' refactoring.
+The previous section informally discussed the ``generalise monad to applicative'' refactoring. In practice there are quite a few options that implementers will make when writing this refactoring, including how parentheses are inserted, for example. This section will discuss in more detail how HaRe implements the ``generalise to applicative'' refactoring.
 
 \begin{figure}[t]
 	\begin{math}
@@ -3076,7 +3105,7 @@ s \in Stmt\ &::=\ p \leftarrow e\\
 &|\ e
 		\end{aligned}
 	\end{math}
-	\caption{Syntax the refactoring works over.}
+	\caption{Input syntax for the refactoring}
 	\label{syntax}
 \end{figure}
 
@@ -3090,7 +3119,7 @@ The refactoring takes two arguments: the filepath of the file to be refactored, 
 \textbf{let}\ $s_1, \ldots, s_n$ be\ the\ do\ block\ to\ refactor\\
 \ ~\ ~\ ~\ ~\       $s_n$\ is\ the\ return\ statement.\\
 This\ block\ must\ pass\ the\ following\ preconditions\\
-\hrule
+\\
 \begin{math}
 \begin{aligned}  	
 &\textbf{Bound Variables are only used in return statement}\\
@@ -3116,12 +3145,12 @@ This\ block\ must\ pass\ the\ following\ preconditions\\
 	\label{preconditions}
 \end{figure}
 
-The two arguments that the refactoring takes in are enough to identify and extract the target function so that precondition checking can begin. These preconditions have been defined in Figure~\ref{preconditions}. 
+The two arguments that the refactoring takes are enough to identify and extract the target function so that precondition checking can begin. These preconditions are defined in Figure~\ref{preconditions}. 
 
-The first precondition, checking whether any of the variables bound within the do block is used in another statement, is fairly straightforward to verify. the refactoring just recurses through the list of statements and checks the right hand side of each statement to see whether a bound variable is used in it. If one of the bound variable is found in a right hand side expression then the entire do expression is not context-free and so cannot be rewritten using the applicative interface alone.
+The first precondition, checking whether any of the variables bound within the do block is used in another statement, is fairly straightforward to verify: the refactoring recurses through the list of statements and checks the right hand side of each statement to see whether a bound variable is used in it. If one of the bound variables is found in a right hand side expression then the entire do expression is not context-free and so cannot be rewritten using the applicative interface alone.
 
-The second precondition is checked using a similar method. First we construct a list of the variables in the order that they are used in the return statement. Then going through the do statements whenever a binding statement is found we check that the variable being bound is the leftmost variable in the return statement that has not already been processed.
-%\clearpage
+The second precondition is checked using a similar method. First we construct a list of the variables in the order that they are used in the return statement. Then we search through the \texttt{do} statements in order and whenever a binding statement is found we check that the variable being bound is the leftmost variable in the return statement that has not already been processed.
+
 
 \subsection{Constructing the Effectful Expression}
 \begin{figure}[t]
@@ -3156,7 +3185,7 @@ The second precondition is checked using a similar method. First we construct a 
 \end{figure}
 
 
-Once the preconditions have passed we can start constructing the ``applicative chain'' that will make up the right hand side of the refactored function. This expression is composed of two different types of subexpressions, binding expressions that contribute to the returned value of the function and effectful expressions that are just used for their effects on the applicative context. The code that constructs this effectul part of the applicative chain is contained in Figure~\ref{effects}.
+Once the preconditions have passed we can start constructing the ``applicative chain'' that will make up the right hand side of the refactored function. This expression is composed of two different types of subexpressions, binding expressions that contribute to the returned value of the function and effectful expressions that are just used for their effects on the applicative context. The code that constructs this effectful part of the applicative chain is given in Figure~\ref{effects}.
 
 \begin{figure}[t]
 \begin{lstlisting}%[frame=tblr]
@@ -3176,9 +3205,9 @@ objEntry = do
 \label{objEntry}
 \end{figure}
 
-In the \texttt{objEntry} parser in Figure~\ref{objEntry} only lines four and eight contribute to the final result. The other expressions just consume input and the returned values of those combinators are discarded. The first step in constructing the applicative chain involves building clusters of statements where each cluster contains a single binding statement (those matching $(p \leftarrow e) :: Stmt$) and its nearest effectful statements (those matching $e :: Stmt$). In the above example we would create two clusters, the first cluster consists of lines three through six and the second of lines seven through nine.\footnote{When there are an odd number of effectful expressions between binding expressions the extra expression is added to the leftmost cluster.}
+In the \texttt{objEntry} parser in Figure~\ref{objEntry} only lines four and eight contribute to the final result. The other expressions just consume input and the returned values of those combinators are discarded. The first step in constructing the applicative chain involves building clusters of statements where each cluster contains a single binding statement (those matching $(p \leftarrow e) :: Stmt$) and its nearest effectful statements (those matching $e :: Stmt$). In the example we would create two clusters, the first cluster consists of lines three through six and the second of lines seven through nine.\footnote{When there are an odd number of effectful expressions between binding expressions the extra expression is added to the leftmost cluster.}
 
-Within each cluster we then decide which applicative operator goes between each expression. Since there is only one binding statement per cluster we know that the only options are \texttt{(*>)} or \texttt{(<*)}. We simply go through the list and if an statement occurs before the binding statement we know that it will be followed by a \texttt{(*>)} operator and once the binding statement comes up all the remaining expressions are composed with the \texttt{(<*)} operator. The first cluster from the \texttt{objEntry} example is: \texttt{(spaces *> parseStr <* spaces <* char ':')}
+Within each cluster we then decide which applicative operator goes between each expression. Since there is only one binding statement per cluster we know that the only options are \texttt{(*>)} or \texttt{(<*)}. We simply go through the list and if a statement occurs before the binding statement we know that it will be followed by a \texttt{(*>)} operator and once the binding statement occurs all the remaining expressions are composed with the \texttt{(<*)} operator. The first cluster from the \texttt{objEntry} example is: \texttt{(spaces *> parseStr <* spaces <* char ':')}
 
 Once every cluster has been refactored separately all of the clusters are wrapped in parentheses and then composed with the full apply operator (\texttt{<*>}), as seen in Figure~\ref{effectObjEntry},
 
@@ -3233,7 +3262,7 @@ Once every cluster has been refactored separately all of the clusters are wrappe
 \end{figure}
 Now that the effectful part of the chain has been constructed we must build the pure expression that will be attached to the front of the applicative chain. The definition in Figure~\ref{pure} builds this pure expression. 
 
-In the following example the returned values are wrapped in a tuple, which is a special case, and the pair constructor (\texttt{(,)}) will be added to the front of the chain with the infix \texttt{fmap} operator (\texttt{<\$>}).
+In the running example the returned values are wrapped in a tuple, which is a special case, and the pair constructor (\texttt{(,)}) will be added to the front of the chain with the infix \texttt{fmap} operator (\texttt{<\$>}).
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3246,9 +3275,9 @@ zipperM lst = do
 \label{zipperM}
 \end{figure}
 
-If the pure expression is just a function call such as in \texttt{zipperM} from Figure~\ref{zipperM} then the pure part of the expression is built by extracting the expression being returned and removing all of the bound variables from this expression. In the \texttt{zipperM} example this is just~\texttt{zip lst} after removing the \texttt{lst2} which was bound in the \texttt{do} block. Finally this expression is what is added to the front of the chain.
+If the pure expression is a function call such as in \texttt{zipperM} from Figure~\ref{zipperM}, then the pure part of the expression is built by extracting the expression being returned and removing all of the bound variables from this expression. In the \texttt{zipperM} example this is~\texttt{zip lst} after removing the \texttt{lst2} which was bound in the \texttt{do} block. Finally this expression is added to the front of the chain.
 
-Once the pure expression has been added to the front of the applicative chain the new function definition can replace the source function's right hand side. The refactored functions from both examples used in this section are shown in Figure \ref{final-fns}.
+Once the pure expression has been added to the front of the applicative chain the new function definition can replace the right hand side of the source function. The refactored versions of both examples used in this section are shown in Figure \ref{final-fns}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3273,7 +3302,7 @@ This section will discuss some libraries where this refactoring could be useful.
 \subsection{Parsing}
 Many of the examples in this paper are parsers using parser combinator libraries. This has been a classic domain of applicative functors. The first examples of applicative-like developments come from papers on parsing~\citep{efficientParsing,errParsers}.
 
-Indeed, when looking through projects on Hackage that are labeled as parsers, examples of where our refactoring could be applied are numerous. Html-tokenizer is a project that tokenizes HTML code to provide a base for HTML parsers~\citep{htmlTok}. Within it there were several functions that are can be generalised. These functions look very much like what we have already seen before. Take for example the following function that matches an opening tag in Figure~\ref{openingTag} and the same function refactoring using this refactoring in Figure~\ref{openingTag_ref}.
+Indeed, when looking through projects on Hackage that are labeled as parsers, examples of where our refactoring could be applied are numerous. Html-tokenizer is a project that tokenizes HTML code to provide a base for HTML parsers~\citep{htmlTok}. Within it there were several functions that are can be generalised. These functions look very much like what we have already seen before. Take the example of matching an opening tag: the original definition is in Figure~\ref{openingTag} and the same function after it has been refactored is shown in Figure~\ref{openingTag_ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3305,7 +3334,7 @@ openingTag = (,,)
 \label{openingTag_ref}
 \end{figure}
 
-Another parser that has several functions that can be refactored is in the implementation of pi-forall, a simple dependently typed language created by Stephanie Weirich~\citep{piForall}. The function that parses a module definition and its refactored equivalent are shown in Figures~\ref{piParse} and ~\ref{piParse_ref}.
+Another parser that has several functions that can be refactored is the implementation of pi-forall, a simple dependently typed language created by Stephanie Weirich~\citep{piForall}. The function that parses a module definition and its refactored equivalent are shown in Figures~\ref{piParse} and ~\ref{piParse_ref}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3340,9 +3369,9 @@ moduleDef = Module
 
 \subsection{Data Store Access}
 
-One of the big motivations behind adopting the applicative interface rather than using the monadic interface all the time is that the applicative operators are not inherently sequential. Essentially the left and right hand sides of a call to apply could be executed in parallel. 
+One of the main motivations behind adopting the applicative interface rather than using the monadic interface is that the applicative operators are not inherently sequential: the left and right hand sides of a call to apply could be evaluated in parallel. 
 
-Facebook's Haxl project simplifies accessing remote data stores such as databases and web-services~\citep{haxl}. In the background when requests to the data store are composed with the \texttt{(<*>)} operator, concurrency is implicit~\citep{haxl}. With the generalise applicative refactoring programmers will be able to write their data queries in the do notation that they are familiar with and then refactor their code to gain the concurrency benefits. Haxl is the motivating behind the \textit{applicativeDo} project~\citep{applicativeDo}, as discussed further in Chapter~\ref{chp:related}.
+Facebook's Haxl project simplifies accessing remote data stores such as databases and web-services~\citep{haxl}. In the background when requests to the data store are composed with the \texttt{(<*>)} operator, concurrency is implicit~\citep{haxl}. With the generalise applicative refactoring programmers will be able to write their data queries in the do notation that they are familiar with and then refactor their code to gain the concurrency benefits. Haxl is the motivating behind the \textit{applicativeDo} project~\citep{applicativeDo}, as discussed earlier in Chapter~\ref{chp:related}.
 
 \subsection{Yesod}
 Another possible application of this refactoring is to parts of the code used to define Yesod webservers~\citep{yesod}. The preferred way to handle the creation and processing of web forms uses the applicative interface~\citep{yesodBook}. Yesod doesn't force forms to be handled applicatively because a monad instance is provided as well but it is the \textit{idiomatic} way to handle web forms. This refactoring would allow people to write in the more familiar do notation and then refactor their code to fit the community standard.
