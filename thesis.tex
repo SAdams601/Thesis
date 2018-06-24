@@ -1,3 +1,4 @@
+% !TeX spellcheck = en_US
 % Documentation:
 %
 % The UoK class file extends the standard report style to follow the Registry
@@ -3382,22 +3383,25 @@ This refactoring is another example of a generalisation refactoring that rewrite
 
 Additionally there are cases where the applicative versions of functions are cleaner and easier to read. Parsers in particular can become very descriptive in the applicative style with function calls being read from left to right in the same order as the syntax elements they are parsing appear in the input. 
 
-In both of these cases the type of data the program is processing will drive the desire to refactor. The first case the parts of a program's result are computed under or extracted from a monadic context but these parts are independently computed and don't depend on the result of one part to compute other parts. This opens the opportunity for parallelism by switching from the strictly sequential monadic interface to the applicative one. With some changes to how apply is evaluated, each of its arguments can be computed in parallel if the applicative instance is defined to take advantage of this fact.\footnote{See~\citep{haxl} for an example of this.} The other case, the actual format of the data can inspire the refactoring. Haskell's \texttt{do} syntax has strict formatting requirements. Every statement of a \texttt{do} block must begin on the same column in the source file. The applicative operators are not as strict and would allow for parsing code to be formatted in unique ways to increase readability.
+In both of these cases the type of data the program is processing will drive the desire to refactor. The first case the parts of a program's result are computed under or extracted from a monadic context but these parts are independently computed and don't depend on the result of one part to compute other parts. This opens the opportunity for parallelism by switching from the strictly sequential monadic interface to the applicative one. With some changes to how apply is evaluated, each of its arguments can be computed in parallel if the applicative instance is defined to take advantage of this fact.\footnote{See~\cite{haxl} for an example of this.} The other case, the actual format of the data can inspire the refactoring. Haskell's \texttt{do} syntax has strict formatting requirements. Every statement of a \texttt{do} block must begin on the same column in the source file. The applicative operators are not as strict and would allow for parsing code to be formatted in unique ways to increase readability. 
+
+Improving readability is a valid reason to refactor code, but can a refactoring tool be preferable over a compiler optimization? The \texttt{ApplicativeDo}  desugarer from~\cite{applicativeDo} that was previously described in Chapter~\ref{chp:related} automatically introduces applicative operators into a \texttt{do} statement, why would a refactoring be preferable to just letting the compiler optimize your program for you? Programmers may prefer for the semantics of their programs to be explicitly written rather than trusting the compiler to make the correct decisions for them.
+
    
 
 \chapter{Introducing Monads}
 \label{chp:monadification}
 
-Up to this point the data refactorings that have been discussed are changing abstractions that already existed in the source code. This chapter will explore refactorings that introduce effectful abstractions into pure code. In particular this chapter will focus monadification, the process of adding monads to pure code. 
+Up to this point the data refactorings that have been discussed are making changes to abstractions that already exist in the source code. This chapter explores refactorings that \textit{introduce} effectful abstractions into pure code. In particular this chapter focuses on monadification, the process of adding monads to pure code. 
 
-Monadification of a Haskell program is a common transformation that must be performed if a problem becomes more complicated than is easily expressed without them, such as exception handling or state\footnote{I've had a colleague remark to me: "I can't count the number of times I've been in the middle of something and realized I needed some state."}. The Haskell Community's guidelines also advise that monadic and pure code should be separated if possible so Haskell programs should be written as pure code until it is certain that monads are required~\citep{guidelines}. This makes the process of monadification a common transformation that Haskell programs undergo, making it a compelling refactoring target.
+Monadification of a Haskell program is a common transformation that must be performed when a program is explicitly effectful, such as using \texttt{Maybe} to handle failure or passing the state of a computation as a parameter. The Haskell Community's guidelines also advise that monadic and pure code should be separated if possible, so that Haskell programs should be written as pure code until it is clear that monads are required~\citep{guidelines}. This makes the process of monadification a common transformation that Haskell programmers undertake, making it a compelling refactoring target.
 
-This chapter will describe a monadification refactoring. First will be a very brief definition of the \texttt{Monad} type class from GHC (section~\ref{monTC}). There are multiple styles of monadification as described in~\citep{monadSurvey}, and section~\ref{monadStyles} will describe these styles and discuss their relative merits and usefulness to the Haskell community. Finally the implementation of the monadification refactoring within the HaRe project is described in section~\ref{monadImp}.
+This chapter describes a monadification refactoring. First there is a brief review of the \texttt{Monad} type class from Haskel (section~\ref{monTC}). There are multiple styles of monadification, as described in~\citep{monadSurvey}, and Section~\ref{monadStyles} will describe these styles and discuss their relative merits and usefulness to Haskell programmers. Finally the implementation of the monadification refactoring within HaRe is described in section~\ref{monadImp}.
  
 \section{The Monad type class}
 \label{monTC}
 
-The monad type class as it exists in GHC is defined in Figure~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} type classes for reference. The two canonical monad functions are \texttt{return} and ``\texttt{(>>=)}'' which is pronounced bind. \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
+The monad type class is defined in Figure~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} type classes for reference. The two canonical monad functions are \texttt{return} and ``\texttt{(>>=)}'' which is pronounced bind. \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3425,7 +3429,7 @@ class Applicative m => Monad m where
 \label{monadDef}
 \end{figure}
 
-The other two functions are part of the Haskell language standard for the \texttt{Monad} type class. The \texttt{(>>)} operator allows for sequential composition, when the second operation is not dependent on the outcome of the first. \texttt{fail} is called when a pattern match failure occurs inside of a \texttt{do} statement. In Figure~\ref{failCall} \texttt{fail} would be called if the function \texttt{f} returns a \texttt{Nothing} rather than a \texttt{Just}.
+The other two functions are part of the Haskell language standard for the \texttt{Monad} type class. The \texttt{(>>)} operator allows for sequential composition, when the second operation is not dependent on the outcome of the first. \texttt{fail} is called when a pattern match failure occurs inside of a \texttt{do} statement. In Figure~\ref{failCall} \texttt{fail} would be called if the function \texttt{f} returns \texttt{Nothing} rather than (\texttt{Just n}) for some \texttt{n}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3438,12 +3442,12 @@ return (n+1)
 \label{failCall}
 \end{figure}
 
-Haskell has singled out monads as the standard framework for building I/O and stateful computations. This section has described the monad type class. Despite the number of tutorials written about how to understand it, the monad type class only consists of the \texttt{return} and \texttt{(>>=)} operations. The following section will discuss the different ways that monadic programs can be constructed. 
+Haskell has identified monads as the standard framework for building I/O and stateful computations. This section has described the monad type class. Despite the number of tutorials written about how to understand it, the monad type class only consists of the \texttt{return} and \texttt{(>>=)} operations. The following section will discuss the different ways that monadic programs can be constructed. 
 
 \section{Styles of Monadification}
 \label{monadStyles}
 
-Up to this point this thesis has been fairly vague about what monadification is, beyond the process of introducing monads into a previously pure type. Monadifying a single type changes it from type \texttt{a} to type \texttt{Monad m => m a}. Monadifying a function changes the result type of the function because there is no way to extract values out of any given monadic context. Monadification can also affect any combination of parameters. Which parameters are affected depends on the \textit{style} of monadification.
+Up to this point this thesis has not gone into detail about what monadification is, beyond the process of introducing monads into a previously pure type. Monadifying a single type changes it from type \texttt{a} to type \texttt{Monad m => m a}. Monadifying a function will always change the result type of a target function because there is no way to extract values out of any monadic context. Monadification can also affect any combination of parameters. Which parameters are affected depends on the \textit{style} of monadification.
 
 The different styles of monadification can change how a function is evaluated. In~\cite{monadSurvey} five different styles of monadification are described as part of a survey of the Haskell community's use of monads. The monadification styles are:
 
@@ -3455,11 +3459,11 @@ The different styles of monadification can change how a function is evaluated. I
 \item Restricted Call-by Value (This is the style implemented in HaRe)
 \end{itemize}
 
-The rest of this chapter will describe these monadification styles in more detail. There are two examples used, one is an implementation of mergesort that was developed for this thesis, and the other is an expression evaluator which is taken from~\cite{monadSurvey}. 
+The rest of this section will describe each of these monadification styles in more detail. There are two examples used: one is an implementation of merge sort that was developed for this thesis, and the other is an expression evaluator which is taken from~\cite{monadSurvey}. 
 
 \subsection{Full Call-by-Value Monadification}
 
-A call-by-value monadification will ensure that all arguments are evaluated before being passed to a function and a function will also be evaluated before having arguments passed to it. Consider the definition of mergesort in Figure~\ref{mergesrt}.
+A call-by-value monadification of a function will ensure that all arguments are evaluated before being passed to a function and the function will also be evaluated before having arguments passed to it. Consider the definition of mergesort in Figure~\ref{mergesrt}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3479,7 +3483,7 @@ merge (x:xs) (y:ys) =
 \label{mergesrt}
 \end{figure}
 
-The full call-by-value monadification when applied to \texttt{mergesort} is defined in Figure~\ref{fcbv}
+The full call-by-value monadification, when applied to \texttt{mergesort}, is defined in Figure~\ref{fcbv}
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3502,7 +3506,7 @@ mergesort = return (\ lst -> case lst of
 
 \subsection{Full Call-by-Name Monadification}
 
-The full call-by-name monadification ensures arguments are unevaluated when they are passed to the function. The full call-by-name version of \texttt{mergesort} is defined in Figure~\ref{fcbn}.
+The full call-by-name monadification of a function ensures arguments are unevaluated when they are passed to the function. The full call-by-name version of \texttt{mergesort} is defined in Figure~\ref{fcbn}.
 
 
 \begin{figure}[t]
@@ -3526,7 +3530,23 @@ mergesort = return (\ mlst -> do
 \label{fcbn}
 \end{figure}
 
-The two "full" monadification styles monadify not only the arguments to a function but also the function itself. The remaining styles are restrictions of these full modifications where only some of the arguments are modified not the functions. 
+\begin{figure}[t]
+	\begin{lstlisting}
+		> let lst = [3,2,1]
+		> fcbvMergesort >>= (\f -> f lst)
+		[1,2,3]
+		> fcbnMergesort >>= (\f -> f (return lst))
+		[1,2,3]
+	\end{lstlisting}
+	\caption{Using the monadified versions of mergsort. \texttt{fcbvMergsort} is defined in Figure~\ref{fcbv} and \texttt{fcbnMergesort} is defined in Figure~\ref{fcbn}.}
+	\label{fullMonadExs}
+\end{figure}
+
+The two "full" monadification styles monadify not only the arguments to a function but also the function itself. That is the refactored functions return a monadic value that computes another function with, depending on the style, parameters that may be monadic. 
+
+The full monadification styles are a bit ``too monadified'' to be broadly useful. Consider the full call-by-value monadification of \texttt{mergesort} in Figure~\ref{fcbv}, to sort a list, first the function needs to be extracted via the monadic context then it can be applied to the list. The full call-by-name version of the function takes an additional step to use, this time the list value needs to be lifted into the monadic context before it can be passed to the extracted function. Examples of how to use these full monadifications are shown in Figure~\ref{fullMonadExs}.
+
+The remaining monadification styles are ``restricted'' versions of the two full monadification styles. All of these styles do not wrap the function inside of the monadic context, they differ in which of the target function's parameters are monadified. 
 
 \subsection{Restricted Call-by-Name Monadification}
 This style of monadification is where every argument is contained within the monad. Using the mergesort example again, Figure~\ref{resCBN} shows the restricted call-by-name monadification.
@@ -3550,10 +3570,10 @@ mergesort ml = do
 \label{resCBN}
 \end{figure}
 
-All of the arguments to \texttt{mergesort} in Figure~\ref{resCBN} are within the monad so the arguments will be evaluated; hence the call-by-name "flavour" as~\citep{monadSurvey} describes it.
+The argument passed to \texttt{mergesort} in Figure~\ref{resCBN} is within the monad so it will not be evaluated until it is extracted from the monadic context on line 3 of Figure~\ref{resCBN}. This gives the refactored function its call-by-name ``flavour'' as~\cite{monadSurvey} describes it. 
 
 \subsection{Data-Directed Monadification}
-This style refactors a certain type to be replaced by a monadic computation over that type. This example becomes clearer when working with functions that have more than a single type like the \texttt{mergesort} example. This style will be explained using the example from~\cite{lammelReuse}. The example is a simple arithmetic expression interpreter as seen in Figure~\ref{fig:interpreter}.
+This style refactors a certain type to be replaced by a monadic computation over that type. This example becomes clearer when working with functions that have more than a single argument like the \texttt{mergesort} example. This style will be explained using the example from~\cite{lammelReuse}. The example is a simple arithmetic expression interpreter as seen in Figure~\ref{fig:interpreter}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3598,15 +3618,13 @@ evalOp Div v1 v2 = do
 \label{fig:monInterp}
 \end{figure}
 
-Some arguments are passed unevaluated, the monadic typed ones, whereas other types are non-monadic. Therefore this style is a mixture of the call-by-name and call-by-value styles~\citep{monadification}. 
+Some arguments are passed unevaluated- those of monadic type- whereas arguments of other types are non-monadic. Therefore this style is a mixture of the call-by-name and call-by-value styles~\citep{monadSurvey}. 
 
-Data-directed monadification is useful if a particular type can always represent the result of a computation that should be effectful. This makes it a difficult style of monadification to implement, because there is not enough information in the type system to always determine which parameters are targets of the refacoring. In the interpreter case, \texttt{Int} is always the result of an evaluation. Even in the only call to \texttt{evalOp} the second and third arguments are computed from recursive calls to \texttt{eval} so those \texttt{Int} types also represent expression evaluation.
-
-This style of monadification would pair well with the ``introduce a type synonym'' refactoring to differentiate instances of types that should be monadified. In the interpreter example if it was anticipated that another \texttt{Int} type that didn't represent the result of an evaluation needed to be added to the program. 
+Data-directed monadification is useful if a particular type can always represent the result of a computation that should be effectful. This makes it a difficult style of monadification to implement, because there is not enough information in the type system to always determine which parameters are targets of the refacoring. In the interpreter case, \texttt{Int} is always the result of an evaluation. Even in the only call to \texttt{evalOp} the second and third arguments are computed from recursive calls to \texttt{eval} so those \texttt{Int} types also represent expression evaluation. This style of monadification would pair well with the ``introduce a type synonym'' refactoring to differentiate instances of types that should be monadified. 
 
 \subsection{Restricted Call-by-Value Monadification}
 
-The final monadification style simply monadifies the result type of the target function(s). This is the style of monadification that is produced by the algorithm described in~\cite{monadification} and that is implemented in HaRe as part of this thesis work.
+The final monadification style monadifies the result type of the target function(s). This is the style of monadification that is produced by the algorithm described in~\cite{monadification} and that is implemented in HaRe as part of this thesis work.
 
 Returning to the mergesort example that was used earlier in this section, the restricted call-by-value monadification implementation of this can be seen in Figure~\ref{rCBV}.
 
@@ -3637,7 +3655,7 @@ merge (x:xs) (y:ys) =
 \label{rCBV}
 \end{figure}
 
-This section has been a summary of the different ways that monadic programs can be written. These styles were first identified by~\cite{lammelReuse},~\cite{monadification}, and~\cite{monadSurvey}. This thesis provides an implementation of the restricted call-by-value monadification. This style fits well with how bind's one argument is a pure value and it returns a monadic value. The next section will describe HaRe's implementation of the restricted call-by-value monadification refactoring.
+This section has been a summary of the different ways that monadic programs can be written. These styles were first identified by~\cite{lammelReuse},~\cite{monadification}, and~\cite{monadSurvey}. This thesis provides an implementation of the restricted call-by-value monadification. This style fits well with how the passed to bind is a pure value and it returns a monadic value. This style is also the obvious way to make a non-effectful computation effectful. The other styles assume that there is an already existing monadic context that either produces the arguments that are passed to the target function, in the call-by-name cases, or to extract the function into, as in the ``full'' monadification styles. The restricted call-by-value style of monadification fits easily into an otherwise pure program, which is what the refactoring is targeting.  
 
 \section{Implementation of the Monadification Refactoring}
 \label{monadImp}
