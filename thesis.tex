@@ -3660,13 +3660,13 @@ This section has been a summary of the different ways that monadic programs can 
 \section{Implementation of the Monadification Refactoring}
 \label{monadImp}
 
-The implementation of Monadification in HaRe is a fairly straightforward top down transformation. The monadification refactoring takes in a list of positions as input. Those positions define where the functions that should be monadified are defined. 
+The implementation of Monadification in HaRe is a top down transformation. The monadification refactoring takes a list of target functions as input. In practice the refactoring receives a list of positions in a file and these positions indicate which functions should be targeted by the refactoring.
 
-The monadification refactoring works over sets of functions simultaneously. Figure~\ref{fgMon} defines two functions \texttt{f} and \texttt{g} and the two possible monadifications (\texttt{*\_m1} and \texttt{*\_m2}). The \texttt{f\_m1} function is how \texttt{f} would be rewritten if it was the sole target of the refactoring, since the right hand side of \texttt{f} is composed from pure values and non-monadic functions \texttt{f\_m1} is defined by applying \texttt{return} to the original definition of \texttt{f}.
+The monadification refactoring works over sets of functions simultaneously. Figure~\ref{fgMon} defines two functions \texttt{f} and \texttt{g} and the two possible monadifications (``\texttt{*\_m1}'' and ``\texttt{*\_m2}''). The \texttt{f\_m1} function is how \texttt{f} would be rewritten if it was the sole target of the refactoring, and \texttt{f\_m2} and \texttt{g\_m2} are the definitions if both functions were a target of the refactoring.
 
-When the refactoring targets both \texttt{f} and \texttt{g} these functions will be rewritten to their "\texttt{*\_m2}" equivalents. In this case \texttt{g} is handled in the same way \texttt{f\_m1} was defined, because it is defined entirely with non-monadic values the new right hand side is just the old one composed with \texttt{return}. The definition of \texttt{f\_m2} is slightly more interesting, however, due to the call to the monadified function \texttt{g\_m2}. The refactored version of \texttt{g} in this scenario produces a monadic value of type \texttt{Monad m => m Int} so a call to this function can no longer be passed to \texttt{(+)}. Instead that whole sub-expression is replaced with a new variable "\texttt{v1}." The result of the, now monadic, computation (\texttt{g\_m2 x}) is bound to this new variable via the bind (\texttt{>>=}) operator and lambda expression. 
+When only making \texttt{f} effectful the refactoring can simply lift its original definition into the monad using the \texttt{return} function. Since \texttt{g} is a pure function it can still be used in the body of \texttt{f\_m1} without any changes. When both of the functions are targets of the refactoring \texttt{g}, because it is not dependent on any other monadic functions, can just be handled in the same way \texttt{f\_m1} was by lifting its definition into the monadic context using \texttt{return}. However, \texttt{f} is dependent on the now effectful \texttt{g} so the expression ``\texttt{(g x) + 1}'' will now throw a type error because \texttt{(g x)} is of type ``\texttt{m Int}'' not a number which was it's previous type. Instead the call to \texttt{g\_m2} needs to be bound to the rest of \texttt{f\_m2}'s definition so that its result can be extracted from the monadic context.
 
- 
+It's important to note that \texttt{g} alone is not a valid target of the refactoring. This is because \texttt{f} is dependent on \texttt{g}, if \texttt{g} becomes effectful then it can no longer be used the pure function \texttt{f}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3691,7 +3691,7 @@ g_m2 y = return (y * 2)
 
 \subsection{Preconditions}
 
-There are two preconditions that must be met before this refactoring can be applied. First, all of call points of the target functions must be ``fully-saturated.'' This means that every call point will have a named variable applied to the target function. This allows the refactoring to assume that the type of a subtree whose leftmost child is a monadified function is a monadic value and not something of type \texttt{Monad m => a -> m a}. 
+There are two preconditions that must be met before this refactoring can be applied. First, all of call points of the target functions must be ``fully-saturated.'' This means that every call point will have a named variable passed to the target function. This allows the refactoring to assume that the type of a subtree whose leftmost child is a monadified function is a monadic value and not something of type \texttt{Monad m => a -> m a}. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3710,7 +3710,7 @@ stringHandler mi s =
 \label{strHan}
 \end{figure}
 
-Like the many of the preconditions for the ``generalise monad to applicative'' refactoring other refactorings can help transform programs to pass the preconditions. The \texttt{stringHandler} in Figure~\ref{strHan} has calls to \texttt{f} that are not fully saturated. Fortunately $\eta$-expansion can be used to fully saturate the calls to \texttt{f} (see Figure~\ref{etaHan}) allowing \texttt{stringHandler} and \texttt{f} to be monadified.\footnote{The original definition of \texttt{stringHandler} could be monadified alone.} This expansion involves introducing abstraction over a function so given some function: \texttt{f :: a -> b -> c} which is used in the expression: \texttt{f x}, this can be $\eta$-expanded to: \texttt{(\textbackslash y -> f x y)} so now all of \texttt{f}'s parameters at this call site are a named variable. 
+Like the many of the preconditions for the ``generalise monad to applicative'' refactoring, other refactorings can help transform programs to pass the preconditions. The \texttt{stringHandler} in Figure~\ref{strHan} has calls to \texttt{f} that are not fully saturated. Fortunately $\eta$-expansion can be used to fully saturate the calls to \texttt{f} (see Figure~\ref{etaHan}) allowing \texttt{stringHandler} and \texttt{f} to be monadified.\footnote{The original definition of \texttt{stringHandler} could be monadified alone.} This expansion involves introducing abstraction over a function so given some function: \texttt{f :: a -> b -> c} which is used in the expression: \texttt{f x}, this can be $\eta$-expanded to: \texttt{(\textbackslash y -> f x y)} so now all of \texttt{f}'s parameters at this call site are named variables. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3725,7 +3725,8 @@ stringHandler mi s =
 \label{etaHan}
 \end{figure}
 
-The second precondition that needs to hold before monadification can take place is that none of the target functions can be called by non-monadic functions. This is due to the fact that a target function's result type will change from some pure value \texttt{a} to a monadic computation over \texttt{a} there is no function that retrieves values out of any given monad so the target function, once it is refactored, will be unusable by non-monadic functions. 
+The second precondition that needs to hold before monadification can take place is that functions that are outside the scope of the refactoring cannot call any of the target functions.
+none of the target functions can be called by non-monadic functions. This is due to the fact that a target function's result type will change from some pure value \texttt{a} to a monadic computation over \texttt{a} there is no function that retrieves values out of any given monad so the target function, once it is refactored, will be unusable by non-monadic functions. 
 
 For the refactoring to applied the set of target functions has to be changed. Either all functions that reference a target function become target functions as well or the dependent function is dropped from the refactoring.
 
