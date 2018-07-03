@@ -3726,17 +3726,18 @@ stringHandler mi s =
 \end{figure}
 
 The second precondition that needs to hold before monadification can take place is that functions that are outside the scope of the refactoring cannot call any of the target functions.
-none of the target functions can be called by non-monadic functions. This is due to the fact that a target function's result type will change from some pure value \texttt{a} to a monadic computation over \texttt{a} there is no function that retrieves values out of any given monad so the target function, once it is refactored, will be unusable by non-monadic functions. 
 
-For the refactoring to applied the set of target functions has to be changed. Either all functions that reference a target function become target functions as well or the dependent function is dropped from the refactoring.
+The second precondition of this refactoring is that the target functions cannot be called outside the scope of the refactoring. Once a function has been monadified it's result cannot be used within a pure function any longer because there is no way to retrieve the result of a monadic computation from its context.
+
+ In the \texttt{stringHandler} example from Figure~\ref{etaHan}, \texttt{stringHandler} alone and \texttt{stringHandler} and \texttt{f} are valid target sets of the refactoring, but trying to monadify \texttt{f} alone is not because it is used outside the scope of the refactoring.
 
 \subsection{The Transformation}
 
-The simplest case of this refactoring is when the target function is defined using only pure functions then the refactored version of the function is just the original body applied to \texttt{return}. Otherwise the refactoring works over the body of a target function in three steps:
+The simplest case of this refactoring is when the target function is defined using only pure functions then the refactored version of the function is just \texttt{return} applied to the original body of the fuction. Otherwise the refactoring works over the body of a target function in three steps:
 
 \begin{enumerate}
-\item Replace any right-hand sub-trees that are calls to functions that are targeted in the refactoring with variables in a top-down left to right manner. For example the body of \texttt{(f x = f (g x))} becomes \texttt{(f v1)} assuming \texttt{f} and \texttt{g} are targets of the refactoring.
-\item If the expression is not a call to one of the target functions then it needs to be applied to return. From the example in step one, the body of \texttt{f} had become \texttt{(f v1)}. Since \texttt{f} is one of the target functions this expression is monadic and doesn't need to be returned.
+\item Replace any right-hand sub-trees that are calls to functions that are targeted in the refactoring with variables in a top-down left to right manner. For example the the definition \texttt{(f x = f (g x))},  becomes \texttt{(f v1)} with \texttt{v1} bound to \texttt{(g x)}, assuming \texttt{f} and \texttt{g} are targets of the refactoring.
+\item If the expression is not a call to one of the target functions then it needs to be passed to return. From the example in step one, the body of \texttt{f} had become \texttt{(f v1)}. Since \texttt{f} is one of the target functions this expression is monadic and doesn't need to be returned.
 \item In the order that the monadic sub-trees were extracted in. Bind those expressions to a lambda that accepts a single argument, the variable that replaced that expression in the original body. The example expression becomes \texttt{(g x) >>= (\\v1 -> f v1)}.
 \item Replace the body of the target function with the generated expression from step three. The final result of the refactoring is \texttt{f x = (g x) >>= (\\v1 -> f v1)}
 \end{enumerate}
