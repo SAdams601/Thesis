@@ -3783,15 +3783,13 @@ Next in step two the bind expression will be constructed from the contents of th
 \label{queueProc}
 \end{figure}
 
-The transformation starts by top down checking the right subtrees for monadic computations. It will first check the call to \texttt{g} (shaded with grey in Figure~\ref{simpF}) then it will check the call to \texttt{h} (the corresponding nodes are inside the box). Both of these subtrees are monadic calls so they will be replaced in the tree with unique generated variables. The refactoring implementation contains a queue where the monadic expressions are paired with the variables that replace them and then stored. After this step the expression is \texttt{f v2 v1} and the queue contains two elements \texttt{[(v1,"(g y)"),(v2,"(h x)")]}. The final step checks if the left most child of the current expression is a call to a monadic function. In this case it is because \texttt{f} is a target of the refactoring but if it wasn't then the expression would be composed with \texttt{return}.
+Once the bind expression has been produced as shown in line 9 of Figure~\ref{queueProc} the third step of the refactoring checks if its innermost expression needs to be lifted into the monadic context with \texttt{return}. In this particular case since the innermost expression is a call to a target function so this step does not affect the final product of the refactoring.
 
-At this point the expression is ready to be part of the right hand side of a lambda expression. The first element is popped from the queue, in this case it's \texttt{(v1,"(g y)")}, the variable name becomes the argument in a lambda expression and the expression is the left argument to bind, \texttt{(g y) >>=(\v1 -> f v2 v1)}. In this manner the refactoring keeps popping elements off of the queue wrapping the previous expression in a lambda with the variable name as its argument and composing this lambda with the expression from the queue using bind until the queue is empty.
-
-The final result of refactoring \texttt{f} is shown in Figure~\ref{simpF_ref}.
+Not the binding of \texttt{f} can be replaced with the bind expression. The final result of refactoring \texttt{f} is shown in Figure~\ref{simpF_ref}. After rewriting \texttt{f} the refactoring would continue by refactoring the bodies of \texttt{g} and \texttt{h}
 
 \begin{figure}[t]
 \begin{lstlisting}
-f x y = (g x) >>= (\ v2 -> (g y) >>= (\v1 -> f v2 v1))
+f x y = (h x) >>= (\ v1 -> (g y) >>= (\v2 -> f v1 v2))
 \end{lstlisting}
 \caption{The final refactored version of \texttt{f}}
 \label{simpF_ref}
@@ -3835,7 +3833,7 @@ eval (Assign x e) env = let (v,env1) = eval e env
 
 The idea is that at this point in the project the explicit passing of the state is unwanted so refactoring \texttt{eval} to become monadic so that the \texttt{Env} can be passed around using the \texttt{State} monad instead. The first two cases that handle the \texttt{Var} and \texttt{N} constructors can simply be wrapped with \texttt{return} because no recursive calls to \texttt{eval} happen in those cases. The three other cases contain let bindings that all call (the now monadic) \texttt{eval}. 
 
-In those cases the local bindings can be used as the variables inside of a lambda expression. This seems simple enough but what order should the bindings be processed in? Consider the let binding in Figure~\ref{intLet}, assuming that the \texttt{f} and \texttt{x} variables are in scope. Due to lazy evaluation this is a valid Haskell let binding despite \texttt{v1} being referenced on line one before it's defined on line two. However if the let bindings are processed in the obvious way from top to bottom\footnote{In this case: \texttt{g v1 >>= ($\backslash$v2 -> f x >>= ($\backslash$v1 -> ...))}} \texttt{v1} will not be in scope when it's passed to \texttt{g}.  
+In those cases the local bindings can be used as the variables inside of a lambda expression. This seems simple enough, there is a question of the order in which the bindings should be processed? Consider the let binding in Figure~\ref{intLet}, assuming that the \texttt{f} and \texttt{x} variables are in scope. Due to lazy evaluation this is a valid Haskell let binding despite \texttt{v1} being referenced on line one before it is defined on line two. However if the let bindings are processed in the obvious way from top to bottom\footnote{In this case: \texttt{g v1 >>= ($\backslash$v2 -> f x >>= ($\backslash$v1 -> ...))}} \texttt{v1} will not be in scope when it is passed to \texttt{g}.  
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3847,7 +3845,7 @@ let v2 = g v1
 \label{intLet}
 \end{figure}
 
-Fortunately GHC offers a solution: the renamer of GHC, which checks for lexical errors, also performs dependency analysis on local bindings and orders them so that later bindings may depend on earlier ones but not vice versa when there is no mutually recursive bindings~\citep{ghcApi}. This renamed ordering is used to lookup the parsed bindings in dependency analysed order.
+Fortunately GHC offers a solution: the renamer of GHC, which checks for lexical errors, also performs dependency analysis on local bindings and orders them so that later bindings may depend on earlier ones but not vice versa when there are no mutually recursive bindings~\citep{ghcApi}. This renamed ordering is used to lookup the parsed bindings in dependency analysed order.
 
 Returning to the evaluator example the monadified version is shown in Figure~\ref{monEval}.\footnote{Line breaks have been added to aid readability in this setting but the refactoring would not actually do this.} The let bindings in \texttt{eval} can be processed from top to bottom. In the \texttt{Add} case this means that the expression bound on line 16 in Figure~\ref{evalExpr} makes up the outermost call to bind and the pattern it was originally bound to becomes the pattern that matches the argument passed to the first lambda expression. 
 \begin{figure}[t]
@@ -3873,7 +3871,7 @@ eval (Assign x e) env = eval e env >>=
 \label{monEval}
 \end{figure}
 
-If there were pure expressions on the right hand side of the let binding those bindings will remain in a let expression. For example the function starting on line one in Figure~\ref{mixLet} contains two let bindings \texttt{pureF} is a pure function and so it remains inside of a let expression whereas \texttt{monF} is a target of the refactoring and it is lifted from the let and passed to bind. 
+If there were pure expressions on the right hand side of the let binding those bindings will remain in a let expression. For example the function starting on line one in Figure~\ref{mixLet} contains two let bindings \texttt{pureF} is a pure function and so it remains inside a let expression whereas \texttt{monF} is a target of the refactoring and it is lifted from the let and passed to bind. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3888,7 +3886,7 @@ f_m x = let y = pureF x in
 \label{mixLet}
 \end{figure}
 
-With this section the refactoring supports the transformation of the core of Haskell. However, this refactoring outputs monadic code composed with the bind operator, which is probably not the most popular way to write monadic code. To better support monadic programming Haskell gives monads their own syntactic structure known as do-syntax. The next section will discuss a separate refactoring for introducing this syntax into the target function.
+With this section the refactoring supports the transformation of the core of Haskell, the the typed lambda calculus with polymorphic let expressions. However, this refactoring outputs monadic code composed with the bind operator, which is probably not the most popular way to write monadic code. To better support monadic programming Haskell gives monads their own syntactic structure known as do-syntax. The next section will discuss a separate refactoring for introducing this syntax into the target function.
 
 \section{Adding Syntactic Sugar}
 
@@ -3907,7 +3905,7 @@ do
 \label{doEx}
 \end{figure}
 
-\textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are (\cite{realWorldHaskell}; \cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
+\textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are (\cite{realWorldHaskell}; \cite{haskellCraft}; \cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
 
 The sugaring of bind syntax into \texttt{do} syntax is a separate refactoring in HaRe. This allows for the programmer to choose exactly which functions should be written with \texttt{do} syntax and when functions are clearer remaining as binds. The refactoring takes in a single parameter, the position where the target function is declared. The sugared version of \texttt{eval} from Figure~\ref{monEval} is shown in Figure~\ref{finEval}. The first two cases weren't bind expressions so they remain just calls to return. The three other cases have been refactored into the equivalent \texttt{do} statements.
 
