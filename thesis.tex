@@ -3745,7 +3745,7 @@ The simplest case of this refactoring is when the target function is defined usi
 \item Finally the body of the target function can be replaced with the constructed bind expression. This target function has now been successfully refactored. These four steps need to be performed over the body of each of the target functions. 
 \end{enumerate}
 
-A concrete example is shown in Figure~\ref{simpleMon}. The functions \texttt{f}, \texttt{g}, and \texttt{h} are all targets of the refactoring.
+A more concrete example is shown in Figure~\ref{simpleMon}. The functions \texttt{f}, \texttt{g}, and \texttt{h} are all targets of the refactoring.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -3763,7 +3763,27 @@ f x y = f (h x) (g y)
 	\label{simpF}
 \end{figure}
 
-The syntax tree of the right hand side of \texttt{f} is shown in Figure~\ref{simpF}. The transformation starts by top down checking the right subtrees for monadic computations. It will first check the call to \texttt{g} (shaded with grey in Figure~\ref{simpF}) then it will check the call to \texttt{h} (the corresponding nodes are inside the box). Both of these subtrees are monadic calls so they will be replaced in the tree with unique generated variables. The refactoring implementation contains a queue where the monadic expressions are paired with the variables that replace them and then stored. After this step the expression is \texttt{f v2 v1} and the queue contains two elements \texttt{[(v1,"(g y)"),(v2,"(h x)")]}. The final step checks if the left most child of the current expression is a call to a monadic function. In this case it is because \texttt{f} is a target of the refactoring but if it wasn't then the expression would be composed with \texttt{return}.
+The syntax tree of the right hand side of \texttt{f} is shown in Figure~\ref{simpF}. The first step of the refactoring begins by extracting all the monadic sub-expressions of the body of \texttt{f} and replacing them with variables. This step works in a top down left to right manner so the call to \texttt{h} is discovered first, the relevant sub-tree is outlined in Figure~\ref{simpF}. Next the call to \texttt{g} will also be extracted. The implementation of the refactoring contains a queue that keeps track of the monadic expressions and the variables that replaced them. At this point in the refactoring, after step one, the queue contains two elements: \texttt{[(v1,(h x)), (v2,(g y))]} and the body of \texttt{f} has become: \texttt{f v1 v2}.
+
+Next in step two the bind expression will be constructed from the contents of the queue and the rewritten body of \texttt{f}. The refactoring begins by popping each expression off of the queue, composing it with bind and creating  a lambda expression from the corresponding variable name. This process has been illustrated in Figure~\ref{queueProc}.
+
+\begin{figure}[t]
+\begin{lstlisting}
+-- Initial state of the queue: [(v1,(h x)), (v2,(g y))]
+-- Begin by popping (v1, (h x)) off
+(h x) >>= (\ v1 -> ...)
+-- The right hand side of the lambda is constructed from what remains in the queue
+-- Pop (v2, (g y)) off
+(h x) >>= (\ v1 -> (g y) >>= (\ v2 -> ...))
+-- The queue is now empty so the top level expression is inserted here
+-- The final result of step 2: 
+(h x) >>= (\ v1 -> (g y) >>= (\ v2 -> f v1 v2))
+\end{lstlisting}
+\caption{Working through the queue of monadic expressions.}
+\label{queueProc}
+\end{figure}
+
+The transformation starts by top down checking the right subtrees for monadic computations. It will first check the call to \texttt{g} (shaded with grey in Figure~\ref{simpF}) then it will check the call to \texttt{h} (the corresponding nodes are inside the box). Both of these subtrees are monadic calls so they will be replaced in the tree with unique generated variables. The refactoring implementation contains a queue where the monadic expressions are paired with the variables that replace them and then stored. After this step the expression is \texttt{f v2 v1} and the queue contains two elements \texttt{[(v1,"(g y)"),(v2,"(h x)")]}. The final step checks if the left most child of the current expression is a call to a monadic function. In this case it is because \texttt{f} is a target of the refactoring but if it wasn't then the expression would be composed with \texttt{return}.
 
 At this point the expression is ready to be part of the right hand side of a lambda expression. The first element is popped from the queue, in this case it's \texttt{(v1,"(g y)")}, the variable name becomes the argument in a lambda expression and the expression is the left argument to bind, \texttt{(g y) >>=(\v1 -> f v2 v1)}. In this manner the refactoring keeps popping elements off of the queue wrapping the previous expression in a lambda with the variable name as its argument and composing this lambda with the expression from the queue using bind until the queue is empty.
 
