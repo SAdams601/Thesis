@@ -3727,19 +3727,22 @@ stringHandler mi s =
 
 The second precondition that needs to hold before monadification can take place is that functions that are outside the scope of the refactoring cannot call any of the target functions.
 
-The second precondition of this refactoring is that the target functions cannot be called outside the scope of the refactoring. Once a function has been monadified it's result cannot be used within a pure function any longer because there is no way to retrieve the result of a monadic computation from its context.
+The second precondition of this refactoring is that the target functions cannot be called outside the scope of the refactoring. Once a function has been monadified it's result cannot be used within a pure function any longer because there is no way to retrieve the result of a monadic computation from the monadic context.
 
- In the \texttt{stringHandler} example from Figure~\ref{etaHan}, \texttt{stringHandler} alone and \texttt{stringHandler} and \texttt{f} are valid target sets of the refactoring, but trying to monadify \texttt{f} alone is not because it is used outside the scope of the refactoring.
+ In the \texttt{stringHandler} example from Figure~\ref{etaHan}, \texttt{stringHandler} alone and \texttt{stringHandler} and \texttt{f} are valid target sets of the refactoring, but trying to monadify \texttt{f} alone is not because it is used outside the scope of the refactoring. 
 
 \subsection{The Transformation}
 
-The simplest case of this refactoring is when the target function is defined using only pure functions then the refactored version of the function is just \texttt{return} applied to the original body of the fuction. Otherwise the refactoring works over the body of a target function in three steps:
+The simplest case of this refactoring is when the target function is defined using only pure functions then the refactored version of the function is simply \texttt{return} applied to the original body of the function. Otherwise the refactoring works over the body of a target function in four steps:
 
 \begin{enumerate}
-\item Replace any right-hand sub-trees that are calls to functions that are targeted in the refactoring with variables in a top-down left to right manner. For example the the definition \texttt{(f x = f (g x))},  becomes \texttt{(f v1)} with \texttt{v1} bound to \texttt{(g x)}, assuming \texttt{f} and \texttt{g} are targets of the refactoring.
-\item If the expression is not a call to one of the target functions then it needs to be passed to return. From the example in step one, the body of \texttt{f} had become \texttt{(f v1)}. Since \texttt{f} is one of the target functions this expression is monadic and doesn't need to be returned.
-\item In the order that the monadic sub-trees were extracted in. Bind those expressions to a lambda that accepts a single argument, the variable that replaced that expression in the original body. The example expression becomes \texttt{(g x) >>= (\\v1 -> f v1)}.
-\item Replace the body of the target function with the generated expression from step three. The final result of the refactoring is \texttt{f x = (g x) >>= (\\v1 -> f v1)}
+\item The refactoring begins by extracting any sub-expressions that are calls to a target function. The extraction happens in a top-down left to right manner, when a sub-expression is found that is a call to one of the refactoring's target functions it is replaced with a variable, so  \texttt{(f x = f (g x))} would become \texttt{(f v1)}.
+
+\item Next a bind expression needs to be constructed from the extracted monadic sub-expressions and the expressions they were extracted from. The extracted sub-expressions become the first argument to bind and a newly constructed lambda expression makes up the second argument. The lambda expression is made from the expression that had the monadic expression replaced with some variable, the only argument of the lambda expression is that variable. From the example in the previous step: \texttt{(g x)} is the extracted monadic sub-expression and \texttt{(f v1)} is the expression it was replaced with the \texttt{v1} variable. In this example the constructed bind expression is defined as \texttt{(g x) >>= (\textbackslash v1 -> f v1)}.
+
+\item If the right hand side expressions of one of the lambda expressions is not a monadic value then \texttt{return} will have to be applied to this expression. In the example from the previous step, if \texttt{f} is a target of the refactoring then the bind statement does not need to be modified further. If \texttt{f} is not one of the target functions then the bind expression needs to be rewritten to: \texttt{(g x) >>= (\textbackslash v1 -> return (f v1))}.
+
+\item Finally the body of the target function can be replaced with the constructed bind expression. This target function has now been successfully refactored. These four steps need to be performed over the body of each of the target functions. 
 \end{enumerate}
 
 A concrete example is shown in Figure~\ref{simpleMon}. The functions \texttt{f}, \texttt{g}, and \texttt{h} are all targets of the refactoring.
