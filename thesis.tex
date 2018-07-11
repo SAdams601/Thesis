@@ -326,15 +326,19 @@ A reason that often used to be given to explain why functional languages are not
 
 HLint is a ``code smell'' tool for Haskell. Poorly designed code often produces ``smells,'' apparently superficial problems that indicate deeper design issues~\citep{fowler}. One of the most common of these smells is duplicated code. Other hints include simplifying boolean expressions to remove unneeded calls to \texttt{not} (e.g. ``\texttt{not (a == b)}'' should become ``\texttt{(a /= b)''}), or replacing common types of folds with their prelude defined names (e.g. \texttt{sum} can replace \texttt{foldr (+) 0}). A code smell tool suggests changes to a code base such as alternative functions to use, how to simplify code, and redundancies~\citep{hlint}.
 
-Code smell and refactoring tools are very closely related. Simplistically a code smell tool detects problems in a code base and a refactoring tool fixes them. If a tool can detect a problem why can't the same program fix them? HLint has a \texttt{-refactor} flag that will automatically apply the suggestions. However a single piece of code could have multiple smells, how would HLint choose which one to apply? Also once a transformation was applied other hints may no longer be applicable. HLint's behaviour in these cases is not documented.
+Code smell and refactoring tools are very closely related. Simplistically a code smell tool detects problems in a code base and a refactoring tool fixes them. If a tool can detect a problem why can't the same program fix them? HLint has a \texttt{-refactor} flag that will automatically apply the suggestions. However there can be a problem in doing this, e.g. a single piece of code could have multiple smells, how would HLint choose which one to apply? Also once a transformation has been applied other hints may no longer be applicable. HLint's behaviour in these cases is not documented.
 
-One of the powerful features of HLint is its customizability. An HLint (called \texttt{hlint.yaml}) configuration file added to the root of a project   will be detected by HLint and it will suggest both the default hints as well as the custom hints from that file. Hints are very simple to write.
+One of the powerful features of HLint is its customizability. An HLint configuration file (called \texttt{hlint.yaml}) added to the root of a project   will be detected by HLint and it will suggest both the default hints as well as the custom hints from that file. Hints are very simple to write.
 
-\begin{lstlisting}[caption={A simple hint from~\citep{hlint}}, label=lstHint]
+\begin{figure}[t]
+\begin{lstlisting}
 - hint: {lhs: x !! 0, rhs: head x}
 \end{lstlisting}
+\caption{A simple hint from~\citep{hlint}}
+\label{lstHint}
+\end{figure}
 
-Listing~\ref{lstHint} contains the definition of a hint that detects the list index operator is being used to look up the 0th element of a list and suggests using \texttt{head} instead. The \texttt{lhs} tag is the code HLint will search for. If code matching \texttt{lhs} is found  HLint will suggest the code be replaced with the \texttt{rhs} code. HLint assumes any single character variable is a substitution parameter. Given the hint from listing~\ref{lstHint} and the following code:
+Figure~\ref{lstHint} contains the definition of a hint that detects the list index operator is being used to look up the 0th element of a list and suggests using \texttt{head} instead. The \texttt{lhs} tag is the code HLint will search for. If code matching \texttt{lhs} is found  HLint will suggest the code be replaced with the \texttt{rhs} code. HLint assumes any single character variable is a substitution parameter. Given the hint from Figure~\ref{lstHint} and the following code:
 
 \begin{lstlisting}
 f list = list !! 0
@@ -352,10 +356,12 @@ Why not:
 1 hint
 \end{lstlisting}
 
+A major limitation of HLint is that it is only aware of a single module at a time. HLint is not aware of what types or names are in scope and code smells that span multiple modules cannot be discovered.
+
 
 \subsection{Haskell Tools Refact}
 
-HaRe is not the only refactoring tool for Haskell. In late 2016 Haskell Tools Refact was announced and is currently at version 0.7~\citep{haskellTools}. The Haskell Tools project is a GHC based developer tool kit~\citep{haskellToolsGit}. There are eight refactorings currently supported\footnote{May 2018}.
+HaRe is not the only refactoring tool for Haskell. In late 2016 Haskell Tools Refact was announced and is currently at version 0.7~\citep{haskellTools}. The Haskell Tools project is a GHC based developer tool kit for writing transformations~\citep{haskellToolsGit}. There are eight refactorings currently supported\footnote{May 2018}.
 
 \begin{itemize}
 \item Rename
@@ -373,11 +379,11 @@ Haskell Tools has implemented  its own abstract syntax tree. The AST of Haskell 
 The Haskell Tools refactorer is currently integrated into the Atom editor\footnote{\url{https://atom.io/}} with Sublime Text\footnote{\url{https://www.sublimetext.com}} support planned for the near future~\citep{haskellTools}
 
 \subsection{Wrangler}\label{wranglerOne}
-Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\citep{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\citep{erlangHistory}. Erlang's core design tenets include lightweight processes, that communicate through message passing. Erlang also boasts a ``let it fail" error handling architecture, where processes either succeed or fail and other specialised processes handle the error~\citep{armstrongThesis}.
+Wrangler is a refactoring and code inspection tool for Erlang~\citep{wrangler}. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\citep{erlang}. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\citep{erlangHistory}. Erlang's core design tenets include lightweight processes, that communicate through message passing. Erlang also boasts a ``let it fail" error handling architecture, when a process fails the error is not handled by the process where it occurred, but is handled by a separate dedicated part of the program~\citep{armstrongThesis}.
 
-Wrangler is accessible from the command line and has been integrated into both Emacs and Eclipse and currently supports a large library of refactorings, code smells, as well as other program analysis tools such as clone detection and automatic API migration~\citep{wrangler}. Additionally Wrangler supports a template based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
+Wrangler is accessible from the command line and has been integrated into both Emacs and Eclipse. It currently supports a large library of refactorings, code smells, as well as other program analysis tools such as clone detection and automatic API migration~\citep{wrangler}. Additionally Wrangler supports a template-based API and a domain specific language which allow users to define their own refactorings and script composite refactorings~\citep{wranglerDomain}.
 
-The template-based API of Wrangler allows users to define program analyses and transformations using Erlang concrete syntax. Wrangler templates consist of fragments of Erlang syntax that may contain meta-variables or meta-atoms that can stand for any language element. Meta-variables/atoms are variables or atoms that end with the "\texttt{@}" character; this meta-variable/atom will then stand for the next language element. Meta-variables/atoms that end with "\texttt{@@}" are list meta-variables/atoms that match a sequence of language elements as long as they are of same sort~\citep{letsUser}.\footnote{Things like the arguments to a function or a sequence of expressions in a function body are the same "sort."}
+The template-based API of Wrangler allows users to define program analyses and transformations using Erlang concrete syntax. Wrangler templates consist of fragments of Erlang syntax that may contain meta-variables or meta-atoms that can stand for any language element. Meta-variables/atoms are variables or atoms that end with the "\texttt{@}" character; this meta-variable/atom binds a language element to its name so that that element can be referred to by name in the definition of the refactoring. Meta-variables/atoms that end with "\texttt{@@}" are list meta-variables/atoms that match a sequence of language elements as long as they are of same sort~\citep{letsUser}.\footnote{Things like the arguments to a function or a sequence of expressions in a function body are the same "sort."}
 
 \begin{figure}[t]
 \begin{lstlisting}[language=erlang]
@@ -397,9 +403,25 @@ The Wrangler DSL supports the creation of a composite refactoring through a vari
 
 The DSL also allows decision making to occur during the execution of a composite refactoring. Composite refactorings are transactional and can be either atomic or non-atomic. Atomic composite refactorings require each component refactoring to be successfully applied before continuing onto the next refactoring. If a single refactoring fails inside of an atomic composite refactoring, the entire refactoring fails and the program remains unchanged. When a single refactoring fails inside a non-atomic composite refactoring, correspondingly, the entire refactoring will not fail and continue by trying the next refactoring in the sequence. The Wrangler DSL allows for refactorings to described as atomic and non-atomic sections at each level.  
 
+\subsection{RefactorErl}\label{refactorErl}
+
+Another notable tool for the Erlang language is RefactorErl. RefactorErl started out as another refactoring tool for Erlang but has since expanded into a source code analysis and transformation tool~\citep{refactorErl}. RefactorErl uses a ``semantic program graph'' to represent an Erlang source program, this graph is broken up into three layers~\citep{erlangStatic}:
+
+\begin{enumerate}
+	\item Lexical layer: This is where token, spacing, and comment information is kept about the source program.
+	\item Syntactic layer: This layer keeps the abstract syntax tree of the source program.
+	\item Semantic layer: This contains additional calculated semantic information about the source program, such as module and function references as well as variable bindings.
+\end{enumerate}
+
+Refactoring tools, in general, only require the information contained within these first two layers, the semantic layer helps RefactorErl implement its static analysis capabilities. The semantic program graph is constructed after a source program's abstract syntax has been obtained from  the Erlang language front end. The semantic layer is built on top of the abstract syntax tree by several different static analysers that each add a different kind of information to the graph. For example, the function analyser adds a semantic function node when the first reference to or the definition of a function is found. Every reference to that function discovered after that points to the original node~\citep{erlangStatic}. 
+
+The edges in the semantic layer are also labeled so the relationships between nodes can be captured as well. The function analyser, for instance, labels the edges going from the semantic function node to internal references to that function with a \textit{funIref} label, and the \textit{fundef} label connects the semantic node to the function definition it represents. The semantic layer is critical for the static analysis RefactorErl performs but it is also quite useful for the refactorings as well. Consider the ``move a function'' refactoring\footnote{See: \url{http://pnyf.inf.elte.hu/trac/refactorerl/wiki/RefactoringSteps/MoveFunction}}, which moves a function definition from one module to another, every reference in the target function needs to be checked to ensure that those definitions are available in the new scope of the function. Without a semantic layer a refactoring tool may have to traverse the syntax tree multiple times to locate all the references the target function contains and ensure they are available in the function's new location. With the semantic layer, on the other hand, finding all of the references can be done in two steps over the graph (one step from the reference to the semantic node, the next step following the semantic node's ``definition'' edge, e.g. \textit{fundef}, \textif{fielddef}, etc.).
+
+RefactorErl currently supports 24 different refactorings as well as a suite of static analysis and program comprehension tools. 
+
 \subsection{ROTOR}
 
-Another newcomer to the refactoring tools for functional language space is ROTOR\footnote{\textbf{R}eliable \textbf{O}Caml-base \textbf{T}ool for \textbf{O}Caml \textbf{R}efactoring} the first refactoring tool to target OCaml~\citep{rotor}. Language features of OCaml provide some unique challenges for a refactoring tool. In OCaml one module may be included in another so that, for example, when renaming the function \texttt{f} in module \texttt{A} but \texttt{A} is included in module \texttt{B} the both \texttt{A.f} and \texttt{B.f} will need to be renamed. 
+A newcomer to the refactoring tools for functional language space is ROTOR\footnote{\textbf{R}eliable \textbf{O}Caml-base \textbf{T}ool for \textbf{O}Caml \textbf{R}efactoring} the first refactoring tool to target OCaml~\citep{rotor}. Language features of OCaml provide some unique challenges for a refactoring tool. In OCaml one module may be included in another so that, for example, when renaming the function \texttt{f} in module \texttt{A} but \texttt{A} is included in module \texttt{B} then both \texttt{A.f} and \texttt{B.f} will need to be renamed. ROTOR handles this by decomposing refactorings into a set of textual replacement operations that can depend on other transformations~\citep{rotor}. From the renaming example renaming ``\texttt{A.f}'' would depend on the ``\texttt{B.f}'' renaming succeeding and vice versa.
 
 An opportunity of the ROTOR project is that it has an partner in industry, Jane Street Capital. ROTOR is using the core library\footnote{\url{https://github.com/janestreet/core}} an "industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
 
@@ -408,7 +430,7 @@ An opportunity of the ROTOR project is that it has an partner in industry, Jane 
 The reasons to refactor source code have also expanded beyond code quality. This section will describe two different projects that have developed refactorings to change the execution of a program from single to multi-threaded. Functional programming languages are well suited to parallel execution due to immutability by default and in some languages (such as Erlang) first-class concurrency features. This section will first describe the ``ParaForming'' which uses refactoring to introduce parallel abstractions into Haskell code, then it will describe work done to refactor Erlang code to introduce algorithmic skeletons.
 
 \subsection{ParaForming}  
-ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\citep{paraforming}. The ParaForming work targets Glasgow parallel Haskell (GpH), an extension to Haskell, and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see Figure~\ref{strategy}). 
+ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\citep{paraforming}. The ParaForming work targets Glasgow parallel Haskell: ``GpH'', an extension to Haskell, and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see Figure~\ref{strategy}). 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -458,20 +480,19 @@ These two refactorings are both a way of introducing data parallelism with varyi
 
 \subsection{Cost-Directed Parallel Refactoring}
 
-The previous section touched on one of the big challenges of parallel programming, determining the correct level of parallelism to achieve maximum performance. \cite{parallelErl} describes a methodology to introduce algorithmic skeletons into Erlang programs using the Erlang refactoring tool Wrangler. In addition to introducing a skeleton this work provides cost models that estimate the performance of the program after adding each skeleton. This estimate helps a programmer make an informed decision about what parallelisation strategy is the best for a particular program. 
+The previous section touched on one of the big challenges of parallel programming, determining the correct level of parallelism to achieve maximum performance. \cite{parallelErl} describes a methodology to introduce algorithmic skeletons into Erlang programs using the Erlang refactoring tool Wrangler. In addition to introducing a skeleton this work provides cost models that estimate the performance of the program after adding each skeleton. This estimate helps a programmer to make an informed decision about which parallelisation strategy is the best for a particular program. 
 
 An algorithmic skeleton is a common parallel pattern. A skeleton is implemented as a higher-order function that takes in a sequential function and any parameters that the skeleton requires. \cite{parallelErl} discusses the four most common and useful skeletons. For example, the map skeleton works by breaking up the target data into pieces that can be operated on in parallel. Finally the results from the the parallel computations are combined back into a single image. One of the examples presented in~\cite{parallelErl} is an image processing system that denoises images. Denoising a section of an image can be done independently from processing the other sections of the same image. The introducing the map skeleton would break the image into pieces to be denoised in parallel then the outputted sections can be stitched back together again
 
-Skeletons are simple to understand in theory but it can be difficult to know which to apply in practice. This is when the cost models of each skeleton become useful to help make an informed decision about which skeleton should cause the greatest speed up. In~\cite{parallelErl} an initial benchmark of the program can 
-be used to estimate the speed up that different skeletons could provide.
+Skeletons are simple to understand in theory but it can be difficult to know which to apply in practice. This is when the cost models of each skeleton become useful to help make an informed decision about which skeleton should cause the greatest speed up and this information can be used to guide the refactoring. In~\cite{parallelErl} an initial benchmark of the program can be used to estimate the speed up that different skeletons could provide.
 
 Parallelisation can be tedious and difficult to do which makes it a good candidate for tool assistance. A refactoring tool can guide a programmer through the process of parallelisation. Much like how the data-driven refactorings have multiple small changes are required before the entire process can be considered ``finished'' changing a program to run in parallel is also a sequence of several smaller changes.
 
 \section{ApplicativeDo}\label{applicativeDo}
 
-Haskell is a pure functional programming language. Purity in this context means that Haskell is side-effect free. This causes some confusion because in other programming languages most of what programs do are side-effects. Haskell instead models side-effect causing computations using Monads, which take effects of computation that are typically implicit and make them an explicit result of the program instead. Beyond modeling side effect causing operations, monads allow for computations to be supplemented with additional features~\citep{haskellWikiMonad}.
+Haskell is a pure functional programming language. Purity in this context means that Haskell is side-effect free. This causes some confusion because in most other languages side-effects are allowed, if not the primary way that programs produce their ``result.'' Haskell instead models side-effect causing computations using Monads, which take effects of computation that are typically implicit and make them an explicit result of the program instead. Beyond modeling side effect causing operations, monads allow for computations to be supplemented with additional features~\citep{haskellWikiMonad}.
 
-Haskell supports the writing of monadic code through the ``\texttt{do}'' syntactic sugar, an example of this syntax can be seen in Figure~\ref{doF}. Monads and their \texttt{do} syntax have become a commonly accepted pattern for handling effects within the Haskell community. 
+Haskell supports the writing of monadic code through the ``\texttt{do}'' syntax sugar, an example of this syntax can be seen in Figure~\ref{doF}. Monads and their \texttt{do} syntax have become a commonly accepted pattern for handling effects within the Haskell community. 
 
 Applicative functors are another type class that describe computations performed within some context, but are less powerful than monads. They were first described by~\cite{mcbrideIdioms}, and a fairly recent change to GHC made the \texttt{Applicative} type class\footnote{\texttt{Applicative} is what the GHC calls the type class that implements applicative functors.} a superclass of \texttt{Monad} which means that every instance of \texttt{Monad} now must also implement the \texttt{Applicative} interface as well.   
 
