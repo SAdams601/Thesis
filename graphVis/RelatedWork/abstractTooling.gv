@@ -1,0 +1,10 @@
+digraph G {
+rankdir=LR;
+build [label="Build Abstract Representation", shape= "box"];
+transform [label = "Analysis and Transformation", shape= "box"]
+output [label = "Output", shape= "box"]
+
+
+build -> transform;
+transform -> output;
+}
