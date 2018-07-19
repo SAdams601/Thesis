@@ -634,7 +634,7 @@ This chapter has discussed the literature that relates to and helped build the w
 
 The final section discussed how refactoring tools were implemented in Erlang and Clojure. Both Wrangler and clj-refactor deal with similar issues when it comes to getting an abstract syntax tree of their target programs. Third party libraries help both of these projects gain access to the abstract syntax tree of the target program with enough information in them to perform transformations while preserving formatting. Other refactoring tools perform much of the analysis required to perform transformations themselves such as RefactorErl and haskell-tools.
 
-By considering how tools are built we can begin to understand the general toolchain that must be built to implement a program analysis or transformation tool. In general program transformation tools work in three main phases, Figure~\ref{generalToolchain} shows the general toolchain that a tool will need to build. Table~\ref{transformPhases} shows the types of libraries and technologies that are used in each of the phases. 
+By considering how tools are built we can begin to understand the general toolchain that must be built to implement a program transformation tool. In general program transformation tools work in three main phases, Figure~\ref{generalToolchain} shows the general toolchain that a tool will need to build. Table~\ref{transformPhases} shows the types of libraries and technologies that are used in each of the phases. 
 
 \begin{figure}[t]
 	\begin{center}
@@ -667,7 +667,17 @@ The second phase of program transformation is the actual analysis and transforma
 
 The final phase a program transformation tool needs to perform is outputting the modified source. If the output needs to be seen by the user this process is handled by a ``pretty-printer.'' Pretty printers takes some abstract representation of source code, typically an abstract syntax tree, and turns it into the code literal that it represents. Pretty printing can prove quite challenging depending on the abstract structure the tool is using. Parsers often omit some of the elements of a source file, code comments and whitespace are often omitted from abstract syntax because they aren't needed by the compiler. Tools that want to preserve these aspects of a user's program need to either store the formatting and comments in the abstract representation somehow, or reconstruct them directly from the token stream. Finally, an IDE can provide powerful abstractions that can perform the pretty printing automatically. Intellij will automatically display changes made to a section of a PSI file, effectively solving this issue for tool builders that target Intellij.
 
-The implementation of program transformation tools  
+The implementation of program transformation tooling, in general, follows the three stage pipeline of:
+
+\begin{enumerate}
+	\item Constructing an abstract representation of the source program.
+	\item Analysis and transformation of that representation.
+	\item Outputting the transformed source code.
+\end{enumerate}
+
+The design of these three phases are highly dependent on the source language the tool targets. In constructing the first phase of a transformation tool it is common to reuse lexer and parser of the target language's runtime if possible which makes the following phases dependent on the abstract syntax that is used byt the runtime system. What information is contained in the abstract syntax informs the steps that a tool must take in the next phase. If information that is required for the transformation isn't included in the abstract syntax it will need to be computed at this point. Additionally depending on the complexity of the abstract syntax tree a generic programming library may need to be introduced or traversal and transform schemes implemented to work with the abstract syntax. The final phase of a program transformation tool, printing,  is again determined by the information that is available from the abstract representation. The original format of the source file may have to be stored separately if the abstract representation does not contain enough information to preserve the user's comments and formatting.
+
+This generic transformation tool pipeline is how many program transformation tools are constructed and HaRe is no exception. This chapter has described other transformation and refactoring tools. The remainder of this thesis will focus on the Haskell refactoring tool HaRe. The next chapter will begin by describing how HaRe is constructed and how refactorings are implemented in it.
 
 \chapter{Background: Refactoring Haskell in HaRe}
 \label{chp:hare}
