@@ -1116,10 +1116,11 @@ Collecting any required information from the other syntax trees up front, is a g
 
 One refactoring that does need to reference the typed syntax tree fairly heavily is the List to Hughes List refactoring described in Section~\ref{listToDlist}. This refactoring needs to change the type of entire subtrees, so it references the typed syntax tree to see what the type of the current node is during the transformation. This is fairly straightforward due to the source being tagged with \texttt{SrcSpan}s that are consistent throughout the compilation process. This means that a piece of typed abstract syntax is the same as a particular parsed syntax subtree if their \texttt{SrcSpan}s are the same. Searching through the later compilation stage's trees is as simple as doing a full traversal of the tree searching for the appropriate \texttt{SrcSpan}.
 
-The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe\footnote{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: \url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} and some of its notable dependencies was the focus of this chapter.
+\section{Summary}
 
-Next this thesis will begin to describe its major contribution: the design and implementation of data-driven refactorings. The next chapter will begin the discussion of what is a data-driven refactoring and some simple refactoring designs.
+This chapter has described the past and current implementation of HaRe. The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe\footnote{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: \url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} and some of its notable dependencies was the focus of this chapter.
 
+The thesis builds upon this work by developing data-driven refactorings, which have not been developed for a functional programming language yet. The next chapter will describe the roots of these refactoring in~\cite{fowler} and how these ideas were adapted to work over the functional programming language Haskell.
 \chapter{Data-driven refactorings}
 \label{chp:ddRefs}
 
