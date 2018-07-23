@@ -82,6 +82,7 @@
 % options. If you need to add further options, these can be given to UoKextentions
 % to be propogated through.
 \usepackage{UoKextentions}
+\usepackage[htt]{hyphenat}
 \usepackage{times}
 %\usepackage{llncsdoc}
 %\usepackage{verbatim}
@@ -223,7 +224,74 @@ False -> x + 1
 \label{lazyY}
 \end{figure}
 
-Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads represent computations, which when run will have effects as well as producing a result. A principle topic of this thesis is refactoring to support patterns of computation related to Monads and other related structures. 
+Haskell's powerful type system and ``purity'' (the idea that functions cannot perform actions in addition to returning values) means that Haskell programs can be developed in a ``type driven'' or ``type first'' way. The work done for this thesis was designed to facilitate this type of development. Therefore, the following sections will introduce some key ideas from the Haskell type ecosystem that readers of this thesis will need to be familiar with.
+
+\subsection{User defined types in Haskell}
+
+All high level programming languages come with some predefined set of types and, typically, some way for users to define new types. In Haskell new types can be introduced with the \texttt{data} keyword. Figure~\ref{simpleDataTy} shows a simple data type, \texttt{Choice}. There are only two different values a \texttt{Choice} can be, ``\texttt{Yes}'' or ``\texttt{No}'', these are the ``constructors'' of \texttt{Choice}. 
+
+
+
+\begin{figure}[t]
+\begin{lstlisting}
+data Choice = Yes | No
+\end{lstlisting}
+\caption{A simple data type that models a yes/no choice.}
+\label{simpleDataTy}
+\end{figure}
+
+Data types can also extend existing Haskell types. Returning to the \texttt{Choice} example maybe we want to be able to store some text along with a ``\texttt{Yes}'' to explain why this choice was made. This modified definition of \texttt{Choice} is shown in Figure~\ref{stringChoice}. Now a call to the \texttt{Yes} constructor needs to be passed some value of type \texttt{String} to get a value of type \texttt{Choice}. 
+
+  \begin{figure}[t]
+\begin{lstlisting}
+data Choice = Yes String | No
+\end{lstlisting}
+\caption{``\texttt{Yes}'' \texttt{Choice}s now contain a string as well.}
+\label{stringChoice}
+\end{figure}
+
+Haskell allows you to take this one step further however. The creator of a type does not need to specify exactly which types will be stored within the new type, this means that types can be ``parameterized.'' Figure~\ref{choiceParam} shows a version of \texttt{Choice} where the \texttt{Yes} choices can contain any type ``\texttt{a}.'' This is known as parametric polymorphism~\citep{haskellWikiPolymorphism}. This type of polymorphism allows users to effectively reuse their types again and again without having to redefine them every time a new ``inner'' type is needed.
+
+  \begin{figure}[t]
+\begin{lstlisting}
+data Choice a = Yes a | No
+\end{lstlisting}
+\caption{``\texttt{Yes}'' \texttt{Choice}s now contain a string as well.}
+\label{choiceParam}
+\end{figure}
+
+\subsection{Type classes}
+
+Now that we have seen how users of Haskell can define their own types, and how types can be defined to generically contain any other types. Haskell is a functional language  so a natural next question is to wonder that, if we can define types that are generic in some ways, can the same be said of functions? The answer is yes, this is what type classes do for Haskell.
+
+A type class allows a user to define a set of functions and/or constant names and their types. Then definitions of these functions and constants can be given for specific types. Figure~\ref{choiceEq} shows the type class for \texttt{Eq} which describes what it means for types to have a notion of equality. Figure~\ref{choiceEq} also shows how the definition of \texttt{Choice} from Figure~\ref{choiceParam} implements the \texttt{Eq} type class. The ``\texttt{(Eq a) =>}'' clause in the instance declaration is a constraint on the type of \texttt{a}. This means that for a \texttt{Choice} to be ``\texttt{Eq}-able'' \texttt{a} must be as well.
+
+\begin{figure}[t]
+\begin{lstlisting}
+class Eq a where
+	(==) :: a -> a -> Bool
+	(/=) :: a -> a -> Bool
+	
+instance (Eq a) => Eq (Choice a) where
+	Yes x == Yes y = x == y
+	No == No = True
+	_ == _ = False
+	
+	c1 /= c2 = not (c1 == c2) 
+\end{lstlisting}
+\caption{The \texttt{Eq} type class and \texttt{Choice}'s implementation of it.}
+\label{choiceEq}
+\end{figure}
+
+Haskell gives it's users very powerful tools to help construct their own types and define those types' properties. These tools allow for many powerful concepts to be defined abstractly making them reusable. One of the more famous abstract concepts of the Haskell language are monads which are the subject of the next section.
+
+\subsection{Monads}
+
+Monads are a type class used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind's first argument is just some monadic value with a result of type \texttt{a} and its second argument is a function that takes in a value of type \texttt{a} and returns another monadic value that computes a result of type \texttt{b}. Bind computes the result of type \texttt{a} from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way\footnote{All instances of monad must abide by the three monad laws~\citep{monadLaws}} it can act as a way to specify how a particular set of computations are performed. In the case of \texttt{Maybe} bind is used to cause a chain of computations return \texttt{Nothing} if one of the steps of computation fail.
+
+Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from \texttt{Monad}, and that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. 
+
+The Haskell community has built a large system of types around monad for representing all different sorts of computations. This system of types provides a fertile environment for data-driven refactorings, the topic of this thesis.
 
 \section{Refactoring} 
 Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was first coined in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}; \cite{performanceRestructuring}). Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}.
@@ -255,12 +323,7 @@ This thesis will proceed as follows:
 
 \textbf{Chapter~\ref{chp:related}: Related work}
 
-This thesis begins with chapter that discusses the some of the related work that this thesis builds from and is inspired by. 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\comment{Update this!!!}
-This chapter covers other refactoring tools for other functional and object-oriented languages. This chapter also discusses multiple projects that are using refactoring in unique and interesting ways such as introducing parallelism, and non-traditional programming languages. Next the chapter describes work on developing syntactic sugar for applicative functors. Finally there is a brief discussion of type changing program transformation systems.
-
+The next chapter of this thesis will discuss some of the relevant literature that this thesis has been inspired by and built upon. This chapter covers other refactoring tools for other functional and object-oriented languages. Beyond refactoring tools, this chapter takes a look at the broader field of program transformation. Finally it sets up a generic framework that describes how program transformation tools are constructed.
 
 \textbf{Chapter~\ref{chp:hare}: Background: Refactoring Haskell in HaRe}
 
@@ -1367,8 +1430,6 @@ This section describes refactoring functions that use the concrete \texttt{Maybe
 
 This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. \texttt{Maybe} is a data type whose declaration is shown in Figure~\ref{maybeDecl}. \texttt{Maybe} represents a computation that can fail or return a value of type \texttt{a}. When a computation has failed \texttt{Maybe} represents this ``result'' with the \texttt{Nothing} constructor. When a calculation succeeds then \texttt{Maybe} returns the result wrapped with the \texttt{Just} constructor. \texttt{Maybe} is a commonly used type in Haskell programs, it also implements many common type classes including \texttt{Monad} and \texttt{MonadPlus}.
 
-Monads are a data type used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind's first argument is just some monadic value with a result of type \texttt{a} and its second argument is a function that takes in a value of type \texttt{a} and returns another monadic value that computes a result of type \texttt{b}. Bind computes the result of type \texttt{a} from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way\footnote{All instances of monad must abide by the three monad laws~\citep{monadLaws}} it can act as a way to specify how a particular set of computations are performed. In the case of \texttt{Maybe} bind is used to cause a chain of computations return \texttt{Nothing} if one of the steps of computation fail.
-
 \begin{figure}[t]
 \begin{lstlisting}
 data Maybe a = Nothing
@@ -1402,8 +1463,6 @@ class Monad m => MonadPlus m where
 \caption{The \texttt{Maybe} \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}
 \label{maybeMonadPlus}
 \end{figure}
-
-Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from \texttt{Monad}, and that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. Figure~\ref{maybeMonadPlus} shows the class declaration for \texttt{MonadPlus} and \texttt{Maybe}'s instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a type class for monads that also have some concept of failure and choice. All instances of \texttt{MonadPlus} have an \texttt{mzero} value, which represents a failed computation, and an \texttt{mplus} function, which represents a way of making a left-biased "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
 
 
 \begin{figure}[t]
