@@ -4080,9 +4080,13 @@ Monads are a challenging and characteristic feature of Haskell and, anecdotally 
 \chapter{Conclusion}
 \label{chp:conc}
 
-\section{Summary of Contributions}
-
 This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow programs to be used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} type class doesn't force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
+
+\section{The GHC Tooling ecosystem}
+
+This approach to refactoring Haskell programs is novel and has not been attempted in HaRe before. Doing this work has given me a broad understanding of the current state of tooling that is available for program transformation of 
+
+\section{Summary of Contributions}
 
 The primary artifacts of this work are my contributions to HaRe and its API. In particular the following contributions have been made:
 
