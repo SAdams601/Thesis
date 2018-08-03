@@ -4020,15 +4020,11 @@ Monads are a challenging and characteristic feature of Haskell and, anecdotally 
 \chapter{Conclusion}
 \label{chp:conc}
 
-\section{Summary of Contributions}
-\begin{itemize}
-	\item Tooling ecosystem of GHC
-	\item REPEAT THESIS ON DATA EVOLVING
-	\item Difficulties working with GHC AST
-\end{itemize}
 This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow programs to be used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} type class does not force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
 
-These refactorings are all designed to help programmers redesign the data their programs are written over. It has been shown in the literature that as programmers make structural decisions the implementation of their programs technical debt can build up, and this debt can only be paid through rewriting and/or refactoring~(\cite{techDebt} and~\cite{fowler}). The core idea behind this thesis is that the data representation decisions that are also made during program development also accrue debt, and that refactoring these representations is an important way to pay it off.  
+These refactorings are all designed to help programmers redesign the data their programs are written over. It has been shown in the literature that as programmers make structural decisions the implementation of their programs technical debt can build up, and this debt can only be paid through rewriting and/or refactoring~(\cite{techDebt} and~\cite{fowler}). The core idea behind this thesis is that the data representation decisions that are also made during program development also accrue debt, and that refactoring is a valid and simple way to pay off this type of technical debt.  
+
+\section{Summary of Contributions}
 
 The primary artifacts of this thesis are my contributions to HaRe and its API. In particular the following contributions have been made:
 
@@ -4052,7 +4048,7 @@ The primary artifacts of this thesis are my contributions to HaRe and its API. I
 
 \section{The GHC Tooling Ecosystem}
 
-The focus of these refactorings is the changes they make to the data that the target programs use, any structural changes the refactoring also make are purely incidental. Despite not being the focus of this thesis, a great deal of effort had to go into understanding the state of the GHC tooling ecosystem and how to rewrite GHC Haskell to produce it. This section will summarize my experience with the current state of the program transformation ecosystem of GHC.
+The focus of the refactorings described in this theis are the changes they make to the data that the target programs use, any structural changes that occur during the transformation are incidental. Despite not being the focus of this thesis, a great deal of effort had to go into understanding the state of the GHC tooling ecosystem and how to rewrite GHC Haskell to produce it. This section will summarize my experience with the current state of the program transformation ecosystem of GHC.
 
 I began working on HaRe when the latest version of GHC was 7.6. At this point all comments, whitespace information, and the positioning of many special characters were completely eliminated from the parsed abstract syntax. To preserve the layout of source files HaRe had to generate a separate tree structure that contained all the tokens that were not represented by the AST and some whitespace information. When it came time to print the modified source the AST and this token tree needed to be combined for the output to be formatted correctly. 
 
@@ -4060,22 +4056,21 @@ A major addition to the utility of the GHC API came with the release of GHC 7.10
 
 In the short time that I have been a part of the Haskell tooling community it has grown and changed a great deal. The GHC has become more receptive to changes to the compiler that support tool builders, notable examples of this are~\cite{apiAnns} and~\cite{treesThatGrow}. There is also an initiative to create a pluginable editor interface for Haskell, haskell-ide-engine\footnote{\url{https://github.com/haskell/haskell-ide-engine}} so that a Haskell environment can be easily incorporated into many different editors and IDEs and tool developers only have to target the ide engine plugin system. The future of Haskell tooling is looking very bright!
 
-\subsection{Challenges of Working with the GHC Abstract Syntax}
+\subsection{Challenges of Working with the GHC API}
 
 Working with the GHC API is not without its challenges however. The structure of the abstract syntax is very complex and spread across several modules. The core types of the tree are represented by many constructors, the expression type for example, \texttt{HsExpr}, contains 51 different constructors as of GHC 8. This amount of complexity makes a generic programming library a mandatory prerequisite for working with the abstract syntax tree. 
 
-Fortunately for tool builders the number of types and constructors that represent the vast majority of ``standard'' Haskell code is much more limited. However, determining which constructors you need to target for any given transformation 
+Fortunately for tool builders the number of types and constructors that represent the vast majority of ``standard'' Haskell code is much more limited. However, determining which constructors you need to target for any given transformation can be very tedious, in the author's experience this process involves looking at numerous printouts of abstract syntax trees.
 
 \section{Future Work}
 This work and HaRe can be extended in multiple ways. Development on HaRe is ongoing and will continue for the foreseeable future. 
 
 \textit{\textbf{Reimplement Refactorings}} - When HaRe was updated to work with GHC the original implementations of the refactorings were no longer valid using the new back-end. An important task in the near future will be to go back an reimplement the refactorings that are currently not supported in HaRe.  
 
-\textit{\textbf{haskell-ide-engine}} - Alan Zimmerman a major contributor to HaRe is currently working on a new project called the \textit{haskell-ide-engine}\footnote{\url{https://github.com/haskell/haskell-ide-engine}} which will allow Haskell tools to be integrated into IDEs via the Language Server Protocol a standard method of communication between tools and development environments~\citep{lsp}. This project will allow for HaRe to be easily integrated into multiple environments including, Eclipse, Visual Studio Code, Sublime Text, Atom, and Emacs.
-
 \textit{\textbf{Interactive refactorings}} - Many of the more complex refactorings would benefit from becoming more interactive. For example if after the ``introduce type synonym'' refactoring was finished if HaRe you highlight different instances of the type that the synonym was introduced for and ask the user if that instance of the type should be renamed using the new synonym or not. Another possible interactive feature of a refactoring would be to offer to refactor some code if it failed the preconditions for another refactoring. For example, if when trying to refactor a \texttt{do} block to use applicative operations the block fails the precondition requiring that all left hand side variables not be used in a right hand side expression, HaRe could suggest extracting the monadic code into its own function and then performing the original refactoring on the modified function.
 
-\textit{\textbf{Template language for refactoring}} - A powerful feature of Wrangler is its template language~\citep{letsUser}. This allows for Wrangler refactorings to be defined using concrete Erlang syntax rather than the abstract syntax, lowering the difficulty in implementing refactorings significantly for programmers not familiar with the Erlang backend. A similar feature for HaRe would allow refactorings to be written without having to understand the syntax tree of GHC. Template Haskell is a template language for Haskell and is built into the GHC. Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}.
+\textit{\textbf{Template language for refactoring}} - A powerful feature of Wrangler is its template language~\citep{letsUser}. This allows for Wrangler refactorings to be defined using concrete Erlang syntax rather than the abstract syntax, lowering the difficulty in implementing refactorings significantly for programmers not familiar with the Erlang backend. A similar feature for HaRe would allow refactorings to be written without having to understand the syntax tree of GHC. Template Haskell is a template language for Haskell and is built into the GHC. A significant amount of time while developing this thesis was spent exploring if Template Haskell and it's related feature, Quasiquotation ~\citep{quasi}, could be used to develop a template language for refactoring Haskell. Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}.
+
 
 \bibliography{main}
 
