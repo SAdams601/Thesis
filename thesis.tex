@@ -201,6 +201,7 @@ Finally I must thank Rosemary for her love and support. You have supported me th
 
 \chapter{Introduction}\label{chp:intro}
 
+The introductory chapter of this thesis will begin with a brief discussion of functional programming and the Haskell programming language. Next will be a very high level overview of refactoring with a focus on refactoring functional programming languages in particular. Finally this chapter concludes with an outline of the remainder of this thesis.
 
 \section{Functional Programming}
 Functional programming is a programming paradigm that focuses on data values as described by expressions which are built from function applications and definitions~\citep{elementsOfFunc}.  Functions in this case are closely related to the idea of mathematical functions. What qualifies a programming language as functional is debatable but several concepts are often included in languages that are described as functional. 
@@ -209,15 +210,15 @@ First class functions mean that functions are allowed to be treated like any oth
   
 \section{Haskell}
 \label{haskell}
-Haskell is a statically typed, lazily evaluated, pure functional language. Haskell is strongly and statically typed, and supports Hindley-Milner type inference(\cite{hindley};\cite{milner}). Type inference means that Haskell programs do not need every type to be explicitly listed in the source code. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
+Haskell is a statically typed, lazily evaluated, pure functional language. Haskell also supports Hindley-Milner type inference(\cite{hindley};\cite{milner}). Type inference means that Haskell programs do not need the type of every top level binding to be explicitly provided by the programmer. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define and use their own types.
 
-Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is a list containing all of the natural numbers. 
+Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is the list containing all of the natural numbers. 
 
 \begin{figure}[t]
 \begin{lstlisting}
 f x y = case x > 0 of
-True -> x - 1
-False -> x + 1
+   True -> x - 1
+   False -> x + 1
 \end{lstlisting}
 \caption{A simple function}
 \label{lazyY}
@@ -4020,7 +4021,7 @@ Monads are a challenging and characteristic feature of Haskell and, anecdotally 
 \chapter{Conclusion}
 \label{chp:conc}
 
-This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow programs to be used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} type class does not force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
+This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow code to be re-used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} type class does not force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
 
 These refactorings are all designed to help programmers redesign the data their programs are written over. It has been shown in the literature that as programmers make structural decisions the implementation of their programs technical debt can build up, and this debt can only be paid through rewriting and/or refactoring~(\cite{techDebt} and~\cite{fowler}). The core idea behind this thesis is that the data representation decisions that are also made during program development also accrue debt, and that refactoring is a valid and simple way to pay off this type of technical debt.  
 
@@ -4031,36 +4032,36 @@ The primary artifacts of this thesis are my contributions to HaRe and its API. I
 \begin{itemize}
 \item The design and implementation of a set of data-driven refactorings in HaRe. These refactorings are:
 	\begin{itemize}
-		\item Introduce a Type Synonym, section~\ref{introSyn}
+		\item Introduce a Type Synonym, Section~\ref{introSyn}
 		\item Generalise Maybe to MonadPlus/Monad, Section~\ref{maybeMonadPlus} and Chapter~\ref{chp:generalImp}
-		\item List to Hughes List, section~\ref{listToDlist} and chapter~\ref{chp:generalImp}
-		\item Generalise Monad to Applicative, chapter~\ref{chp:applicative}
-		\item Monadification	, chapter~\ref{chp:monadification}	
+		\item List to Hughes List, Section~\ref{listToDlist} and chapter~\ref{chp:generalImp}
+		\item Generalise Monad to Applicative, Chapter~\ref{chp:applicative}
+		\item Monadification	, Chapter~\ref{chp:monadification}	
 	\end{itemize}
 \item An API for the creation of embeddable types refactorings, chapter~\ref{chp:generalImp}
-\item Enhancements and additions to HaRe's API, see chapter~\ref{chp:generalImp}. The API was extended while developing the refactorings mentioned above.
+\item Enhancements and additions to HaRe's API, see Chapter~\ref{chp:generalImp}. The API was extended while developing the refactorings mentioned above.
 \begin{itemize}
-	\item Functions that perform high level, common transformations, that many refactorings must do (e.g. wrapping a syntax element in parenthesis)
-	\item Functions for retrieving particular syntax elements from the tree of an entire module such as getting the body of a function based on a position.
-	\item Functions that aid in working with ghc-exactprint and the annotations such as changing the location of a syntax element relative to the prior syntax element or adding new annotations to a syntax element.
+	\item Functions that perform high level, common transformations, that many refactorings must do (e.g. wrapping a syntax element in parentheses)
+	\item Functions for retrieving particular syntax elements from the abstract syntax tree of an entire module such as getting the body of a function based on a position. 
+	\item Functions that aid in working with ghc-exactprint and the parsed GHC abstract syntax tree's annotations. These functions provide functionality such as changing the location of a syntax element relative to the prior syntax element or adding new annotations to a syntax element.
 \end{itemize}	  
 \end{itemize}
 
 \section{The GHC Tooling Ecosystem}
 
-The focus of the refactorings described in this theis are the changes they make to the data that the target programs use, any structural changes that occur during the transformation are incidental. Despite not being the focus of this thesis, a great deal of effort had to go into understanding the state of the GHC tooling ecosystem and how to rewrite GHC Haskell to produce it. This section will summarize my experience with the current state of the program transformation ecosystem of GHC.
+The focus of the refactorings described in this theis are the changes they make to the data that the target programs use; any structural changes that occur during the transformation are incidental. Despite not being the focus of this thesis, a great deal of effort had to go into understanding the state of the GHC tooling ecosystem and how to rewrite GHC Haskell to produce it. This section will summarize my experience with the current state of the program transformation ecosystem of GHC.
 
-I began working on HaRe when the latest version of GHC was 7.6. At this point all comments, whitespace information, and the positioning of many special characters were completely eliminated from the parsed abstract syntax. To preserve the layout of source files HaRe had to generate a separate tree structure that contained all the tokens that were not represented by the AST and some whitespace information. When it came time to print the modified source the AST and this token tree needed to be combined for the output to be formatted correctly. 
+I began working on HaRe when the latest version of GHC was 7.6 (At the time of writing it is 8.4.3). At this point all comments, whitespace information, and the positioning of many special characters were completely eliminated from the parsed abstract syntax. To preserve the layout of source files HaRe had to generate a separate tree structure that contained all the tokens that were not represented by the AST and some whitespace information. When it came time to print the modified source the AST and this token tree needed to be combined for the output to be formatted correctly. 
 
-A major addition to the utility of the GHC API came with the release of GHC 7.10. With the release the GHC's parser would now return the location of all comments and tokens that had been previously discarded, in a separate structure as part of the the parsed syntax tree. This implementation allowed compiler stages that depended on the parsed AST to remain unchanged because the new structure could be ignored. This addition to the GHC also coincided with the release of ghc-exactprint,\footnote{This is not coincidental. Alan Zimmerman is the programmer behind both the modification to the GHC and the ghc-exactprint library.} which was described in Section~\ref{ghcExactprint}. This library made transforming Haskell code much easier because it allowed the formatting to be done with relative positioning instead of with absolute locations. Ghc-exactprint also greatly simplified the development of the common transformation library that was added to HaRe as a part of this thesis work. 
+A major addition to the utility of the GHC API came with the release of GHC 7.10. With this release the GHC parser would now return the location of all comments and tokens that had been previously discarded, in a separate structure as part of the the parsed syntax tree. This implementation allowed compiler stages that depended on the parsed AST to remain unchanged because the new structure could be ignored. This addition to the GHC also coincided with the release of ghc-exactprint,\footnote{This is not coincidental. Alan Zimmerman is the programmer behind both the modification to the GHC and the ghc-exactprint library.} which was described in Section~\ref{ghcExactprint}. This library made transforming Haskell code much easier because it allowed the formatting to be done with relative positioning instead of absolute locations. Ghc-exactprint also greatly simplified the development of the common transformation library that was added to HaRe as a part of this thesis work. 
 
-In the short time that I have been a part of the Haskell tooling community it has grown and changed a great deal. The GHC has become more receptive to changes to the compiler that support tool builders, notable examples of this are~\cite{apiAnns} and~\cite{treesThatGrow}. There is also an initiative to create a pluginable editor interface for Haskell, haskell-ide-engine\footnote{\url{https://github.com/haskell/haskell-ide-engine}} so that a Haskell environment can be easily incorporated into many different editors and IDEs and tool developers only have to target the ide engine plugin system. The future of Haskell tooling is looking very bright!
+In the short time that I have been a part of the Haskell tooling community it has grown and changed a great deal. The GHC has been changed specifically to better support tool builders, notable examples of this are~\cite{apiAnns} and~\cite{treesThatGrow}. There is also an initiative to create a pluginable editor interface for Haskell, haskell-ide-engine\footnote{\url{https://github.com/haskell/haskell-ide-engine}} so that a Haskell environment can be easily incorporated into many different editors and IDEs and tool developers only have to target the ide engine plugin system. The future of Haskell tooling is looking very bright! And in particular this makes adding HaRe to other IDEs that much easier.
 
 \subsection{Challenges of Working with the GHC API}
 
 Working with the GHC API is not without its challenges however. The structure of the abstract syntax is very complex and spread across several modules. The core types of the tree are represented by many constructors, the expression type for example, \texttt{HsExpr}, contains 51 different constructors as of GHC 8. This amount of complexity makes a generic programming library a mandatory prerequisite for working with the abstract syntax tree. 
 
-Fortunately for tool builders the number of types and constructors that represent the vast majority of ``standard'' Haskell code is much more limited. However, determining which constructors you need to target for any given transformation can be very tedious, in the author's experience this process involves looking at numerous printouts of abstract syntax trees.
+Fortunately for tool builders the number of types and constructors that represent the vast majority of ``standard'' Haskell code is much more limited. However, determining which constructors you need to target for any given transformation can be very tedious: in the author's experience this process involves looking at numerous printouts of abstract syntax trees. 
 
 \section{Future Work}
 This work and HaRe can be extended in multiple ways. Development on HaRe is ongoing and will continue for the foreseeable future. 
