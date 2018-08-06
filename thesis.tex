@@ -82,6 +82,7 @@
 % options. If you need to add further options, these can be given to UoKextentions
 % to be propogated through.
 \usepackage{UoKextentions}
+\usepackage[htt]{hyphenat}
 \usepackage{times}
 %\usepackage{llncsdoc}
 %\usepackage{verbatim}
@@ -201,7 +202,6 @@ Finally I must thank Rosemary for her love and support. You have supported me th
 
 \chapter{Introduction}\label{chp:intro}
 
-The introductory chapter of this thesis will begin with a brief discussion of functional programming and the Haskell programming language. Next will be a very high level overview of refactoring with a focus on refactoring functional programming languages in particular. Finally this chapter concludes with an outline of the remainder of this thesis.
 
 \section{Functional Programming}
 Functional programming is a programming paradigm that focuses on data values as described by expressions which are built from function applications and definitions~\citep{elementsOfFunc}.  Functions in this case are closely related to the idea of mathematical functions. What qualifies a programming language as functional is debatable but several concepts are often included in languages that are described as functional. 
@@ -210,21 +210,88 @@ First class functions mean that functions are allowed to be treated like any oth
   
 \section{Haskell}
 \label{haskell}
-Haskell is a statically typed, lazily evaluated, pure functional language. Haskell also supports Hindley-Milner type inference(\cite{hindley};\cite{milner}). Type inference means that Haskell programs do not need the type of every top level binding to be explicitly provided by the programmer. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define and use their own types.
+Haskell is a statically typed, lazily evaluated, pure functional language. Haskell is strongly and statically typed, and supports Hindley-Milner type inference(\cite{hindley};\cite{milner}). Type inference means that Haskell programs do not need every type to be explicitly listed in the source code. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
 
-Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is the list containing all of the natural numbers. 
+Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is a list containing all of the natural numbers. 
 
 \begin{figure}[t]
 \begin{lstlisting}
 f x y = case x > 0 of
-   True -> x - 1
-   False -> x + 1
+True -> x - 1
+False -> x + 1
 \end{lstlisting}
 \caption{A simple function}
 \label{lazyY}
 \end{figure}
 
-Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads represent computations, which when run will have effects as well as producing a result. A principle topic of this thesis is refactoring to support patterns of computation related to Monads and other related structures. 
+Haskell's powerful type system and ``purity'' (the idea that functions cannot perform actions in addition to returning values) means that Haskell programs can be developed in a ``type driven'' or ``type first'' way. The work done for this thesis was designed to facilitate this type of development. Therefore, the following sections will introduce some key ideas from the Haskell type ecosystem that readers of this thesis will need to be familiar with.
+
+\subsection{User defined types in Haskell}
+
+All high level programming languages come with some predefined set of types and, typically, some way for users to define new types. In Haskell new types can be introduced with the \texttt{data} keyword. Figure~\ref{simpleDataTy} shows a simple data type, \texttt{Choice}. There are only two different values a \texttt{Choice} can be, ``\texttt{Yes}'' or ``\texttt{No}'', these are the ``constructors'' of \texttt{Choice}. 
+
+
+
+\begin{figure}[t]
+\begin{lstlisting}
+data Choice = Yes | No
+\end{lstlisting}
+\caption{A simple data type that models a yes/no choice.}
+\label{simpleDataTy}
+\end{figure}
+
+Data types can also extend existing Haskell types. Returning to the \texttt{Choice} example maybe we want to be able to store some text along with a ``\texttt{Yes}'' to explain why this choice was made. This modified definition of \texttt{Choice} is shown in Figure~\ref{stringChoice}. Now a call to the \texttt{Yes} constructor needs to be passed some value of type \texttt{String} to get a value of type \texttt{Choice}. 
+
+  \begin{figure}[t]
+\begin{lstlisting}
+data Choice = Yes String | No
+\end{lstlisting}
+\caption{``\texttt{Yes}'' \texttt{Choice}s now contain a string as well.}
+\label{stringChoice}
+\end{figure}
+
+Haskell allows you to take this one step further however. The creator of a type does not need to specify exactly which types will be stored within the new type, this means that types can be ``parameterized.'' Figure~\ref{choiceParam} shows a version of \texttt{Choice} where the \texttt{Yes} choices can contain any type ``\texttt{a}.'' This is known as parametric polymorphism~\citep{haskellWikiPolymorphism}. This type of polymorphism allows users to effectively reuse their types again and again without having to redefine them every time a new ``inner'' type is needed.
+
+  \begin{figure}[t]
+\begin{lstlisting}
+data Choice a = Yes a | No
+\end{lstlisting}
+\caption{``\texttt{Yes}'' \texttt{Choice}s now contain a string as well.}
+\label{choiceParam}
+\end{figure}
+
+\subsection{Type classes}
+
+Now that we have seen how users of Haskell can define their own types, and how types can be defined to generically contain any other types. Haskell is a functional language  so a natural next question is to wonder that, if we can define types that are generic in some ways, can the same be said of functions? The answer is yes, this is what type classes do for Haskell.
+
+A type class allows a user to define a set of functions and/or constant names and their types. Then definitions of these functions and constants can be given for specific types. Figure~\ref{choiceEq} shows the type class for \texttt{Eq} which describes what it means for types to have a notion of equality. Figure~\ref{choiceEq} also shows how the definition of \texttt{Choice} from Figure~\ref{choiceParam} implements the \texttt{Eq} type class. The ``\texttt{(Eq a) =>}'' clause in the instance declaration is a constraint on the type of \texttt{a}. This means that for a \texttt{Choice} to be ``\texttt{Eq}-able'' \texttt{a} must be as well.
+
+\begin{figure}[t]
+\begin{lstlisting}
+class Eq a where
+	(==) :: a -> a -> Bool
+	(/=) :: a -> a -> Bool
+	
+instance (Eq a) => Eq (Choice a) where
+	Yes x == Yes y = x == y
+	No == No = True
+	_ == _ = False
+	
+	c1 /= c2 = not (c1 == c2) 
+\end{lstlisting}
+\caption{The \texttt{Eq} type class and \texttt{Choice}'s implementation of it.}
+\label{choiceEq}
+\end{figure}
+
+Haskell gives it's users very powerful tools to help construct their own types and define those types' properties. These tools allow for many powerful concepts to be defined abstractly making them reusable. One of the more famous abstract concepts of the Haskell language are monads which are the subject of the next section.
+
+\subsection{Monads}
+
+Monads are a type class used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind's first argument is just some monadic value with a result of type \texttt{a} and its second argument is a function that takes in a value of type \texttt{a} and returns another monadic value that computes a result of type \texttt{b}. Bind computes the result of type \texttt{a} from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way\footnote{All instances of monad must abide by the three monad laws~\citep{monadLaws}} it can act as a way to specify how a particular set of computations are performed. In the case of \texttt{Maybe} bind is used to cause a chain of computations return \texttt{Nothing} if one of the steps of computation fail.
+
+Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from \texttt{Monad}, and that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. 
+
+The Haskell community has built a large system of types around monad for representing all different sorts of computations. This system of types provides a fertile environment for data-driven refactorings, the topic of this thesis.
 
 \section{Refactoring} 
 Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was first coined in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}; \cite{performanceRestructuring}). Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}.
@@ -256,12 +323,7 @@ This thesis will proceed as follows:
 
 \textbf{Chapter~\ref{chp:related}: Related work}
 
-This thesis begins with chapter that discusses the some of the related work that this thesis builds from and is inspired by. 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\comment{Update this!!!}
-This chapter covers other refactoring tools for other functional and object-oriented languages. This chapter also discusses multiple projects that are using refactoring in unique and interesting ways such as introducing parallelism, and non-traditional programming languages. Next the chapter describes work on developing syntactic sugar for applicative functors. Finally there is a brief discussion of type changing program transformation systems.
-
+The next chapter of this thesis will discuss some of the relevant literature that this thesis has been inspired by and built upon. This chapter covers other refactoring tools for other functional and object-oriented languages. Beyond refactoring tools, this chapter takes a look at the broader field of program transformation. Finally it sets up a generic framework that describes how program transformation tools are constructed.
 
 \textbf{Chapter~\ref{chp:hare}: Background: Refactoring Haskell in HaRe}
 
@@ -1117,10 +1179,11 @@ Collecting any required information from the other syntax trees up front, is a g
 
 One refactoring that does need to reference the typed syntax tree fairly heavily is the List to Hughes List refactoring described in Section~\ref{listToDlist}. This refactoring needs to change the type of entire subtrees, so it references the typed syntax tree to see what the type of the current node is during the transformation. This is fairly straightforward due to the source being tagged with \texttt{SrcSpan}s that are consistent throughout the compilation process. This means that a piece of typed abstract syntax is the same as a particular parsed syntax subtree if their \texttt{SrcSpan}s are the same. Searching through the later compilation stage's trees is as simple as doing a full traversal of the tree searching for the appropriate \texttt{SrcSpan}.
 
-The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe\footnote{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: \url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} and some of its notable dependencies was the focus of this chapter.
+\section{Summary}
 
-Next this thesis will begin to describe its major contribution: the design and implementation of data-driven refactorings. The next chapter will begin the discussion of what is a data-driven refactoring and some simple refactoring designs.
+This chapter has described the past and current implementation of HaRe. The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe\footnote{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: \url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} and some of its notable dependencies was the focus of this chapter.
 
+The thesis builds upon this work by developing data-driven refactorings, which have not been developed for a functional programming language yet. The next chapter will describe the roots of these refactoring in~\cite{fowler} and how these ideas were adapted to work over the functional programming language Haskell.
 \chapter{Data-driven refactorings}
 \label{chp:ddRefs}
 
@@ -1367,8 +1430,6 @@ This section describes refactoring functions that use the concrete \texttt{Maybe
 
 This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. \texttt{Maybe} is a data type whose declaration is shown in Figure~\ref{maybeDecl}. \texttt{Maybe} represents a computation that can fail or return a value of type \texttt{a}. When a computation has failed \texttt{Maybe} represents this ``result'' with the \texttt{Nothing} constructor. When a calculation succeeds then \texttt{Maybe} returns the result wrapped with the \texttt{Just} constructor. \texttt{Maybe} is a commonly used type in Haskell programs, it also implements many common type classes including \texttt{Monad} and \texttt{MonadPlus}.
 
-Monads are a data type used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind's first argument is just some monadic value with a result of type \texttt{a} and its second argument is a function that takes in a value of type \texttt{a} and returns another monadic value that computes a result of type \texttt{b}. Bind computes the result of type \texttt{a} from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way\footnote{All instances of monad must abide by the three monad laws~\citep{monadLaws}} it can act as a way to specify how a particular set of computations are performed. In the case of \texttt{Maybe} bind is used to cause a chain of computations return \texttt{Nothing} if one of the steps of computation fail.
-
 \begin{figure}[t]
 \begin{lstlisting}
 data Maybe a = Nothing
@@ -1402,8 +1463,6 @@ class Monad m => MonadPlus m where
 \caption{The \texttt{Maybe} \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}
 \label{maybeMonadPlus}
 \end{figure}
-
-Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from \texttt{Monad}, and that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. Figure~\ref{maybeMonadPlus} shows the class declaration for \texttt{MonadPlus} and \texttt{Maybe}'s instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a type class for monads that also have some concept of failure and choice. All instances of \texttt{MonadPlus} have an \texttt{mzero} value, which represents a failed computation, and an \texttt{mplus} function, which represents a way of making a left-biased "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
 
 
 \begin{figure}[t]
@@ -4021,57 +4080,43 @@ Monads are a challenging and characteristic feature of Haskell and, anecdotally 
 \chapter{Conclusion}
 \label{chp:conc}
 
-This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow code to be re-used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} type class does not force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
+This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow programs to be used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} type class doesn't force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
 
-These refactorings are all designed to help programmers redesign the data their programs are written over. It has been shown in the literature that as programmers make structural decisions the implementation of their programs technical debt can build up, and this debt can only be paid through rewriting and/or refactoring~(\cite{techDebt} and~\cite{fowler}). The core idea behind this thesis is that the data representation decisions that are also made during program development also accrue debt, and that refactoring is a valid and simple way to pay off this type of technical debt.  
+\section{The GHC Tooling ecosystem}
+
+This approach to refactoring Haskell programs is novel and has not been attempted in HaRe before. Doing this work has given me a broad understanding of the current state of tooling that is available for program transformation of 
 
 \section{Summary of Contributions}
 
-The primary artifacts of this thesis are my contributions to HaRe and its API. In particular the following contributions have been made:
+The primary artifacts of this work are my contributions to HaRe and its API. In particular the following contributions have been made:
 
 \begin{itemize}
 \item The design and implementation of a set of data-driven refactorings in HaRe. These refactorings are:
 	\begin{itemize}
-		\item Introduce a Type Synonym, Section~\ref{introSyn}
+		\item Introduce a Type Synonym, section~\ref{introSyn}
 		\item Generalise Maybe to MonadPlus/Monad, Section~\ref{maybeMonadPlus} and Chapter~\ref{chp:generalImp}
-		\item List to Hughes List, Section~\ref{listToDlist} and chapter~\ref{chp:generalImp}
-		\item Generalise Monad to Applicative, Chapter~\ref{chp:applicative}
-		\item Monadification	, Chapter~\ref{chp:monadification}	
+		\item List to Hughes List, section~\ref{listToDlist} and chapter~\ref{chp:generalImp}
+		\item Generalise Monad to Applicative, chapter~\ref{chp:applicative}
+		\item Monadification	, chapter~\ref{chp:monadification}	
 	\end{itemize}
 \item An API for the creation of embeddable types refactorings, chapter~\ref{chp:generalImp}
-\item Enhancements and additions to HaRe's API, see Chapter~\ref{chp:generalImp}. The API was extended while developing the refactorings mentioned above.
+\item Enhancements and additions to HaRe's API, see chapter~\ref{chp:generalImp}. The API was extended while developing the refactorings mentioned above.
 \begin{itemize}
-	\item Functions that perform high level, common transformations, that many refactorings must do (e.g. wrapping a syntax element in parentheses)
-	\item Functions for retrieving particular syntax elements from the abstract syntax tree of an entire module such as getting the body of a function based on a position. 
-	\item Functions that aid in working with ghc-exactprint and the parsed GHC abstract syntax tree's annotations. These functions provide functionality such as changing the location of a syntax element relative to the prior syntax element or adding new annotations to a syntax element.
+	\item Functions that perform high level, common transformations, that many refactorings must do (e.g. wrapping a syntax element in parenthesis)
+	\item Functions for retrieving particular syntax elements from the tree of an entire module such as getting the body of a function based on a position.
+	\item Functions that aid in working with ghc-exactprint and the annotations such as changing the location of a syntax element relative to the prior syntax element or adding new annotations to a syntax element.
 \end{itemize}	  
 \end{itemize}
-
-\section{The GHC Tooling Ecosystem}
-
-The focus of the refactorings described in this theis are the changes they make to the data that the target programs use; any structural changes that occur during the transformation are incidental. Despite not being the focus of this thesis, a great deal of effort had to go into understanding the state of the GHC tooling ecosystem and how to rewrite GHC Haskell to produce it. This section will summarize my experience with the current state of the program transformation ecosystem of GHC.
-
-I began working on HaRe when the latest version of GHC was 7.6 (At the time of writing it is 8.4.3). At this point all comments, whitespace information, and the positioning of many special characters were completely eliminated from the parsed abstract syntax. To preserve the layout of source files HaRe had to generate a separate tree structure that contained all the tokens that were not represented by the AST and some whitespace information. When it came time to print the modified source the AST and this token tree needed to be combined for the output to be formatted correctly. 
-
-A major addition to the utility of the GHC API came with the release of GHC 7.10. With this release the GHC parser would now return the location of all comments and tokens that had been previously discarded, in a separate structure as part of the the parsed syntax tree. This implementation allowed compiler stages that depended on the parsed AST to remain unchanged because the new structure could be ignored. This addition to the GHC also coincided with the release of ghc-exactprint,\footnote{This is not coincidental. Alan Zimmerman is the programmer behind both the modification to the GHC and the ghc-exactprint library.} which was described in Section~\ref{ghcExactprint}. This library made transforming Haskell code much easier because it allowed the formatting to be done with relative positioning instead of absolute locations. Ghc-exactprint also greatly simplified the development of the common transformation library that was added to HaRe as a part of this thesis work. 
-
-In the short time that I have been a part of the Haskell tooling community it has grown and changed a great deal. The GHC has been changed specifically to better support tool builders, notable examples of this are~\cite{apiAnns} and~\cite{treesThatGrow}. There is also an initiative to create a pluginable editor interface for Haskell, haskell-ide-engine\footnote{\url{https://github.com/haskell/haskell-ide-engine}} so that a Haskell environment can be easily incorporated into many different editors and IDEs and tool developers only have to target the ide engine plugin system. The future of Haskell tooling is looking very bright! And in particular this makes adding HaRe to other IDEs that much easier.
-
-\subsection{Challenges of Working with the GHC API}
-
-Working with the GHC API is not without its challenges however. The structure of the abstract syntax is very complex and spread across several modules. The core types of the tree are represented by many constructors, the expression type for example, \texttt{HsExpr}, contains 51 different constructors as of GHC 8. This amount of complexity makes a generic programming library a mandatory prerequisite for working with the abstract syntax tree. 
-
-Fortunately for tool builders the number of types and constructors that represent the vast majority of ``standard'' Haskell code is much more limited. However, determining which constructors you need to target for any given transformation can be very tedious: in the author's experience this process involves looking at numerous printouts of abstract syntax trees. 
-
 \section{Future Work}
 This work and HaRe can be extended in multiple ways. Development on HaRe is ongoing and will continue for the foreseeable future. 
 
 \textit{\textbf{Reimplement Refactorings}} - When HaRe was updated to work with GHC the original implementations of the refactorings were no longer valid using the new back-end. An important task in the near future will be to go back an reimplement the refactorings that are currently not supported in HaRe.  
 
+\textit{\textbf{haskell-ide-engine}} - Alan Zimmerman a major contributor to HaRe is currently working on a new project called the \textit{haskell-ide-engine}\footnote{\url{https://github.com/haskell/haskell-ide-engine}} which will allow Haskell tools to be integrated into IDEs via the Language Server Protocol a standard method of communication between tools and development environments~\citep{lsp}. This project will allow for HaRe to be easily integrated into multiple environments including, Eclipse, Visual Studio Code, Sublime Text, Atom, and Emacs.
+
 \textit{\textbf{Interactive refactorings}} - Many of the more complex refactorings would benefit from becoming more interactive. For example if after the ``introduce type synonym'' refactoring was finished if HaRe you highlight different instances of the type that the synonym was introduced for and ask the user if that instance of the type should be renamed using the new synonym or not. Another possible interactive feature of a refactoring would be to offer to refactor some code if it failed the preconditions for another refactoring. For example, if when trying to refactor a \texttt{do} block to use applicative operations the block fails the precondition requiring that all left hand side variables not be used in a right hand side expression, HaRe could suggest extracting the monadic code into its own function and then performing the original refactoring on the modified function.
 
-\textit{\textbf{Template language for refactoring}} - A powerful feature of Wrangler is its template language~\citep{letsUser}. This allows for Wrangler refactorings to be defined using concrete Erlang syntax rather than the abstract syntax, lowering the difficulty in implementing refactorings significantly for programmers not familiar with the Erlang backend. A similar feature for HaRe would allow refactorings to be written without having to understand the syntax tree of GHC. Template Haskell is a template language for Haskell and is built into the GHC. A significant amount of time while developing this thesis was spent exploring if Template Haskell and it's related feature, Quasiquotation ~\citep{quasi}, could be used to develop a template language for refactoring Haskell. Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}.
-
+\textit{\textbf{Template language for refactoring}} - A powerful feature of Wrangler is its template language~\citep{letsUser}. This allows for Wrangler refactorings to be defined using concrete Erlang syntax rather than the abstract syntax, lowering the difficulty in implementing refactorings significantly for programmers not familiar with the Erlang backend. A similar feature for HaRe would allow refactorings to be written without having to understand the syntax tree of GHC. Template Haskell is a template language for Haskell and is built into the GHC. Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}.
 
 \bibliography{main}
 
