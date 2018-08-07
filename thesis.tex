@@ -210,9 +210,9 @@ First class functions mean that functions are allowed to be treated like any oth
   
 \section{Haskell}
 \label{haskell}
-Haskell is a statically typed, lazily evaluated, pure functional language. Haskell is strongly and statically typed, and supports Hindley-Milner type inference(\cite{hindley};\cite{milner}). Type inference means that Haskell programs do not need every type to be explicitly listed in the source code. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
+Haskell is a statically typed, lazily evaluated, pure functional language. Haskell supports Hindley-Milner type inference(\cite{hindley};\cite{milner}), this  means that top level bindings in Haskell programs do not need to be explicitly typed by the programmer. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define their own types.
 
-Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is a list containing all of the natural numbers. 
+Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is the list containing all of the natural numbers. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -224,11 +224,11 @@ False -> x + 1
 \label{lazyY}
 \end{figure}
 
-Haskell's powerful type system and ``purity'' (the idea that functions cannot perform actions in addition to returning values) means that Haskell programs can be developed in a ``type driven'' or ``type first'' way. The work done for this thesis was designed to facilitate this type of development. Therefore, the following sections will introduce some key ideas from the Haskell type ecosystem that readers of this thesis will need to be familiar with.
+Haskell's powerful type system and ``purity'' (the idea that functions cannot perform actions in addition to returning values) means that Haskell programs can be developed in a ``type driven'' or ``type first'' way. The work done in this thesis was designed to facilitate this type of development. Therefore, the following sections will introduce some key ideas from the Haskell type ecosystem that readers of this thesis will need to be familiar with.
 
 \subsection{User defined types in Haskell}
 
-All high level programming languages come with some predefined set of types and, typically, some way for users to define new types. In Haskell new types can be introduced with the \texttt{data} keyword. Figure~\ref{simpleDataTy} shows a simple data type, \texttt{Choice}. There are only two different values a \texttt{Choice} can be, ``\texttt{Yes}'' or ``\texttt{No}'', these are the ``constructors'' of \texttt{Choice}. 
+All high level programming languages come with some predefined set of types and, typically, some way for users to define new types. In Haskell new types can be introduced with the \texttt{data} keyword. Figure~\ref{simpleDataTy} shows a simple data type, \texttt{Choice}. There are only two different values a \texttt{Choice} can be, \texttt{Yes} or \texttt{No}, these are the \textit{constructors} of \texttt{Choice}. 
 
 
 
@@ -240,50 +240,50 @@ data Choice = Yes | No
 \label{simpleDataTy}
 \end{figure}
 
-Data types can also extend existing Haskell types. Returning to the \texttt{Choice} example maybe we want to be able to store some text along with a ``\texttt{Yes}'' to explain why this choice was made. This modified definition of \texttt{Choice} is shown in Figure~\ref{stringChoice}. Now a call to the \texttt{Yes} constructor needs to be passed some value of type \texttt{String} to get a value of type \texttt{Choice}. 
+Data types can also extend existing Haskell types. Returning to the \texttt{Choice} example maybe we want to be able to store some text along with a \texttt{Yes} to explain why this choice was made. This modified definition of \texttt{Choice} is shown in Figure~\ref{stringChoice}. Now a call to the \texttt{Yes} constructor needs to be passed some value of type \texttt{String} to construct a value of type \texttt{Choice}. 
 
   \begin{figure}[t]
 \begin{lstlisting}
 data Choice = Yes String | No
 \end{lstlisting}
-\caption{``\texttt{Yes}'' \texttt{Choice}s now contain a string as well.}
+\caption{\texttt{Yes} \texttt{Choice}s now contain a string as well.}
 \label{stringChoice}
 \end{figure}
 
-Haskell allows you to take this one step further however. The creator of a type does not need to specify exactly which types will be stored within the new type, this means that types can be ``parameterized.'' Figure~\ref{choiceParam} shows a version of \texttt{Choice} where the \texttt{Yes} choices can contain any type ``\texttt{a}.'' This is known as parametric polymorphism~\citep{haskellWikiPolymorphism}. This type of polymorphism allows users to effectively reuse their types again and again without having to redefine them every time a new ``inner'' type is needed.
+Haskell allows you to take this one step further however. The creator of a type does not need to specify exactly which types will be stored within the new type, this means that types can be \textit{parameterized}. Figure~\ref{choiceParam} shows a version of \texttt{Choice} where the \texttt{Yes} choices can contain any type \texttt{a}. This is known as parametric polymorphism~\citep{haskellWikiPolymorphism}. This type of polymorphism allows users to effectively reuse their types again and again without having to redefine them every time a new ``inner'' type is needed.
 
   \begin{figure}[t]
 \begin{lstlisting}
 data Choice a = Yes a | No
 \end{lstlisting}
-\caption{``\texttt{Yes}'' \texttt{Choice}s now contain a string as well.}
+\caption{\texttt{Yes} \texttt{Choice}s can now hold any other type.}
 \label{choiceParam}
 \end{figure}
 
 \subsection{Type classes}
 
-Now that we have seen how users of Haskell can define their own types, and how types can be defined to generically contain any other types. Haskell is a functional language  so a natural next question is to wonder that, if we can define types that are generic in some ways, can the same be said of functions? The answer is yes, this is what type classes do for Haskell.
+Now that we have seen how users of Haskell can define their own data types, and how types can be defined in a generic way, making the definitions applicable to a whole set of arguments. Haskell is a functional language  so a natural next question is to wonder that, if we can define types that are generic in some ways, can the same be said of functions? The answer is yes, this is what type classes do for Haskell.
 
 A type class allows a user to define a set of functions and/or constant names and their types. Then definitions of these functions and constants can be given for specific types. Figure~\ref{choiceEq} shows the type class for \texttt{Eq} which describes what it means for types to have a notion of equality. Figure~\ref{choiceEq} also shows how the definition of \texttt{Choice} from Figure~\ref{choiceParam} implements the \texttt{Eq} type class. The ``\texttt{(Eq a) =>}'' clause in the instance declaration is a constraint on the type of \texttt{a}. This means that for a \texttt{Choice} to be ``\texttt{Eq}-able'' \texttt{a} must be as well.
 
 \begin{figure}[t]
 \begin{lstlisting}
 class Eq a where
-	(==) :: a -> a -> Bool
-	(/=) :: a -> a -> Bool
+   (==) :: a -> a -> Bool
+   (/=) :: a -> a -> Bool
 	
 instance (Eq a) => Eq (Choice a) where
-	Yes x == Yes y = x == y
-	No == No = True
-	_ == _ = False
+   Yes x == Yes y = x == y
+   No == No = True
+   _ == _ = False
 	
-	c1 /= c2 = not (c1 == c2) 
+   c1 /= c2 = not (c1 == c2) 
 \end{lstlisting}
 \caption{The \texttt{Eq} type class and \texttt{Choice}'s implementation of it.}
 \label{choiceEq}
 \end{figure}
 
-Haskell gives it's users very powerful tools to help construct their own types and define those types' properties. These tools allow for many powerful concepts to be defined abstractly making them reusable. One of the more famous abstract concepts of the Haskell language are monads which are the subject of the next section.
+Haskell gives its users very powerful tools to help construct their own types and define those types' properties. These tools allow for many powerful concepts to be defined abstractly making them reusable. One of the more well known abstract concepts of the Haskell language are monads which are the subject of the next section.
 
 \subsection{Monads}
 
@@ -4138,7 +4138,9 @@ This work and HaRe can be extended in multiple ways. Development on HaRe is ongo
 \textit{\textbf{Template language for refactoring}} - A powerful feature of Wrangler is its template language~\citep{letsUser}. This allows for Wrangler refactorings to be defined using concrete Erlang syntax rather than the abstract syntax, lowering the difficulty in implementing refactorings significantly for programmers not familiar with the Erlang backend. A similar feature for HaRe would allow refactorings to be written without having to understand the syntax tree of GHC. Template Haskell is a template language for Haskell and is built into the GHC. A significant amount of time while developing this thesis was spent exploring if Template Haskell and it's related feature, Quasiquotation ~\citep{quasi}, could be used to develop a template language for refactoring Haskell. Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}.
 
 
-\textit{\textbf{Data-Driven refactorings for other languages}} - The data-driven refactorings presented in this thesis lean heavily on the types that 
+\textit{\textbf{Data-Driven refactorings for other languages}} - The data-driven refactorings presented in this thesis lean heavily on types that are commonly used in the Haskell community. It would be interesting to explore data-driven refactorings for other functional programming languages such as OCaml or Scala. Data-driven refactorings for these languages would have to be developed from scratch based on how data is modeled in these languages.
+
+
 
 
 
