@@ -638,7 +638,7 @@ By considering how tools are built we can begin to understand the general toolch
 
 \begin{figure}[t]
 	\begin{center}
-		\includegraphics[scale=.5]{graphVis/RelatedWork/abstractTooling.png}
+		\includegraphics[scale=.4]{graphVis/RelatedWork/abstractTooling.png}
 	\end{center}
 	\caption{A general toolchain for program transformation.}
 	\label{generalToolchain}
@@ -4077,7 +4077,9 @@ This work and HaRe can be extended in multiple ways. Development on HaRe is ongo
 
 \textit{\textbf{Template language for refactoring}} - A powerful feature of Wrangler is its template language~\citep{letsUser}. This allows for Wrangler refactorings to be defined using concrete Erlang syntax rather than the abstract syntax, lowering the difficulty in implementing refactorings significantly for programmers not familiar with the Erlang backend. A similar feature for HaRe would allow refactorings to be written without having to understand the syntax tree of GHC. Template Haskell is a template language for Haskell and is built into the GHC. A significant amount of time while developing this thesis was spent exploring if Template Haskell and it's related feature, Quasiquotation ~\citep{quasi}, could be used to develop a template language for refactoring Haskell. Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}.
 
-\textit{\textbf{Data-Driven refactorings for other languages}} - The data-driven refactorings presented in this thesis lean heavily on the types that 
+\textit{\textbf{Data-Driven refactorings for other languages}} - The data-driven refactorings presented in this thesis lean heavily on the types that Haskell provides and how they are used by the Haskell community. Data-driven refactorings for other programming languages would be very different from the refactorings presented in this thesis. The refactorings related to Applicative Functors and Monads are much less useful for other langauges as they are a fairly unique feature of Haskell.\footnote{Haskell's \textit{purity} requires some way to handle effects and monads are the primary way this is handled in Haskell. However, nothing prevents monads from being adopted in any language that supports parameterised types they are just less useful in an effectful language.} Data-driven refactorings for other statically typed functional languages such as OCaml or Scala would be an interesting topic to explore further because of how different these langauges are from Haskell.
+
+  
 
 
 \bibliography{main}
