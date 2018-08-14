@@ -1462,9 +1462,9 @@ This section describes refactoring functions that use the concrete \texttt{Maybe
 
 \subsection{Generalising Maybe}
 
-This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. \texttt{Maybe} is a data type whose declaration is shown in Figure~\ref{maybeDecl}. \texttt{Maybe} represents a computation that can fail or return a value of type \texttt{a}. When a computation has failed \texttt{Maybe} represents this ``result'' with the \texttt{Nothing} constructor. When a calculation succeeds then \texttt{Maybe} returns the result wrapped with the \texttt{Just} constructor. \texttt{Maybe} is a commonly used type in Haskell programs, it also implements many common type classes including \texttt{Monad} and \texttt{MonadPlus}.
+This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. \texttt{Maybe} is a data type whose declaration is shown in Figure~\ref{maybeDecl}. \texttt{Maybe} represents a computation that can fail or return a value of type \texttt{a}. When a computation has failed \texttt{Maybe} represents this ``result'' with the \texttt{Nothing} constructor. When a calculation succeeds then \texttt{Maybe} returns the result wrapped with the \texttt{Just} constructor. \texttt{Maybe} is a commonly used type in Haskell programs, it also implements many common type classes including \texttt{Monad} and \texttt{MonadPlus}. 
 
-Monads are a data type used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind's first argument is just some monadic value with a result of type \texttt{a} and its second argument is a function that takes in a value of type \texttt{a} and returns another monadic value that computes a result of type \texttt{b}. Bind computes the result of type \texttt{a} from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way\footnote{All instances of monad must abide by the three monad laws~\citep{monadLaws}} it can act as a way to specify how a particular set of computations are performed. In the case of \texttt{Maybe} bind is used to cause a chain of computations return \texttt{Nothing} if one of the steps of computation fail.
+The definition of \texttt{Maybe} as well as its instance declarations for the \texttt{Monad} and \texttt{MonadPlus} type classes are shown in Figures~\ref{maybeDecl} and~\ref{maybeMonadDef}. The declaration of the \texttt{MonadPlus} type class as well as \texttt{Maybe}'s definition of it are shown in Figure~\ref{maybeMonadPlusDef}.
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -1476,34 +1476,6 @@ data Maybe a = Nothing
 \end{figure}
 
 \begin{figure}[t]
-\begin{lstlisting}
-class Applicative m => Monad m where
-	return :: a -> m a
-    (>>=)  :: forall a b. m a -> (a -> m b) -> m b
-\end{lstlisting}
-\caption{The \texttt{Monad} type class declaration}
-\label{monadTC}
-\end{figure}
-
-\begin{figure}[t]
-\begin{lstlisting}                 
-instance MonadPlus Maybe where
-   mzero = Nothing
-   Nothing `mplus` r = r
-   l          `mplus` _ = l
-                 
-class Monad m => MonadPlus m where
-   mzero :: m a
-   mplus :: m a -> m a -> m a
-\end{lstlisting}
-\caption{The \texttt{Maybe} \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}
-\label{maybeMonadPlus}
-\end{figure}
-
-Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from \texttt{Monad}, and that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. Figure~\ref{maybeMonadPlus} shows the class declaration for \texttt{MonadPlus} and \texttt{Maybe}'s instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a type class for monads that also have some concept of failure and choice. All instances of \texttt{MonadPlus} have an \texttt{mzero} value, which represents a failed computation, and an \texttt{mplus} function, which represents a way of making a left-biased "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
-
-
-\begin{figure}[t]
 \begin{lstlisting}   
 instance Monad Maybe where
 	return = Just
@@ -1512,12 +1484,29 @@ instance Monad Maybe where
 	Nothing  >>= _ = Nothing
 \end{lstlisting}
 \caption{\texttt{Maybe}'s monad instance definition}
-\label{maybeMonad}
+\label{maybeMonadDef}
+\end{figure}
+
+\begin{figure}[t]
+\begin{lstlisting}                 
+class Monad m => MonadPlus m where
+   mzero :: m a
+   mplus :: m a -> m a -> m a
+
+instance MonadPlus Maybe where
+   mzero = Nothing
+   Nothing `mplus` r = r
+   l          `mplus` _ = l
+                 
+\end{lstlisting}
+\caption{The \texttt{Maybe} \texttt{MonadPlus} instance declaration, and the \texttt{MonadPlus} class definition.}
+\label{maybeMonadPlusDef}
 \end{figure}
 
 
-\subsection{Refactoring Maybe to MonadPlus} 
 
+\subsection{Refactoring Maybe to MonadPlus} 
+\label{maybeMonadPlus}
 \texttt{MonadPlus} is the obvious generalisation of \texttt{Maybe}. \texttt{Maybe} encodes failure using the \texttt{Nothing} constructor and its definition of \texttt{mplus} chooses to discard failed computations on the left in exchange for a possibly successful one. This behaviour is exactly what \texttt{MonadPlus} is designed to encapsulate. This section describes a refactoring for rewriting functions that use \texttt{Maybe} to use the \texttt{MonadPlus} type class instead.
 
 \begin{figure}[t]
@@ -1562,7 +1551,8 @@ printResult m =
 \label{printRes}
 \end{figure}
 
-\subsection{Refactoring Maybe to Monad}\label{genMonad}
+\subsection{Refactoring Maybe to Monad}
+\label{genMonad}
 
 In some cases it is possible to generalise a \texttt{Maybe} type to become \texttt{Monad} instead. When functions duplicate the work that is done by \texttt{Maybe}'s implementation of bind then that function can be generalised to use the monadic interface instead.
 
