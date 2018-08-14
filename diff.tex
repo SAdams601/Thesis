@@ -1,7 +1,7 @@
 %DIF 1a1
 %DIF LATEXDIFF DIFFERENCE FILE
 %DIF DEL thesisSubmitted.tex   Sat Aug 11 12:24:53 2018
-%DIF ADD thesis.tex            Sun Aug 12 13:14:44 2018
+%DIF ADD thesis.tex            Tue Aug 14 09:53:08 2018
 % !TeX spellcheck = en_US %DIF > 
 %DIF -------
 % Documentation:
@@ -300,10 +300,8 @@ Finally I must thank Rosemary for her love and support. You have supported me th
 
 \chapter{Introduction}\label{chp:intro}
 
-\DIFaddbegin \DIFadd{The introductory chapter of this thesis will begin with a brief discussion of functional programming and the Haskell programming language. Next will be a very high level overview of refactoring with a focus on refactoring functional programming languages in particular. Finally this chapter concludes with an outline of the remainder of this thesis.
-}
 
-\DIFaddend \section{Functional Programming}
+\section{Functional Programming}
 Functional programming is a programming paradigm that focuses on data values as described by expressions which are built from function applications and definitions~\citep{elementsOfFunc}.  Functions in this case are closely related to the idea of mathematical functions. What qualifies a programming language as functional is debatable but several concepts are often included in languages that are described as functional. 
 
 First class functions mean that functions are allowed to be treated like any other data type. First class functions can be passed to or returned from from other ``higher-order'' functions. Iteration is accomplished through recursion rather than via looping. There is also a heavy emphasis on functions remaining ``pure\DIFaddbegin \DIFadd{,}\DIFaddend '' that is without side effects\DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{; }\DIFaddend though functional languages do provide ways to use IO or state\DIFaddbegin \DIFadd{, }\DIFaddend it is emphasised that functions should remain pure if at all possible. Haskell's type system allows for effectful computations to be contained within monad types.
@@ -330,20 +328,139 @@ f x y = case x > 0 of
 \label{lazyY}
 \end{figure}
 
-Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads represent computations, which when run will have effects as well as producing a result. A principle topic of this thesis is refactoring to support patterns of computation related to Monads and other related structures. 
+Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads represent computations, which when run will have effects as well as producing a result. A principle topic of this thesis is refactoring to support patterns of computation related to Monads and other related structures.
 
-\section{Refactoring} 
-Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was \DIFdelbegin \DIFdel{coined in 1991 in}\DIFdelend \DIFaddbegin \DIFadd{first coined in}\DIFaddend ~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}\DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{; }\DIFaddend \cite{performanceRestructuring}). Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}.
+\DIFaddbegin \subsection{User defined types in Haskell}
 
-Behaviour preservation is what separates refactoring from other types of program manipulation. This idea of functionality preservation means that refactoring will not introduce new bugs or eliminate old ones. To prevent semantic changes after refactoring, many refactorings have non-trivial preconditions~\citep{mens2002formalising}. For example, the renaming refactoring should check that the new name being introduced does not cause a name clash with a name already used in the source program.
+\DIFadd{All high level programming languages come with some predefined set of types and, typically, some way for users to define new types. In Haskell new types can be introduced with the }\texttt{\DIFadd{data}} \DIFadd{keyword. Figure~\ref{simpleDataTy} shows a simple data type, }\texttt{\DIFadd{Choice}}\DIFadd{. There are only two different values a }\texttt{\DIFadd{Choice}} \DIFadd{can be, }\texttt{\DIFadd{Yes}} \DIFadd{or }\texttt{\DIFadd{No}}\DIFadd{, these are the }\textit{\DIFadd{constructors}} \DIFadd{of }\texttt{\DIFadd{Choice}}\DIFadd{. 
+}
 
-Manual refactoring is tedious and error prone because changes to small portions of code may require system-wide changes. When deleting a parameter from a function, for example, every call site of that function also needs to be modified, and missing even a single call site will cause an error. Refactoring by hand depends on high testing coverage to ensure that functionality is preserved~\citep{fowler}. This means that tools that can automatically perform refactorings and ensure that preconditions are met are highly desirable.
+
+
+\begin{figure}[t]
+\begin{lstlisting}
+data Choice = Yes | No
+\end{lstlisting}
+\caption{\DIFaddFL{A simple data type that models a yes/no choice.}}
+\label{simpleDataTy}
+\end{figure}
+
+\DIFadd{Data types can also extend existing Haskell types. Returning to the }\texttt{\DIFadd{Choice}} \DIFadd{example maybe we want to be able to store some text along with a }\texttt{\DIFadd{Yes}} \DIFadd{to explain why this choice was made. This modified definition of }\texttt{\DIFadd{Choice}} \DIFadd{is shown in Figure~\ref{stringChoice}. Now a call to the }\texttt{\DIFadd{Yes}} \DIFadd{constructor needs to be passed some value of type }\texttt{\DIFadd{String}} \DIFadd{to construct a value of type }\texttt{\DIFadd{Choice}}\DIFadd{. 
+}
+
+  \begin{figure}[t]
+\begin{lstlisting}
+data Choice = Yes String | No
+\end{lstlisting}
+\caption{\texttt{\DIFaddFL{Yes}} \texttt{\DIFaddFL{Choice}}\DIFaddFL{s now contain a string as well.}}
+\label{stringChoice}
+\end{figure}
+
+\DIFadd{Haskell allows you to take this one step further however. The creator of a type does not need to specify exactly which types will be stored within the new type, this means that types can be }\textit{\DIFadd{parameterized}}\DIFadd{. Figure~\ref{choiceParam} shows a version of }\texttt{\DIFadd{Choice}} \DIFadd{where the }\texttt{\DIFadd{Yes}} \DIFadd{choices can contain any type }\texttt{\DIFadd{a}}\DIFadd{. This is known as parametric polymorphism~\mbox{%DIFAUXCMD
+\citep{haskellWikiPolymorphism}}\hspace{0pt}%DIFAUXCMD
+. This type of polymorphism allows users to effectively reuse their types again and again without having to redefine them every time a new ``inner'' type is needed.
+}
+
+  \begin{figure}[t]
+\begin{lstlisting}
+data Choice a = Yes a | No
+\end{lstlisting}
+\caption{\texttt{\DIFaddFL{Yes}} \texttt{\DIFaddFL{Choice}}\DIFaddFL{s can now hold any other type.}}
+\label{choiceParam}
+\end{figure}
+
+\subsection{Type classes}
+
+\DIFadd{Now that we have seen how users of Haskell can define their own data types, and how types can be defined in a generic way, making the definitions applicable to a whole set of arguments. Haskell is a functional language  so a natural next question is to wonder that, if we can define types that are generic in some ways, can the same be said of functions? The answer is yes, this is what type classes do for Haskell.
+}
+
+\DIFadd{A type class allows a user to define a set of functions and/or constant names and their types. Then definitions of these functions and constants can be given for specific types. Figure~\ref{choiceEq} shows the type class for }\texttt{\DIFadd{Eq}} \DIFadd{which describes what it means for types to have a notion of equality. Figure~\ref{choiceEq} also shows how the definition of }\texttt{\DIFadd{Choice}} \DIFadd{from Figure~\ref{choiceParam} implements the }\texttt{\DIFadd{Eq}} \DIFadd{type class. The ``}\texttt{\DIFadd{(Eq a) =>}}\DIFadd{'' clause in the instance declaration is a constraint on the type of }\texttt{\DIFadd{a}}\DIFadd{. This means that for a }\texttt{\DIFadd{Choice}} \DIFadd{to be ``}\texttt{\DIFadd{Eq}}\DIFadd{-able'' }\texttt{\DIFadd{a}} \DIFadd{must be as well.
+}
+
+\begin{figure}[t]
+\begin{lstlisting}
+class Eq a where
+   (==) :: a -> a -> Bool
+   (/=) :: a -> a -> Bool
+
+instance (Eq a) => Eq (Choice a) where
+   Yes x == Yes y = x == y
+   No == No = True
+   _ == _ = False
+
+   c1 /= c2 = not (c1 == c2) 
+\end{lstlisting}
+\caption{\DIFaddFL{The }\texttt{\DIFaddFL{Eq}} \DIFaddFL{type class and }\texttt{\DIFaddFL{Choice}}\DIFaddFL{'s implementation of it.}}
+\label{choiceEq}
+\end{figure}
+
+\DIFadd{Haskell gives its users very powerful tools to help construct their own types and define those types' properties. These tools allow for many powerful concepts to be defined abstractly making them reusable. One of the more well known abstract concepts of the Haskell language are monads which are the subject of the next section.
+}
+
+\subsection{Monads}
+
+\DIFadd{Monads are a type class used to represent ``composable computation descriptions''~\mbox{%DIFAUXCMD
+\citep{haskellWikiMonad}}\hspace{0pt}%DIFAUXCMD
+. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: }\texttt{\DIFadd{return}} \DIFadd{which will create a monadic computation that will produce its parameter and }\texttt{\DIFadd{>>=}} \DIFadd{(which is pronounced bind). Bind's first argument is some monadic value with a result of type }\texttt{\DIFadd{a}} \DIFadd{and its second argument is a function that takes in a value of type }\texttt{\DIFadd{a}} \DIFadd{and returns another monadic value that computes a result of type }\texttt{\DIFadd{b}}\DIFadd{. Bind computes the result of type }\texttt{\DIFadd{a}} \DIFadd{from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way}\footnote{\DIFadd{All instances of monad should abide by the three monad laws~\mbox{%DIFAUXCMD
+\citep{wadler1995Monads}}\hspace{0pt}%DIFAUXCMD
+}} \DIFadd{it can act as a way to specify how a particular set of computations are performed. 
+}
+
+\DIFadd{The }\texttt{\DIFadd{Choice}} \DIFadd{type that was defined in the previous section is really just a copy of the }\texttt{\DIFadd{Maybe}} \DIFadd{type which is commonly used to represent computations that may fail or return a result. Instead of }\texttt{\DIFadd{Yes}} \DIFadd{and }\texttt{\DIFadd{No}} \texttt{\DIFadd{Maybe}}\DIFadd{'s constructors are }\texttt{\DIFadd{Just}} \DIFadd{and }\texttt{\DIFadd{Nothing}} \DIFadd{respectively. }\texttt{\DIFadd{Maybe}} \DIFadd{is a monad and in its case bind is used to cause a chain of computations to return }\texttt{\DIFadd{Nothing}} \DIFadd{if one of the steps of the computation fail. This allows for functions that could potentially fail to return a result to be composed without having to check if their parameter is a }\texttt{\DIFadd{null}} \DIFadd{value. Figure~\ref{maybeChain} shows this in practice. Each of the }\texttt{\DIFadd{f\_}} \DIFadd{functions can be written with the assumption that their parameter exists, only the top level function, }\texttt{\DIFadd{g}}\DIFadd{, needs to check if the }\texttt{\DIFadd{chain}} \DIFadd{function has failed.
+}
+
+\begin{figure}[t]
+	\begin{lstlisting}
+	class Applicative m => Monad m where
+	return :: a -> m a
+	(>>=)  :: forall a b. m a -> (a -> m b) -> m b
+	\end{lstlisting}
+	\caption{\DIFaddFL{The }\texttt{\DIFaddFL{Monad}} \DIFaddFL{type class declaration}}
+	\label{monadTC}
+\end{figure}
+
+\begin{figure}[t]
+	\begin{lstlisting}
+		chain :: a -> Maybe a
+		chain a = f_1 a >>= f_2 >>= f_3 >>= f_4
+
+		g a = case (chain a) of
+			(Just b) -> putStrLn ("Got value: " ++ (show b))
+			Nothing -> putStrLn "Something went wrong"
+	\end{lstlisting}
+	\caption{\DIFaddFL{A chain of functions composed using bind. Each }\texttt{\DIFaddFL{f\_}} \DIFaddFL{function is of type }\texttt{\DIFaddFL{a -> Maybe a}}}
+	\label{maybeChain}
+\end{figure}
+
+\DIFadd{Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from }\texttt{\DIFadd{Monad}}\DIFadd{, and that categorise additional features monads can have, such as failure (}\texttt{\DIFadd{MonadFail}}\DIFadd{) or failure and recovery (}\texttt{\DIFadd{MonadPlus}}\DIFadd{)~\mbox{%DIFAUXCMD
+\citep{typeclassopedia}}\hspace{0pt}%DIFAUXCMD
+. }\texttt{\DIFadd{MonadPlus}} \DIFadd{is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. 
+}
+
+\DIFadd{In addition to the type classes that further categorise monads, monads themselves inherit from other more general types: functors and applicative functors. Functors are the set of types that can mapped over, in the case of lists the values can be transformed to another value by mapping some function over the list. Applicative functors are the set of types that can have sequential actions performed over them. Applicative functors will be discussed in more detail in Chapter~\ref{chp:applicative}. 
+}
+
+\DIFadd{The Haskell community has built a large system of types around monad for representing all different sorts of computations. This system of types provides a fertile environment for data-driven refactorings, the topic of this thesis.
+}
+
+\DIFaddend \section{Refactoring} 
+Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was \DIFdelbegin \DIFdel{coined in 1991 in}\DIFdelend \DIFaddbegin \DIFadd{first coined in}\DIFaddend ~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. \DIFaddbegin \DIFadd{Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\mbox{%DIFAUXCMD
+\citep{fowler}}\hspace{0pt}%DIFAUXCMD
+. }\DIFaddend People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}\DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{; }\DIFaddend \cite{performanceRestructuring}). 
+\DIFdelbegin \DIFdel{Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\mbox{%DIFAUXCMD
+\citep{fowler}}\hspace{0pt}%DIFAUXCMD
+.
+}\DIFdelend 
+
+Behaviour preservation is what separates refactoring from other types of program manipulation. This idea of \DIFdelbegin \DIFdel{functionality preservation means }\DIFdelend \DIFaddbegin \DIFadd{behaviour preservation is }\DIFaddend that refactoring will not introduce new bugs or eliminate old ones. To prevent semantic changes after refactoring, many refactorings have non-trivial preconditions~\citep{mens2002formalising}. For example, the \DIFdelbegin \DIFdel{renaming refactoring }\DIFdelend \DIFaddbegin \DIFadd{refactoring that renames an item (such as a function or variable) }\DIFaddend should check that the new name being introduced does not cause a name clash with a name already used in the source program.
+
+Manual refactoring \DIFdelbegin \DIFdel{is }\DIFdelend \DIFaddbegin \DIFadd{can be }\DIFaddend tedious and error prone because changes to small portions of code may require system-wide changes. When deleting a parameter from a function, for example, every call site of that function also needs to be modified, and missing even a single call site will cause an error. Refactoring by hand depends on high testing coverage to ensure that functionality is preserved~\citep{fowler}. This means that tools that can automatically perform refactorings and ensure that preconditions are met are highly desirable.
 
 \subsection{Functional refactoring}
 
-Refactoring a functional language has a few key differences from refactoring an imperative language. The higher-order nature \DIFaddbegin \DIFadd{of }\DIFaddend functional languages means that any sub-expression of a function is a candidate for generalisation whereas in other languages the types of parameters and results is limited. \DIFaddbegin \DIFadd{This means that functional refactorings can target }\DIFaddend The semantics of functional languages also allow for more comprehensive checking of preconditions based on the static semantics of the language~\citep{refacTools}.
+Refactoring a functional language has a few key differences from refactoring an imperative language. The higher-order nature \DIFaddbegin \DIFadd{of }\DIFaddend functional languages means that any sub-expression of a function is a candidate for generalisation whereas in other languages the types of parameters and results \DIFdelbegin \DIFdel{is limited. }\DIFdelend \DIFaddbegin \DIFadd{are limited. This means that functional refactorings can target much more of the source program's abstract syntax tree. }\DIFaddend The semantics of functional languages also allow for more comprehensive checking of preconditions based on the static semantics of the language~\citep{refacTools}.
 
-It is also not unusual for functional refactorings to be substantially different than their object-oriented (OO) counterparts. For example creating a case statement from a multi-equation function definition in a functional language versus inlining a virtual method as a case statement in an OO language require substantially different program manipulations~\citep{huiqingThesis}. Additionally there can be refactorings with no OO counterpart, monadification\DIFaddbegin \DIFadd{, }\DIFaddend the introduction of monadic types into otherwise pure code, for instance.
+It is also not unusual for functional refactorings to be substantially different than their object-oriented (OO) counterparts. For example creating a \DIFdelbegin \DIFdel{case }\DIFdelend \DIFaddbegin \texttt{\DIFadd{case}} \DIFaddend statement from a multi-equation function definition in a functional language versus inlining \DIFdelbegin \DIFdel{a virtual method as a case }\DIFdelend \DIFaddbegin \DIFadd{virtual methods into a }\texttt{\DIFadd{case}} \DIFaddend statement in an OO language require substantially different program manipulations~\citep{huiqingThesis}. \DIFaddbegin \DIFadd{The first refactoring, the inlining of a multi-equation function, involves moving the pattern matches from each of the target function's equations to the left hand side patterns of the new }\texttt{\DIFadd{case}} \DIFadd{expression. The object oriented refactoring needs to look up all of the implementations of the virtual method, inline their bodies into the new target method, and build a case statement that switches depending on which concrete type the new method is called invoked in. Both of these refactorings are consolidating some conditional logic into a single function,}\footnote{\DIFadd{If we consider methods to be functions that happen to be associated with a particular object.}} \DIFadd{but the syntax elements that need to traversed and constructed to build the target program are very different. }\DIFaddend Additionally there can be refactorings with no OO counterpart, monadification the introduction of monadic types into otherwise pure code \DIFdelbegin \DIFdel{, }\DIFdelend for instance.
 
 \section{Summary}
 
@@ -426,12 +543,16 @@ The work in this thesis was carried out in HaRe\DIFdelbegin \DIFdel{(the }\textb
 \DIFdelend \DIFaddbegin \DIFadd{Chapter~\ref{chp:generalImp}}\DIFaddend .
 	\item The design and implementation of the ``generalise maybe'' and ``list to Hughes list'' refactoring, described in \DIFdelbegin \DIFdel{chapters}\DIFdelend \DIFaddbegin \DIFadd{Chapters}\DIFaddend ~\ref{chp:ddRefs} and ~\DIFdelbegin \DIFdel{\ref{generalImp}}\DIFdelend \DIFaddbegin \DIFadd{\ref{chp:generalImp}}\DIFaddend . The ``generalise maybe'' refactoring is a way of taking a concrete effect and turning it into an abstract one so that it can be instantiated in multiple ways. The ``list to Hughes list'' refactoring describes a way to rewrite  a program's data model to use a different type with a similar interface.
 	\item The design and implementation of the ``\DIFdelbegin \DIFdel{Generalise Monads to Applicative}\DIFdelend \DIFaddbegin \DIFadd{generalise monads to applicative}\DIFaddend '' refactoring, \DIFdelbegin \DIFdel{chapter}\DIFdelend \DIFaddbegin \DIFadd{Chapter}\DIFaddend ~\ref{chp:applicative}. Effects in Haskell are typically handled using monads, a powerful abstraction that allows the type system to check the type of the effects that are being performed by a program. Since the introduction of monads the Haskell community has developed more fine-grained approaches to effect handling. This refactoring allows software systems to handle effects using the applicative as opposed to the monadic interface.
-	\item The design and implementation of the ``monadification'' refactoring, see \DIFdelbegin \DIFdel{chapter}\DIFdelend \DIFaddbegin \DIFadd{Chapter}\DIFaddend ~\ref{chp:monadification}. Monadification is the process of making a program work over a monadic type rather than a pure one. This refactoring supports the evolution of pure programs to effectful ones.
+	\item The \DIFdelbegin \DIFdel{design and }\DIFdelend implementation of the ``monadification'' refactoring, see \DIFdelbegin \DIFdel{chapter}\DIFdelend \DIFaddbegin \DIFadd{Chapter}\DIFaddend ~\ref{chp:monadification}. Monadification is the process of making a program work over a monadic type rather than a pure one. This refactoring supports the \DIFdelbegin \DIFdel{evolution }\DIFdelend \DIFaddbegin \DIFadd{transformation }\DIFaddend of pure programs to effectful ones.
 \end{itemize}
 
 
 %DIF > %%%%%%%%%%%%%%%%%%%%%%%%%
-\DIFaddbegin \chapter{\DIFadd{Related Work}}
+\DIFaddbegin 
+
+
+%DIF > %%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{\DIFadd{Related Work}}
 \label{chp:related}
 
 \DIFadd{This chapter reviews current work in refactoring and other areas of the literature and helps to situate the work described in this thesis into a broader landscape. This chapter begins, in Section~\ref{ideTools}, with a short description of refactoring tools, including the sophisticated modern IDEs that support object-oriented languages and the refactoring tools that support functional languages. 
@@ -452,7 +573,7 @@ The work in this thesis was carried out in HaRe\DIFdelbegin \DIFdel{(the }\textb
 \DIFadd{The final section of this chapter discusses how refactoring tools are implemented. This section pays special attention to refactoring tools that target languages other than Haskell, because the focus of Chapter~\ref{chp:hare} is on building refactoring tools for Haskell.
 }
 
-\section{\DIFadd{Refactoring Tools in Modern IDEs}}\label{ideTools}
+\section{Refactoring Tools in Modern IDEs}\label{ideTools}
 \DIFadd{Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse}\footnote{\url{https://www.eclipse.org/}}\DIFadd{, NetBeans}\footnote{\url{https://netbeans.org/}}\DIFadd{, IntelliJ}\footnote{\url{https://www.jetbrains.com/idea/}}\DIFadd{, and Visual Studio}\footnote{\url{https://www.visualstudio.com/}} \DIFadd{all come with refactoring tools for their primary language~\mbox{%DIFAUXCMD
 \citep{ides}}\hspace{0pt}%DIFAUXCMD
 . These refactoring tools support some general refactorings (renaming, method extraction) and some that are specific to object-oriented languages (pushing/pulling methods up/down the object hierarchy). 
@@ -461,13 +582,13 @@ The work in this thesis was carried out in HaRe\DIFdelbegin \DIFdel{(the }\textb
 \DIFadd{Modern IDEs, however, were not designed with functional programming in mind. Eclipse, Netbeans, and Intellij were all built to support Java and Visual Studio supports multiple languages most prominently C++ and C\#.}\footnote{\DIFadd{Visual Studio also includes support for F\# out of the box, but this could be considered the exception that proves the rule.}} \DIFadd{These tools allow community developed plugins to expand the languages they can support but the plugin's can fall out of date, for example the Haskell Eclipse plugin was stopped being supported in 2015.}\footnote{\DIFadd{See: }\url{https://wiki.haskell.org/IDEs\#EclipseFP_plugin_for_Eclipse_IDE}} \DIFadd{Though modern IDEs are heavily depended on in object-oriented development functional programming languages have developed their own, mostly independent tooling ecosystems. This will be the focus of the next section, refactoring tools for functional programming languages.
 }
 
-\section{\DIFadd{Refactoring Tools for functional languages}}\label{funcTools}
+\section{Refactoring Tools for functional languages}\label{funcTools}
 \DIFadd{A reason that often used to be given to explain why functional languages are not in widespread use in industry is the lack of a robust tooling ecosystem~\mbox{%DIFAUXCMD
 \citep{wadlerTools}}\hspace{0pt}%DIFAUXCMD
 . This is no longer the case as functional language ecosystems have undergone a great deal of development in recent years and, maybe coincidently, use in industry has gone up substantially in the last five years. This section will cover some existing refactoring and code smell tools for functional programming languages.
 }
 
-\subsection{\DIFadd{HLint}}
+\subsection{HLint}
 
 \DIFadd{HLint is a ``code smell'' tool for Haskell. Poorly designed code often produces ``smells,'' apparently superficial problems that indicate deeper design issues~\mbox{%DIFAUXCMD
 \citep{fowler}}\hspace{0pt}%DIFAUXCMD
@@ -516,7 +637,7 @@ Why not:
 }
 
 
-\subsection{\DIFadd{Haskell Tools Refact}}
+\subsection{Haskell Tools Refact}
 
 \DIFadd{HaRe is not the only refactoring tool for Haskell. In late 2016 Haskell Tools Refact was announced and is currently at version 0.7~\mbox{%DIFAUXCMD
 \citep{haskellTools}}\hspace{0pt}%DIFAUXCMD
@@ -546,7 +667,7 @@ Why not:
 }\hspace{0pt}%DIFAUXCMD
 }
 
-\subsection{\DIFadd{Wrangler}}\label{wranglerOne}
+\subsection{Wrangler}\label{wranglerOne}
 \DIFadd{Wrangler is a refactoring and code inspection tool for Erlang~\mbox{%DIFAUXCMD
 \citep{wrangler}}\hspace{0pt}%DIFAUXCMD
 . Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\mbox{%DIFAUXCMD
@@ -591,7 +712,7 @@ Why not:
 \DIFadd{The DSL also allows decision making to occur during the execution of a composite refactoring. Composite refactorings are transactional and can be either atomic or non-atomic. Atomic composite refactorings require each component refactoring to be successfully applied before continuing onto the next refactoring. If a single refactoring fails inside of an atomic composite refactoring, the entire refactoring fails and the program remains unchanged. When a single refactoring fails inside a non-atomic composite refactoring, correspondingly, the entire refactoring will not fail and continue by trying the next refactoring in the sequence. The Wrangler DSL allows for refactorings to described as atomic and non-atomic sections at each level.  
 }
 
-\subsection{\DIFadd{RefactorErl}}\label{refactorErl}
+\subsection{RefactorErl}\label{refactorErl}
 
 \DIFadd{Another notable tool for the Erlang language is RefactorErl. RefactorErl started out as another refactoring tool for Erlang but has since expanded into a source code analysis and transformation tool~\mbox{%DIFAUXCMD
 \citep{refactorErl}}\hspace{0pt}%DIFAUXCMD
@@ -617,7 +738,7 @@ Why not:
 \DIFadd{RefactorErl currently supports 24 different refactorings as well as a suite of static analysis and program comprehension tools. 
 }
 
-\subsection{\DIFadd{ROTOR}}
+\subsection{ROTOR}
 
 \DIFadd{A newcomer to the refactoring tools for functional language space is ROTOR}\footnote{\textbf{\DIFadd{R}}\DIFadd{eliable }\textbf{\DIFadd{O}}\DIFadd{Caml-base }\textbf{\DIFadd{T}}\DIFadd{ool for }\textbf{\DIFadd{O}}\DIFadd{Caml }\textbf{\DIFadd{R}}\DIFadd{efactoring}} \DIFadd{the first refactoring tool to target OCaml~\mbox{%DIFAUXCMD
 \citep{rotor}}\hspace{0pt}%DIFAUXCMD
@@ -629,12 +750,12 @@ Why not:
 \DIFadd{An opportunity of the ROTOR project is that it has an partner in industry, Jane Street Capital. ROTOR is using the core library}\footnote{\url{https://github.com/janestreet/core}} \DIFadd{an "industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
 }
 
-\section{\DIFadd{Refactoring to introduce parallelism}}\label{refacParallel}
+\section{Refactoring to introduce parallelism}\label{refacParallel}
 
 \DIFadd{The reasons to refactor source code have also expanded beyond code quality. This section will describe two different projects that have developed refactorings to change the execution of a program from single to multi-threaded. Functional programming languages are well suited to parallel execution due to immutability by default and in some languages (such as Erlang) first-class concurrency features. This section will first describe the ``ParaForming'' which uses refactoring to introduce parallel abstractions into Haskell code, then it will describe work done to refactor Erlang code to introduce algorithmic skeletons.
 }
 
-\subsection{\DIFadd{ParaForming}}  
+\subsection{ParaForming}  
 \DIFadd{ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\mbox{%DIFAUXCMD
 \citep{paraforming}}\hspace{0pt}%DIFAUXCMD
 . The ParaForming work targets Glasgow parallel Haskell: ``GpH'', an extension to Haskell, and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see Figure~\ref{strategy}). 
@@ -693,7 +814,7 @@ sumEulerChunk c n = sum (map euler (mkList n) `using` parListChunk c rdeepseq)
 outlines a refactoring that can make recursive calls happen in parallel.
 }
 
-\subsection{\DIFadd{Cost-Directed Parallel Refactoring}}
+\subsection{Cost-Directed Parallel Refactoring}
 
 \DIFadd{The previous section touched on one of the big challenges of parallel programming, determining the correct level of parallelism to achieve maximum performance. \mbox{%DIFAUXCMD
 \cite{parallelErl} }\hspace{0pt}%DIFAUXCMD
@@ -715,7 +836,7 @@ an initial benchmark of the program can be used to estimate the speed up that di
 \DIFadd{Parallelisation can be tedious and difficult to do which makes it a good candidate for tool assistance. A refactoring tool can guide a programmer through the process of parallelisation. Much like how the data-driven refactorings have multiple small changes are required before the entire process can be considered ``finished'' changing a program to run in parallel is also a sequence of several smaller changes.
 }
 
-\section{\DIFadd{ApplicativeDo}}\label{applicativeDo}
+\section{ApplicativeDo}\label{applicativeDo}
 
 \DIFadd{Haskell is a pure functional programming language. Purity in this context means that Haskell is side-effect free. This causes some confusion because in most other languages side-effects are allowed, if not the primary way that programs produce their ``result.'' Haskell instead models side-effect causing computations using Monads, which take effects of computation that are typically implicit and make them an explicit result of the program instead. Beyond modeling side effect causing operations, monads allow for computations to be supplemented with additional features~\mbox{%DIFAUXCMD
 \citep{haskellWikiMonad}}\hspace{0pt}%DIFAUXCMD
@@ -780,14 +901,14 @@ f = (\x2 x3 -> (x2, x3))
 }
 
 
-\section{\DIFadd{Program transformations}}\label{typeTrans}
+\section{Program transformations}\label{typeTrans}
 
 \DIFadd{Refactoring is a type of program transformation but it does not constitute the whole field. A major difference between refactoring and other types of program transformations is that a refactoring must take into account the human readability of its output. Program transformations typically focus on just the algorithm whereas refactorings must take into account the broader effects a transformation has on a codebase and the context that programs exist in. Additionally the target program of a refactoring needs to be readable, maintainable, and keep proper layout and user comments. Other types of program transformation don't typically have these concerns. This section will describe some of the program transformation work most relevant to this thesis. First it will describe the type and transform system developed by~\mbox{%DIFAUXCMD
 \citep{typeAndTransformSemantics}}\hspace{0pt}%DIFAUXCMD
 . Next there will be a discussion of the previous methods of monadification found in the literature. 
 }
 
-\subsection{\DIFadd{Type and transform systems}}
+\subsection{Type and transform systems}
 
 \DIFadd{The type-and-transform system described in~\mbox{%DIFAUXCMD
 \citep{typeAndTransformSemantics} }\hspace{0pt}%DIFAUXCMD
@@ -812,7 +933,7 @@ abs . rep = id
 \DIFadd{This work emphasises formalisation and its correctness and the work is done in the context of the lambda calculus rather than a full programming language. There is a Haskell implementation of their system but it is only a prototype though they state that they want to expand this work to work with Haskell however this has not been published yet.
 }
 
-\subsection{\DIFadd{Automatic Monadification}}\label{erwigMonad}
+\subsection{Automatic Monadification}\label{erwigMonad}
 
 \DIFadd{Monadification is not a new problem and various solutions have been presented in the literature. In~\mbox{%DIFAUXCMD
 \citep{lammelReuse} }\hspace{0pt}%DIFAUXCMD
@@ -864,7 +985,7 @@ is very similar to the one implemented in HaRe. It has the same precondition tha
 . This source provides a comprehensive discussion of the different styles of monadification. There are several different, equally ``correct,'' ways to monadify a function. A refactoring tool, perhaps more than other types of program transformations, needs to consider what its users intentions and desires are for applying the transformation so that the most useful output can be produced. This is particularly important for refactoring tools because its output needs to be directly usable by developers. This makes the discussion of what monadification style to be very relevant since the monadified functions need to be easily usable. This issue of style is continued in Chapter~\ref{chp:monadification}. 
 }
 
-\subsection{\DIFadd{Data Type Transformations}}\label{dtt}
+\subsection{Data Type Transformations}\label{dtt}
 
 \DIFadd{Data types are obviously the focus of data-driven refactorings and a considerable amount of work has been focused on them in the program transformation and refactoring literature. 
 }
@@ -879,7 +1000,7 @@ the authors present a set of transformation primitives that help modify data typ
 \DIFadd{This framework created a set of transformation operators that work over Haskell but the design of the framework is general enough to be implemented in other langauges that also support algebraic data types.
 }
 
-\subsection{\DIFadd{Generic Refactorings}}
+\subsection{Generic Refactorings}
 
 \DIFadd{The previous subsection discussed a transformation system for data types and one of the main contributions of that framework is its language agnostic design~\mbox{%DIFAUXCMD
 \citep{datatypeTransformation}}\hspace{0pt}%DIFAUXCMD
@@ -902,7 +1023,7 @@ helps identify that certain transformations can be applied regardless of languag
 that do not obvious functional equivalents.
 }
 
-\section{\DIFadd{Engineering refactoring tools}}\label{engineeringRefac}
+\section{Engineering refactoring tools}\label{engineeringRefac}
 
 \DIFadd{Sections~\ref{ideTools} and~\ref{funcTools} briefly discussed some refactoring tools and the features they provide but did not say much about how they are built. This section will look at how refactoring tools are actually built, with a specific focus on how these tools gain access to a representation of the target source code and how they work with that representation. This section will also focus on languages other than Haskell. Refactoring Haskell is, of course, the focus of this thesis, and the general implementation of HaRe will be the focus of Chapter~\ref{chp:hare}.
 }
@@ -910,7 +1031,7 @@ that do not obvious functional equivalents.
 \DIFadd{This section will look in greater detail at implementing refactoring tools for Erlang and Clojure.
 }
 
-\subsection{\DIFadd{Implementing Wrangler}}
+\subsection{Implementing Wrangler}
 
 \DIFadd{Wrangler was first mentioned in Section~\ref{wranglerOne}, here we describe in a bit more detail how Wrangler is implemented, with a particular focus on the internal representation of the Erlang source code that Wrangler uses and how that representation is transformed. 
 }
@@ -929,7 +1050,7 @@ that do not obvious functional equivalents.
 . Generic programming is a technique used to eliminate this type of code. Rather than use a third-party generic programming library like HaRe does (see Section~\ref{genProg}) Wrangler has implemented its own versions of the generic traversals it requires.}\footnote{\DIFadd{See: }\url{https://github.com/RefactoringTools/wrangler/blob/master/src/api_ast_traverse.erl}} \DIFadd{This is feasible to in Erlang because its weak dynamic type system means that traversals can be defined in a single function whereas Haskell needs separate functions defined to handle each type of the abstract syntax tree. 
 }
 
-\subsection{\DIFadd{Refactoring LISPs}}
+\subsection{Refactoring LISPs}
 
 \DIFadd{The LISP family of languages make interesting target languages for refactorings. Lisps' support for macros and because Lisp code is structured as lists means that the internal representation of a Lisp program can be manipulated with the list-processing functionality that comes built into the language. 
 }
@@ -943,7 +1064,7 @@ that do not obvious functional equivalents.
 . The Clojure refactoring tool uses a separate analyser to generate an AST independent of which dialect is being targeted. Once that representation is created Emacs Lisp can actually be used to perform the source code transformation instead of Clojure.    
 }
 
-\section{\DIFadd{Summary}}
+\section{Summary}
 
 \DIFadd{This chapter has discussed the literature that relates to and helped build the work that is described in the rest of this thesis. It began with a discussion of other refactoring tools, for both functional and object-oriented languages. Next in Section~\ref{refacParallel} was a description of work that uses refactoring to introduce parallelism into programs. Refactoring's original goal was to improve code quality and reduce technical debt, but with this work refactoring has been expanded to include introducing parallelism. This thesis again pushes the scope that refactorings can focus on towards data type evolution. Section~\ref{applicativeDo} describes an alternative interpretation for the Haskell }\texttt{\DIFadd{do}} \DIFadd{syntax. The work described in Chapter~\ref{chp:applicative} has the same goal as this work, the introduction of applicative rather than monadic operations. The approach taken in Chapter~\ref{chp:applicative} uses refactoring to explicitely introduce applicative operations rather than having the compiler do this implicitely. The program transformation field also has looked at how data types can change and some of this work was described in Section~\ref{typeTrans}. 
 }
@@ -1106,9 +1227,7 @@ The HaRe API exposes the full Programatica abstract syntax for Haskell 98 to the
 
 The overall goal of the HaRe API is to help ensure the correctness of new refactorings by limiting the amount of code required that is not related to program transformation, and isolating common error sources \DIFaddbegin \DIFadd{caused by having to keep the AST and token stream synced}\DIFaddend ~\citep{hareApi}. This design goal still guides the development of HaRe, and many of the functions that were provided in the original HaRe API have been \DIFdelbegin \DIFdel{updated }\DIFdelend \DIFaddbegin \DIFadd{ported }\DIFaddend to HaRe's latest implementation.  
 
-\DIFdelbegin \section{\DIFdel{Underlying technologies}}
-%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
+\DIFdelbegin %DIFDELCMD < \section{Underlying technologies}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -1599,8 +1718,10 @@ Beyond those two features\DIFaddbegin \DIFadd{, }\DIFaddend refactorings are fre
 
 Merging precondition checking with transformation saves the refactoring from traversing parts of the AST multiple times\DIFdelbegin \DIFdel{, for }\DIFdelend \DIFaddbegin \DIFadd{. For }\DIFaddend example, the renaming refactoring checks for name conflicts while it descends the AST\DIFaddbegin \DIFadd{, }\DIFaddend replacing the old name with the new one. Obviously this strategy only works for certain preconditions\DIFaddbegin \DIFadd{: }\DIFaddend the only precondition for deleting a definition is that the target definition \DIFdelbegin \DIFdel{isn't }\DIFdelend \DIFaddbegin \DIFadd{is not }\DIFaddend used. The transformation only affects the syntax tree of the definition to be deleted so the implementation of the refactoring has to do a separate scan of the rest of the target module and any of its client modules to determine if the target definition is used or not.
 
-\subsection{\DIFdelbegin \DIFdel{The Development Process of HaRe}\DIFdelend \DIFaddbegin \DIFadd{Using GHC's Abstract Syntax Trees}\DIFaddend }
-\DIFaddbegin \DIFadd{Each stage of the compiler takes the previous stage's output and creates its own version of the tree decorated with some additional information. This provides a challenge when writing refactorings because all of the changes made to the source needs to be reflected in the parsed syntax tree. In general the parsed syntax contains enough information to perform a refactoring. Since the parsed AST is also where changes must be made for ghc-exactprint to output the modifications, most of the refactorings only look at the parsed AST. If information is required from one of the other compilation stages it is either pre-collected at the start of the refactoring, or the }\texttt{\DIFadd{SrcSpan}}\DIFadd{s that decorate all of the syntax trees can be used to navigate to the equivalent points in different syntax trees.
+\DIFdelbegin %DIFDELCMD < \subsection{The Development Process of HaRe}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \subsection{Using GHC's Abstract Syntax Trees}
+\DIFadd{Each stage of the compiler takes the previous stage's output and creates its own version of the tree decorated with some additional information. This provides a challenge when writing refactorings because all of the changes made to the source needs to be reflected in the parsed syntax tree. In general the parsed syntax contains enough information to perform a refactoring. Since the parsed AST is also where changes must be made for ghc-exactprint to output the modifications, most of the refactorings only look at the parsed AST. If information is required from one of the other compilation stages it is either pre-collected at the start of the refactoring, or the }\texttt{\DIFadd{SrcSpan}}\DIFadd{s that decorate all of the syntax trees can be used to navigate to the equivalent points in different syntax trees.
 }\DIFaddend 
 
 \DIFdelbegin \DIFdel{Very little, if any, of the code from the original implementation of HaRe is used today.
@@ -1618,12 +1739,12 @@ Development of HaRe has been coordinated through GitHub}\footnote{%DIFDELCMD < \
 \DIFaddbegin \DIFadd{One refactoring that does need to reference the typed syntax tree fairly heavily is the List to Hughes List refactoring described in Section~\ref{listToDlist}. This refactoring needs to change the type of entire subtrees, so it references the typed syntax tree to see what the type of the current node is during the transformation. This is fairly straightforward due to the source being tagged with }\texttt{\DIFadd{SrcSpan}}\DIFadd{s that are consistent throughout the compilation process. This means that a piece of typed abstract syntax is the same as a particular parsed syntax subtree if their }\texttt{\DIFadd{SrcSpan}}\DIFadd{s are the same. Searching through the later compilation stage's trees is as simple as doing a full traversal of the tree searching for the appropriate }\texttt{\DIFadd{SrcSpan}}\DIFadd{.
 }
 
-\section{\DIFadd{Summary}}
+\section{Summary}
 
-\DIFadd{The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe}\footnote{\DIFadd{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: }\url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} \DIFadd{and some of its notable dependencies was the focus of this chapter.
+\DIFadd{The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe}\footnote{\DIFadd{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: }\url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} \DIFadd{and some of its notable dependencies was the focus of this chapter. 
 }
 
-\DIFadd{Next this thesis will begin to describe its major contribution: the design and implementation of data-driven refactorings. The next chapter will begin the discussion of what is a data-driven refactoring and some simple refactoring designs.
+\DIFadd{The next chapter will begin to describe the major contribution of this thesis: the design and implementation of data-driven refactorings. The next chapter will begin the discussion of what is a data-driven refactoring and some simple refactoring designs.
 }
 
 \DIFaddend \chapter{Data-driven refactorings}
@@ -1778,9 +1899,8 @@ These two different approaches to type systems both have pros and cons\DIFdelbeg
 	\item Data representation in a rich type system like Haskell's\DIFaddbegin \DIFadd{, }\DIFaddend in some sense\DIFaddbegin \DIFadd{, }\DIFaddend determines the structure of the program.
 \end{itemize} 
 
-\DIFdelbegin \subsection{\DIFdel{Introducing a Type Synonym}}%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
-\DIFdelend \DIFaddbegin \section{\DIFadd{Introducing a Type Synonym}}\DIFaddend \label{introSyn}
+\DIFdelbegin %DIFDELCMD < \subsection{Introducing a Type Synonym}%%%
+\DIFdelend \DIFaddbegin \section{Introducing a Type Synonym}\DIFaddend \label{introSyn}
 
 Type synonyms in Haskell, as mentioned previously, are a way to name an existing type. A simple example can be seen in \DIFdelbegin \DIFdel{figure}\DIFdelend \DIFaddbegin \DIFadd{Figure}\DIFaddend ~\ref{fooSyn}. 
 
@@ -1904,8 +2024,9 @@ printThankYou businessName order = do
 Small refactorings are also a good practice for tool builders. Creating multiple small composable steps that can be used in multiple ways \DIFdelbegin \DIFdel{are }\DIFdelend \DIFaddbegin \DIFadd{is }\DIFaddend much more flexible than large ``monolithic'' style refactorings.
 
 
-\section{\DIFdelbegin \DIFdel{Generalising Maybe}\DIFdelend \DIFaddbegin \DIFadd{Generalisation}\DIFaddend }
-\label{genMaybe}
+\DIFdelbegin %DIFDELCMD < \section{Generalising Maybe}%%%
+\DIFdelend \DIFaddbegin \section{Generalisation}
+\DIFaddend \label{genMaybe}
 
 A common type of refactoring is generalisation. A \DIFdelbegin \DIFdel{structural generalising refactoring would be extract a method or function. It takes expressions specific to a single function and generalises them so that they are applicable to multiple functions.
 }\DIFdelend \DIFaddbegin \DIFadd{generalising refactoring that is structural would be the ``generalise a definition'' refactoring from~\mbox{%DIFAUXCMD
@@ -1947,20 +2068,12 @@ Functional languages don't have this single unified hierarchy , but smaller hier
 \DIFadd{This section describes refactoring functions that use the concrete }\texttt{\DIFadd{Maybe}} \DIFadd{type to instead use one of the type classes it is an instance of, either }\texttt{\DIFadd{Monad}} \DIFadd{or }\texttt{\DIFadd{MonadPlus}}\DIFadd{. These refactorings will take a function of type }\texttt{\DIFadd{a -> Maybe b}} \DIFadd{and rewrite it to become either }\texttt{\DIFadd{Monad m => a -> m b}} \DIFadd{or }\texttt{\DIFadd{MonadPlus m => a -> m b}}\DIFadd{. These refactored types are a generalisation of the original function because instead of only being applicable to a single type (}\texttt{\DIFadd{Maybe}} \DIFadd{in this case) the refactored function can now be used with data of type }\texttt{\DIFadd{Monad}} \DIFadd{or }\texttt{\DIFadd{MonadPlus}}\DIFadd{.
 }
 
-\subsection{\DIFadd{Generalising Maybe}}
+\subsection{Generalising Maybe}
 
-\DIFaddend This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. \DIFaddbegin \texttt{\DIFadd{Maybe}} \DIFadd{is a data type whose declaration is shown in Figure~\ref{maybeDecl}. }\texttt{\DIFadd{Maybe}} \DIFadd{represents a computation that can fail or return a value of type }\texttt{\DIFadd{a}}\DIFadd{. When a computation has failed }\texttt{\DIFadd{Maybe}} \DIFadd{represents this ``result'' with the }\texttt{\DIFadd{Nothing}} \DIFadd{constructor. When a calculation succeeds then }\texttt{\DIFadd{Maybe}} \DIFadd{returns the result wrapped with the }\texttt{\DIFadd{Just}} \DIFadd{constructor. }\texttt{\DIFadd{Maybe}} \DIFadd{is a commonly used type in Haskell programs, it also implements many common type classes including }\texttt{\DIFadd{Monad}} \DIFadd{and }\texttt{\DIFadd{MonadPlus}}\DIFadd{.
-}\DIFaddend 
+\DIFaddend This section describes a refactoring that rewrites programs of type \texttt{Maybe a} to use the \texttt{MonadPlus} type class or, if possible, the \texttt{Monad} type class. \DIFdelbegin %DIFDELCMD < 
 
-\DIFaddbegin \DIFadd{Monads are a data type used to represent ``composable computation descriptions''~\mbox{%DIFAUXCMD
-\citep{haskellWikiMonad}}\hspace{0pt}%DIFAUXCMD
-. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: }\texttt{\DIFadd{return}} \DIFadd{which will create a monadic computation that will produce its parameter and }\texttt{\DIFadd{>>=}} \DIFadd{(which is pronounced bind). Bind's first argument is just some monadic value with a result of type }\texttt{\DIFadd{a}} \DIFadd{and its second argument is a function that takes in a value of type }\texttt{\DIFadd{a}} \DIFadd{and returns another monadic value that computes a result of type }\texttt{\DIFadd{b}}\DIFadd{. Bind computes the result of type }\texttt{\DIFadd{a}} \DIFadd{from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way}\footnote{\DIFadd{All instances of monad must abide by the three monad laws~\mbox{%DIFAUXCMD
-\citep{monadLaws}}\hspace{0pt}%DIFAUXCMD
-}} \DIFadd{it can act as a way to specify how a particular set of computations are performed. In the case of }\texttt{\DIFadd{Maybe}} \DIFadd{bind is used to cause a chain of computations return }\texttt{\DIFadd{Nothing}} \DIFadd{if one of the steps of computation fail.
-}
-
-\DIFaddend \begin{figure}[t]
-\DIFdelbeginFL %DIFDELCMD < \begin{lstlisting}%DIFDELCMD < 
+%DIFDELCMD < \begin{figure}[t]
+%DIFDELCMD < \begin{lstlisting}%DIFDELCMD < 
 %DIFDELCMD < data Maybe a = Nothing
 %DIFDELCMD <                  | Just a
 %DIFDELCMD <                  
@@ -1976,52 +2089,89 @@ Functional languages don't have this single unified hierarchy , but smaller hier
 %DIFDELCMD <    mplus :: m a -> m a -> m a
 %DIFDELCMD < \end{lstlisting}
 %DIFDELCMD < %%%
-\DIFdelendFL \DIFaddbeginFL \begin{lstlisting}
-data Maybe a = Nothing
-                 | Just a
-\end{lstlisting}
-\DIFaddendFL \caption{The \texttt{Maybe} data type \DIFdelbeginFL \DIFdelFL{definition and }\texttt{\DIFdelFL{MonadPlus}} %DIFAUXCMD
-\DIFdelFL{instance }\DIFdelendFL declaration\DIFdelbeginFL \DIFdelFL{, and the }\texttt{\DIFdelFL{MonadPlus}} %DIFAUXCMD
-\DIFdelFL{class definition}\DIFdelendFL .}
-\DIFaddbeginFL \label{maybeDecl}
-\end{figure}
+%DIFDELCMD < \caption{%
+{%DIFAUXCMD
+\DIFdelFL{The }\texttt{\DIFdelFL{Maybe}} %DIFAUXCMD
+\DIFdelFL{data type definition and }\texttt{\DIFdelFL{MonadPlus}} %DIFAUXCMD
+\DIFdelFL{instance declaration, and the }\texttt{\DIFdelFL{MonadPlus}} %DIFAUXCMD
+\DIFdelFL{class definition.}}
+%DIFAUXCMD
+%DIFDELCMD < \label{maybeMonadPlus}
+%DIFDELCMD < \end{figure}
+%DIFDELCMD <  
+
+%DIFDELCMD < %%%
+\DIFdel{Figure~\ref{maybeMonadPlus} contains the class declaration for }\texttt{\DIFdel{MonadPlus}} %DIFAUXCMD
+\DIFdel{the }\DIFdelend \texttt{Maybe} \DIFdelbegin \DIFdel{instance of that class. The }\DIFdelend \DIFaddbegin \DIFadd{is a data type whose declaration is shown in Figure~\ref{maybeDecl}. }\DIFaddend \texttt{Maybe} \DIFdelbegin \DIFdel{type }\DIFdelend represents a computation that \DIFdelbegin \DIFdel{may }\DIFdelend \DIFaddbegin \DIFadd{can fail or }\DIFaddend return a value \DIFdelbegin \DIFdel{wrapped in }\DIFdelend \DIFaddbegin \DIFadd{of type }\texttt{\DIFadd{a}}\DIFadd{. When a computation has failed }\texttt{\DIFadd{Maybe}} \DIFadd{represents this ``result'' with the }\texttt{\DIFadd{Nothing}} \DIFadd{constructor. When a calculation succeeds then }\texttt{\DIFadd{Maybe}} \DIFadd{returns the result wrapped with }\DIFaddend the \texttt{Just} constructor\DIFdelbegin \DIFdel{or may fail (represented by the }\texttt{\DIFdel{Nothing}} %DIFAUXCMD
+\DIFdel{constructor). The }\DIFdelend \DIFaddbegin \DIFadd{. }\DIFaddend \texttt{\DIFdelbegin \DIFdel{MonadPlus}%DIFDELCMD < } %%%
+\DIFdel{class is a typeclass for monads that also have a monoidal structure~}\footnote{\DIFdel{A monoid is a semigroup whose associative binary operation has an identity element.}}%DIFAUXCMD
+\addtocounter{footnote}{-1}%DIFAUXCMD
+\DIFdelend \DIFaddbegin \DIFadd{Maybe}} \DIFadd{is a commonly used type in Haskell programs, it also implements many common type classes including }\texttt{\DIFadd{Monad}} \DIFadd{and }\texttt{\DIFadd{MonadPlus}}\DIFaddend . 
+
+The \DIFdelbegin \texttt{\DIFdel{MonadPlus}} %DIFAUXCMD
+\DIFdel{class helps generalise monads that contain some concept of failure }\DIFdelend \DIFaddbegin \DIFadd{definition of }\texttt{\DIFadd{Maybe}} \DIFadd{as well as its instance declarations for the }\texttt{\DIFadd{Monad}} \DIFaddend and \DIFdelbegin \DIFdel{choice. The }\DIFdelend \DIFaddbegin \texttt{\DIFadd{MonadPlus}} \DIFadd{type classes are shown in Figures~\ref{maybeDecl} and~\ref{maybeMonadDef}. The declaration of the }\texttt{\DIFadd{MonadPlus}} \DIFadd{type class as well as }\texttt{\DIFadd{Maybe}}\DIFadd{'s definition of it are shown in Figure~\ref{maybeMonadPlusDef}.
+}
 
 \begin{figure}[t]
 \begin{lstlisting}
-class Applicative m => Monad m where
-	return :: a -> m a
-    (>>=)  :: forall a b. m a -> (a -> m b) -> m b
+data Maybe a = Nothing
+                 | Just a
 \end{lstlisting}
-\caption{\DIFaddFL{The }\texttt{\DIFaddFL{Monad}} \DIFaddFL{type class declaration}}
-\label{monadTC}
+\caption{\DIFaddFL{The }\texttt{\DIFaddFL{Maybe}} \DIFaddFL{data type declaration.}}
+\label{maybeDecl}
+\end{figure}
+
+\begin{figure}[t]
+\begin{lstlisting}   
+instance Monad Maybe where
+	return = Just
+
+	(Just a) >>= f = f a
+	Nothing  >>= _ = Nothing
+\end{lstlisting}
+\caption{\texttt{\DIFaddFL{Maybe}}\DIFaddFL{'s monad instance definition}}
+\label{maybeMonadDef}
 \end{figure}
 
 \begin{figure}[t]
 \begin{lstlisting}                 
+class Monad m => MonadPlus m where
+   mzero :: m a
+   mplus :: m a -> m a -> m a
+
 instance MonadPlus Maybe where
    mzero = Nothing
    Nothing `mplus` r = r
    l          `mplus` _ = l
 
-class Monad m => MonadPlus m where
-   mzero :: m a
-   mplus :: m a -> m a -> m a
 \end{lstlisting}
 \caption{\DIFaddFL{The }\texttt{\DIFaddFL{Maybe}} \texttt{\DIFaddFL{MonadPlus}} \DIFaddFL{instance declaration, and the }\texttt{\DIFaddFL{MonadPlus}} \DIFaddFL{class definition.}}
-\DIFaddendFL \label{maybeMonadPlus}
+\label{maybeMonadPlusDef}
 \end{figure}
 
-\DIFaddbegin \DIFadd{Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from }\texttt{\DIFadd{Monad}}\DIFadd{, and that categorise additional features monads can have, such as failure (}\texttt{\DIFadd{MonadFail}}\DIFadd{) or failure and recovery (}\texttt{\DIFadd{MonadPlus}}\DIFadd{)~\mbox{%DIFAUXCMD
+
+
+\subsection{Refactoring Maybe to MonadPlus} 
+\label{maybeMonadPlus}
+\texttt{\DIFadd{MonadPlus}} \DIFadd{is the obvious generalisation of }\texttt{\DIFadd{Maybe}}\DIFadd{. }\texttt{\DIFadd{Maybe}} \DIFadd{encodes failure using the }\texttt{\DIFadd{Nothing}} \DIFadd{constructor and its definition of }\texttt{\DIFadd{mplus}} \DIFadd{chooses to discard failed computations on the left in exchange for a possibly successful one. This behaviour is exactly what }\texttt{\DIFadd{MonadPlus}} \DIFadd{is designed to encapsulate. This section describes a refactoring for rewriting functions that use }\texttt{\DIFadd{Maybe}} \DIFadd{to use the }\texttt{\DIFadd{MonadPlus}} \DIFadd{type class instead.
+}
+
+\begin{figure}[t]
+\begin{lstlisting}
+showNat :: Int -> Maybe String
+showNat i =
+  if (i >= 0)
+    then (Just (show i))
+    else Nothing
+\end{lstlisting}
+\caption{\texttt{\DIFaddFL{showNat}}}
+\label{mmp2}
+\end{figure}
+
+\DIFadd{The function }\DIFaddend \texttt{\DIFdelbegin \DIFdel{mzero}\DIFdelend \DIFaddbegin \DIFadd{showNat}\DIFaddend } \DIFdelbegin \DIFdel{value represents a failed computation and }\texttt{\DIFdel{mplus}} %DIFAUXCMD
+\DIFdel{represents a way of making a "choice" between two computations that may or may not have failed~\mbox{%DIFAUXCMD
 \citep{typeclassopedia}}\hspace{0pt}%DIFAUXCMD
-. }\texttt{\DIFadd{MonadPlus}} \DIFadd{is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. }\DIFaddend Figure~\ref{maybeMonadPlus} \DIFdelbegin \DIFdel{contains }\DIFdelend \DIFaddbegin \DIFadd{shows }\DIFaddend the class declaration for \texttt{MonadPlus} \DIFdelbegin \DIFdel{the }\DIFdelend \DIFaddbegin \DIFadd{and }\DIFaddend \texttt{Maybe}\DIFaddbegin \DIFadd{'s }\DIFaddend instance of that class. The \texttt{Maybe} type represents a computation that may return a value wrapped in the \texttt{Just} constructor or may fail (represented by the \texttt{Nothing} constructor). The \texttt{MonadPlus} class is a \DIFdelbegin \DIFdel{typeclass }\DIFdelend \DIFaddbegin \DIFadd{type class }\DIFaddend for monads that also have \DIFdelbegin \DIFdel{a monoidal structure~}\footnote{\DIFdel{A monoid is a semigroup whose associative binary operation has an identity element.}}%DIFAUXCMD
-\addtocounter{footnote}{-1}%DIFAUXCMD
-\DIFdel{. 
-}%DIFDELCMD < 
-
-%DIFDELCMD < %%%
-\DIFdel{The }\texttt{\DIFdel{MonadPlus}} %DIFAUXCMD
-\DIFdel{class helps generalise monads that contain }\DIFdelend some concept of failure and choice. \DIFdelbegin \DIFdel{The }\DIFdelend \DIFaddbegin \DIFadd{All instances of }\texttt{\DIFadd{MonadPlus}} \DIFadd{have an }\DIFaddend \texttt{mzero} value\DIFaddbegin \DIFadd{, which }\DIFaddend represents a failed computation\DIFdelbegin \DIFdel{and }\DIFdelend \DIFaddbegin \DIFadd{, and an }\DIFaddend \texttt{mplus} \DIFaddbegin \DIFadd{function, which }\DIFaddend represents a way of making a \DIFaddbegin \DIFadd{left-biased }\DIFaddend "choice" between two computations that may or may not have failed~\citep{typeclassopedia}. 
-
+}\DIFdelend \DIFaddbegin \DIFadd{takes a pure value and returns a }\texttt{\DIFadd{Maybe}}\DIFadd{, instead of taking in a }\texttt{\DIFadd{Maybe}} \DIFadd{and returning another }\texttt{\DIFadd{Maybe}} \DIFadd{as in the previous example. The more general version of }\texttt{\DIFadd{showNat}} \DIFadd{needs to be able to express the idea of failure that }\texttt{\DIFadd{MonadPlus}} \DIFadd{encodes with the }\texttt{\DIFadd{mzero}} \DIFadd{operation}\DIFaddend . 
 
 \DIFdelbegin %DIFDELCMD < \begin{figure}
 %DIFDELCMD < \begin{lstlisting}%DIFDELCMD < 
@@ -2039,43 +2189,6 @@ class Monad m => MonadPlus m where
 %DIFDELCMD < \end{lstlisting}
 %DIFDELCMD < %%%
 \DIFdelendFL \DIFaddbeginFL \begin{figure}[t]
-\begin{lstlisting}   
-instance Monad Maybe where
-	return = Just
-
-	(Just a) >>= f = f a
-	Nothing  >>= _ = Nothing
-\end{lstlisting}
-\DIFaddendFL \caption{\texttt{Maybe}'s monad instance definition}
-\label{maybeMonad}
-\end{figure}
-
-
-\subsection{Refactoring Maybe to \DIFdelbegin \DIFdel{Monad}\DIFdelend \DIFaddbegin \DIFadd{MonadPlus}\DIFaddend } 
-\DIFdelbegin %DIFDELCMD < \label{genMonad}
-%DIFDELCMD < %%%
-\DIFdelend 
-
-\DIFdelbegin \DIFdel{This refactoring replaces }\DIFdelend \DIFaddbegin \texttt{\DIFadd{MonadPlus}} \DIFadd{is the obvious generalisation of }\DIFaddend \texttt{Maybe}\DIFdelbegin \DIFdel{-specific code with the more general }\DIFdelend \DIFaddbegin \DIFadd{. }\texttt{\DIFadd{Maybe}} \DIFadd{encodes failure using the }\texttt{\DIFadd{Nothing}} \DIFadd{constructor and its definition of }\texttt{\DIFadd{mplus}} \DIFadd{chooses to discard failed computations on the left in exchange for a possibly successful one. This behaviour is exactly what }\texttt{\DIFadd{MonadPlus}} \DIFadd{is designed to encapsulate. This section describes a refactoring for rewriting functions that use }\texttt{\DIFadd{Maybe}} \DIFadd{to use the }\texttt{\DIFadd{MonadPlus}} \DIFadd{type class instead.
-}
-
-\begin{figure}[t]
-\begin{lstlisting}
-showNat :: Int -> Maybe String
-showNat i =
-  if (i >= 0)
-    then (Just (show i))
-    else Nothing
-\end{lstlisting}
-\caption{\texttt{\DIFaddFL{showNat}}}
-\label{mmp2}
-\end{figure}
-
-\DIFadd{The function }\texttt{\DIFadd{showNat}} \DIFadd{takes a pure value and returns a }\texttt{\DIFadd{Maybe}}\DIFadd{, instead of taking in a }\texttt{\DIFadd{Maybe}} \DIFadd{and returning another }\texttt{\DIFadd{Maybe}} \DIFadd{as in the previous example. The more general version of }\DIFaddend \texttt{\DIFdelbegin \DIFdel{Monad}\DIFdelend \DIFaddbegin \DIFadd{showNat}\DIFaddend } \DIFdelbegin \DIFdel{and }\DIFdelend \DIFaddbegin \DIFadd{needs to be able to express the idea of failure that }\DIFaddend \texttt{MonadPlus} \DIFdelbegin \DIFdel{operations. 
-This is done by recognizing when }\DIFdelend \DIFaddbegin \DIFadd{encodes with the }\texttt{\DIFadd{mzero}} \DIFadd{operation. 
-}
-
-\begin{figure}[t]
 \begin{lstlisting}
 showNat :: (MonadPlus m) => Int -> m String
 showNat i =
@@ -2083,14 +2196,23 @@ showNat i =
     then (return (show i))
     else mzero
 \end{lstlisting}
-\caption{\texttt{\DIFaddFL{showNat}} \DIFaddFL{refactored}}
-\label{mmp2Ref}
-\end{figure} 
+\DIFaddendFL \caption{\DIFdelbeginFL \texttt{\DIFdelFL{Maybe}}%DIFAUXCMD
+\DIFdelFL{'s monad instance definition}\DIFdelendFL \DIFaddbeginFL \texttt{\DIFaddFL{showNat}} \DIFaddFL{refactored}\DIFaddendFL }
+\DIFdelbeginFL %DIFDELCMD < \label{maybeMonad}
+%DIFDELCMD < %%%
+\DIFdelendFL \DIFaddbeginFL \label{mmp2Ref}
+\DIFaddendFL \end{figure} 
 
-\DIFadd{Figure~\ref{mmp2Ref} shows the refactored version of }\texttt{\DIFadd{showNat}}\DIFadd{. In this case the refactoring can simply replace the }\DIFaddend \texttt{Maybe}-specific \DIFdelbegin \DIFdel{code is structured in the same way as the }\DIFdelend \DIFaddbegin \DIFadd{calls with more general ones. This is very similar to the way that the expression that made up the anonymous function from Figure~\ref{mmp1Ref} was constructed by changing calls to }\texttt{\DIFadd{Just}} \DIFadd{to }\texttt{\DIFadd{return}} \DIFadd{and calls to }\texttt{\DIFadd{Nothing}} \DIFadd{to }\texttt{\DIFadd{mzero}}\DIFadd{. 
+\DIFdelbegin %DIFDELCMD < \subsection{Refactoring Maybe to Monad}%DIFDELCMD < \label{genMonad}%%%
+%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{This refactoring replaces }\DIFdelend \DIFaddbegin \DIFadd{Figure~\ref{mmp2Ref} shows the refactored version of }\texttt{\DIFadd{showNat}}\DIFadd{. In this case the refactoring can simply replace the }\DIFaddend \texttt{Maybe}-specific \DIFdelbegin \DIFdel{code with the more general }\texttt{\DIFdel{Monad}} %DIFAUXCMD
+\DIFdel{and }\texttt{\DIFdel{MonadPlus}} %DIFAUXCMD
+\DIFdel{operations}\DIFdelend \DIFaddbegin \DIFadd{calls with more general ones}\DIFaddend . This is \DIFdelbegin \DIFdel{done by recognizing when }\DIFdelend \DIFaddbegin \DIFadd{very similar to the way that the expression that made up the anonymous function from Figure~\ref{mmp1Ref} was constructed by changing calls to }\texttt{\DIFadd{Just}} \DIFadd{to }\texttt{\DIFadd{return}} \DIFadd{and calls to }\texttt{\DIFadd{Nothing}} \DIFadd{to }\texttt{\DIFadd{mzero}}\DIFadd{. 
 }
 
-\DIFadd{Due to the }\texttt{\DIFadd{return}} \DIFadd{operator of }\texttt{\DIFadd{Monad}} \DIFadd{being equivalent to }\texttt{\DIFadd{Just}} \DIFadd{and }\texttt{\DIFadd{mzero}} \DIFadd{being supplied by }\texttt{\DIFadd{MonadPlus}}\DIFadd{, both of }\texttt{\DIFadd{Maybe}}\DIFadd{'s constructors can be replaced with }\DIFaddend more general operations. \DIFdelbegin \DIFdel{Figure~\ref{mmp1} contains a simple example of this}\DIFdelend \DIFaddbegin \DIFadd{Between these two type classes all of the functionality of }\texttt{\DIFadd{Maybe}} \DIFadd{can be replaced in functions that build }\texttt{\DIFadd{Maybe}}\DIFadd{s. However if a function deconstructs a }\texttt{\DIFadd{Maybe}} \DIFadd{type through pattern matching it may not be generalisable. Consider the function }\texttt{\DIFadd{printResult}} \DIFadd{in Figure~\ref{printRes}. }\texttt{\DIFadd{printResult}} \DIFadd{performs a pattern match over the }\texttt{\DIFadd{Maybe}} \DIFadd{type constructors rather than only in right hand side expressions; there is no way to generalise pattern matching on }\texttt{\DIFadd{Just}}\DIFaddend .
+\DIFadd{Due to the }\texttt{\DIFadd{return}} \DIFadd{operator of }\texttt{\DIFadd{Monad}} \DIFadd{being equivalent to }\texttt{\DIFadd{Just}} \DIFadd{and }\texttt{\DIFadd{mzero}} \DIFadd{being supplied by }\texttt{\DIFadd{MonadPlus}}\DIFadd{, both of }\DIFaddend \texttt{Maybe}\DIFdelbegin \DIFdel{-specific code is structured in the same way as the }\DIFdelend \DIFaddbegin \DIFadd{'s constructors can be replaced with }\DIFaddend more general operations. \DIFdelbegin \DIFdel{Figure~\ref{mmp1} contains a simple example of this}\DIFdelend \DIFaddbegin \DIFadd{Between these two type classes all of the functionality of }\texttt{\DIFadd{Maybe}} \DIFadd{can be replaced in functions that build }\texttt{\DIFadd{Maybe}}\DIFadd{s. However if a function deconstructs a }\texttt{\DIFadd{Maybe}} \DIFadd{type through pattern matching it may not be generalisable. Consider the function }\texttt{\DIFadd{printResult}} \DIFadd{in Figure~\ref{printRes}. }\texttt{\DIFadd{printResult}} \DIFadd{performs a pattern match over the }\texttt{\DIFadd{Maybe}} \DIFadd{type constructors rather than only in right hand side expressions; there is no way to generalise pattern matching on }\texttt{\DIFadd{Just}}\DIFaddend .
 
 \begin{figure}[t]
 \DIFaddbeginFL \begin{lstlisting}
@@ -2104,7 +2226,8 @@ printResult m =
 \label{printRes}
 \end{figure}
 
-\subsection{\DIFadd{Refactoring Maybe to Monad}}\label{genMonad}
+\subsection{Refactoring Maybe to Monad}
+\label{genMonad}
 
 \DIFadd{In some cases it is possible to generalise a }\texttt{\DIFadd{Maybe}} \DIFadd{type to become }\texttt{\DIFadd{Monad}} \DIFadd{instead. When functions duplicate the work that is done by }\texttt{\DIFadd{Maybe}}\DIFadd{'s implementation of bind then that function can be generalised to use the monadic interface instead.
 }
@@ -2155,10 +2278,7 @@ It is worth saying that if the right hand side of the \texttt{Just} case from th
 \DIFdel{instead.  
  }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\subsection{\DIFdel{Refactoring Maybe to MonadPlus}} 
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < \subsection{Refactoring Maybe to MonadPlus} 
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -2393,7 +2513,7 @@ append xs ys = DL (unDL xs . unDL ys)
 While difference lists support fast appends there is no such thing as a free lunch\DIFdelbegin \DIFdel{, speed ups }\DIFdelend \DIFaddbegin \DIFadd{: speedups }\DIFaddend for certain functions are paid for by slowdowns in other places. Getting the head and tail of a normal list are both constant time operations but become linear time for difference lists because the difference lists will have to be converted back to normal lists. 
 
 
-\subsection{\DIFdelbegin \DIFdel{Refactoring lists to Hughes lists}%DIFDELCMD < }
+\DIFdelbegin %DIFDELCMD < \subsection{Refactoring lists to Hughes lists}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -2404,7 +2524,7 @@ While difference lists support fast appends there is no such thing as a free lun
 \subsubsection{\DIFdel{Embeddable Types}} 
 %DIFAUXCMD
 \addtocounter{subsubsection}{-1}%DIFAUXCMD
-\DIFdel{This refactoring }\DIFdelend \DIFaddbegin \DIFadd{Embeddable Types}} 
+\DIFdel{This refactoring }\DIFdelend \DIFaddbegin \subsection{Embeddable Types} 
 \DIFadd{This refactoring }\DIFaddend takes the view that a type consists of some structure and a set of functions that operate on that structure. 
 
 This refactoring requires that a source type is ``reversibly embeddable'' into the target type. If the source type is some type $A$ and the target type is some type $B$ then for $A$ to be reversibly embeddable \DIFdelbegin \DIFdel{in }\DIFdelend \DIFaddbegin \DIFadd{into }\DIFaddend $B$\DIFaddbegin \DIFadd{, }\DIFaddend two functions must exist\DIFdelbegin \DIFdel{. The }\DIFdelend \DIFaddbegin \DIFadd{: the }\DIFaddend projection function $proj :: A \rightarrow B$ and the abstraction function $abs :: B \rightarrow A$\DIFaddbegin \DIFadd{, as shown in Figure~\ref{galois}}\DIFaddend . The property in equation~\ref{eq1} must hold for $A$ to be embeddable in $B$. However, the \DIFdelbegin \DIFdel{property in equation~\ref{eq2} does not necessarily hold}\DIFdelend \DIFaddbegin \DIFadd{reverse compositions of $proj . abs$ is not necessarily $id_B$}\DIFaddend .   
@@ -2490,7 +2610,7 @@ Fortunately different versions of the refactoring can be made by defining separa
 \DIFdelbegin \subsubsection{\DIFdel{Transforming functions}}
 %DIFAUXCMD
 \addtocounter{subsubsection}{-1}%DIFAUXCMD
-\DIFdelend \DIFaddbegin \subsection{\DIFadd{Refactoring functions to use Hughes lists}}
+\DIFdelend \DIFaddbegin \subsection{Refactoring functions to use Hughes lists}
 \DIFaddend 
 
 \DIFdelbegin \DIFdel{The refactoring breaks into three different cases depending on the type }\DIFdelend \DIFaddbegin \DIFadd{For functional programmers, lists are a very familiar and versatile data structure. However, if an application requires repeated appends as described at the start of this section their performance becomes an issue. Difference lists provide a similar interface to lists but without this troublesome behaviour and provide projection (}\texttt{\DIFadd{fromList}}\DIFadd{) and abstraction (}\texttt{\DIFadd{toList}}\DIFadd{) functions between themselves and normal lists. This section will describe a refactoring to convert programs written using normal lists to use difference lists instead. 
@@ -2538,7 +2658,10 @@ insComma_2 s1 s2 = fromList ((toList s1) ++ (",") ++ (toList s2))
 \label{commaRef}
 \end{figure}
 
-\subsection{Modifying the Type of \DIFdelbegin \DIFdel{a Parameter}\DIFdelend \DIFaddbegin \DIFadd{an Input}\DIFaddend }
+\DIFdelbegin %DIFDELCMD < \subsection{Modifying the Type of a Parameter}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \subsection{Modifying the Type of an Input}
+\DIFaddend 
 
 The simplest case of this refactoring is modifying the type of a parameter. Consider the example in \DIFdelbegin \DIFdel{figure~\ref{median} }\DIFdelend \DIFaddbegin \DIFadd{Figure~\ref{mean} }\DIFaddend that calculates the \DIFdelbegin \DIFdel{median }\DIFdelend \DIFaddbegin \DIFadd{mean }\DIFaddend of list of numbers. 
 
@@ -2837,7 +2960,7 @@ The following chapters will expand on some of these ideas. The next chapter will
 \renewcommand{\topfraction}{1}
 \renewcommand{\floatpagefraction}{1}
 
-The previous chapter described \DIFdelbegin \DIFdel{two refactorings, }\DIFdelend \DIFaddbegin \DIFadd{three refactorings, ``introducing a type synonym,'' ``}\DIFaddend generalising \texttt{Maybe}\DIFdelbegin \DIFdel{and the }\DIFdelend \DIFaddbegin \DIFadd{,'' and the ``}\DIFaddend list to Hughes list refactorings\DIFaddbegin \DIFadd{''}\DIFaddend . This chapter will describe how refactorings are implemented in HaRe. Section~\ref{sec:genMaybeImp} describes the implementation of the generalising \texttt{Maybe} refactoring which was first covered in \DIFdelbegin \DIFdel{section}\DIFdelend \DIFaddbegin \DIFadd{Section}\DIFaddend ~\ref{genMaybe}. Section~\ref{sec:hughesListImp} covers the implementation of the \DIFaddbegin \DIFadd{``}\DIFaddend list to Hughes list\DIFaddbegin \DIFadd{'' }\DIFaddend refactoring (see \DIFdelbegin \DIFdel{section}\DIFdelend \DIFaddbegin \DIFadd{Section}\DIFaddend ~\ref{listToDlist}) and the embeddable type refactoring system that it is made with. The chapter also covers the enhancements that HaRe's API has undergone while developing the refactorings discussed in this thesis. Section~\ref{hareAPI} discusses the enhancements I made to HaRe's API.
+The previous chapter described \DIFdelbegin \DIFdel{two refactorings, }\DIFdelend \DIFaddbegin \DIFadd{three refactorings, ``introducing a type synonym,'' ``}\DIFaddend generalising \texttt{Maybe}\DIFdelbegin \DIFdel{and the }\DIFdelend \DIFaddbegin \DIFadd{,'' and the ``}\DIFaddend list to Hughes list refactorings\DIFaddbegin \DIFadd{''}\DIFaddend . This chapter will describe how refactorings are implemented in HaRe. \DIFaddbegin \DIFadd{This chapter is organised in a similar way to the previous one. Beginning with }\DIFaddend Section~\ref{sec:genMaybeImp} \DIFaddbegin \DIFadd{which }\DIFaddend describes the implementation of the generalising \texttt{Maybe} refactoring \DIFdelbegin \DIFdel{which was first covered in section}\DIFdelend \DIFaddbegin \DIFadd{that was discussed in Section}\DIFaddend ~\ref{genMaybe}. Section~\ref{sec:hughesListImp} covers the implementation of the \DIFaddbegin \DIFadd{``}\DIFaddend list to Hughes list\DIFaddbegin \DIFadd{'' }\DIFaddend refactoring (see \DIFdelbegin \DIFdel{section}\DIFdelend \DIFaddbegin \DIFadd{Section}\DIFaddend ~\ref{listToDlist}) and the embeddable type refactoring system that it is made with. \DIFdelbegin \DIFdel{The }\DIFdelend \DIFaddbegin \DIFadd{In addition to discussing the implementation of the refactorings from Chapter~\ref{chp:ddRefs} this }\DIFaddend chapter also covers the enhancements that HaRe's API has undergone while developing the refactorings discussed in this thesis. Section~\ref{hareAPI} discusses the enhancements I made to HaRe's API.
 
 \section{Implementation of the ``Generalising Maybe" refactoring}
 \label{sec:genMaybeImp}
@@ -3467,9 +3590,9 @@ The \texttt{Transform} module defines the following functions:
 
 \section{Summary}
 
-This chapter has described two of the data driven refactorings were developed for HaRe. It has also introduced how refactorings are implemented in HaRe and the functionality provided by HaRe's API.
+This chapter has described \DIFdelbegin \DIFdel{two of the data driven refactorings were developed for HaRe. It has also introduced how refactorings are implemented in HaReand the functionality provided by }\DIFdelend \DIFaddbegin \DIFadd{how the generalising }\texttt{\DIFadd{Maybe}} \DIFadd{and the list to Hughes list refactorings have been implemented in HaRe. In addition to the specific implementations  of these two refactorings this chapter also described the additions to HaRe's API that were made to support the refactorings developed for this thesis. In addition to the enhancements made to }\DIFaddend HaRe's \DIFdelbegin \DIFdel{API}\DIFdelend \DIFaddbegin \DIFadd{general API for refactoring, this chapter also covers the API that supports reversibly embeddable type refactorings such as the list to Hughes list refactoring}\DIFaddend .
 
-The next chapters will continue to introduce more complex data driven refactorings, starting with the ``generalising Monads to Applicative'' refactoring.
+\DIFdelbegin \DIFdel{The next chapters will continue to introduce more complex data driven refactorings, starting with the ``generalising Monads to Applicative'' refactoring}\DIFdelend \DIFaddbegin \DIFadd{Now that the the basic design and implementation of data-driven refactorings have been introduced the thesis will proceed by looking at two more refactorings, generalising monadic code to applicative functors (Chapter~\ref{chp:applicative}) and the monadification of pure code (Chapter~\ref{chp:monadification})}\DIFaddend .
 
 
 \DIFdelbegin %DIFDELCMD < \renewcommand{\floatpagefraction}{.66}
@@ -3482,7 +3605,9 @@ The next chapters will continue to introduce more complex data driven refactorin
 
 The previous chapter introduced the concept of a functional data refactoring and gave \DIFdelbegin \DIFdel{two examples , }\DIFdelend \DIFaddbegin \DIFadd{three examples of data driven refactorings: }\DIFaddend introducing a type synonym\DIFdelbegin \DIFdel{and generalising Maybeto MonadPlus}\DIFdelend \DIFaddbegin \DIFadd{, generalising Maybe, and list to Hughes lists}\DIFaddend . This chapter will cover another generalising refactoring\DIFdelbegin \DIFdel{in more depth, rewriting }\DIFdelend \DIFaddbegin \DIFadd{, generalising }\DIFaddend monadic functions to use applicative functors \DIFaddbegin \DIFadd{if certain conditions are met}\DIFaddend . 
 
-In their 2008 functional pearl \DIFdelbegin \DIFdel{"Applicative programming with effects" }\DIFdelend \DIFaddbegin \DIFadd{``Applicative Programming with Effects,~\mbox{%DIFAUXCMD
+\DIFaddbegin \section{Applicative Functors}
+
+\DIFaddend In their 2008 functional pearl \DIFdelbegin \DIFdel{"Applicative programming with effects" }\DIFdelend \DIFaddbegin \DIFadd{``Applicative Programming with Effects,~\mbox{%DIFAUXCMD
 \citep{mcbrideIdioms}}\hspace{0pt}%DIFAUXCMD
 '' }\DIFaddend Conor McBride and Ross Paterson introduced a new \DIFdelbegin \DIFdel{typeclass }\DIFdelend \DIFaddbegin \DIFadd{type class }\DIFaddend that they called Idioms but are \DIFdelbegin \DIFdel{also }\DIFdelend \DIFaddbegin \DIFadd{more commonly }\DIFaddend known as Applicative Functors\DIFdelbegin \DIFdel{~\mbox{%DIFAUXCMD
 \citep{mcbrideIdioms}}\hspace{0pt}%DIFAUXCMD
@@ -3496,8 +3621,10 @@ Applicative functors \DIFdelbegin \DIFdel{were }\DIFdelend \DIFaddbegin \DIFadd{
 
 This chapter will discuss the design and implementation of a refactoring which \DIFdelbegin \DIFdel{will automatically refactor }\DIFdelend \DIFaddbegin \DIFadd{automatically refactors }\DIFaddend code written in a monadic style to use the applicative operators instead \DIFaddbegin \DIFadd{given it meets certain conditions that we will spell out}\DIFaddend . Section~\ref{sec:appOverview} is a brief overview of the \DIFaddbegin \DIFadd{operations of the }\DIFaddend \texttt{Applicative} typeclass\DIFdelbegin \DIFdel{'s operators, section~\ref{sec:appProgStyle} will discuss }\DIFdelend \DIFaddbegin \DIFadd{, Section~\ref{sec:appProgStyle} discusses }\DIFaddend the applicative programming style and, in general, how programs are constructed using the applicative operators\DIFdelbegin \DIFdel{, next, section}\DIFdelend \DIFaddbegin \DIFadd{. Next, Section}\DIFaddend ~\ref{sec:appInPractice} describes how the Haskell community uses the applicative typeclass\DIFdelbegin \DIFdel{. Then section}\DIFdelend \DIFaddbegin \DIFadd{, and Section}\DIFaddend ~\ref{sec:appRefact} describes in detail the refactoring \DIFaddbegin \DIFadd{and its preconditions}\DIFaddend . Section~\ref{sec:refacImp} discusses the \DIFdelbegin \DIFdel{refactorings }\DIFdelend \DIFaddbegin \DIFadd{refactoring's }\DIFaddend implementation in HaRe and some additional refactorings that can be used to \DIFdelbegin \DIFdel{get around the }\DIFdelend \DIFaddbegin \DIFadd{transform the code to meet the }\DIFaddend preconditions. Finally some applications that are good candidates for this refactoring are discussed in \DIFdelbegin \DIFdel{section}\DIFdelend \DIFaddbegin \DIFadd{Section}\DIFaddend ~\ref{sec:appApps}.
 
-\section{The \DIFdelbegin \DIFdel{applicative Typeclass}\DIFdelend \DIFaddbegin \DIFadd{Applicative Type Class}\DIFaddend }
-\label{sec:appOverview}
+\DIFdelbegin %DIFDELCMD < \section{The applicative Typeclass}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \section{The Applicative Type Class}
+\DIFaddend \label{sec:appOverview}
 This section \DIFdelbegin \DIFdel{will be a quick }\DIFdelend \DIFaddbegin \DIFadd{is a short }\DIFaddend introduction to the \texttt{Applicative} \DIFdelbegin \DIFdel{typeclass and some other }\DIFdelend \DIFaddbegin \DIFadd{type class and some related }\DIFaddend functions that are commonly used to write functions in an applicative style. 
 \DIFdelbegin \DIFdel{We begin by discussing a superclass of }\texttt{\DIFdel{Applicative}}%DIFAUXCMD
 \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{To discuss applicative functors we first have to cover functors. Functors originate from category theory and are a natural generalisation of maps over lists. The definition of GHC's }\DIFaddend \texttt{Functor} \DIFdelbegin \DIFdel{, shown in figure}\DIFdelend \DIFaddbegin \DIFadd{type class is shown in Figure}\DIFaddend ~\ref{functor}. The \texttt{Functor} \DIFdelbegin \DIFdel{typeclass }\DIFdelend \DIFaddbegin \DIFadd{type class }\DIFaddend defines a single function that must be implemented\DIFdelbegin \DIFdel{, }\DIFdelend \DIFaddbegin \DIFadd{: }\DIFaddend \texttt{fmap}.
@@ -3890,7 +4017,7 @@ instance Applicative m => Applicative (DockerT m) where
 \label{dockerApp}
 \end{figure}
 
-\DIFaddbegin \subsection{\DIFadd{Conclusions}}
+\DIFaddbegin \subsection{Conclusions}
 
 \DIFadd{The search results are inconclusive. It is hard to make firm judgements about people's familiarity with a complex type class just from the implementation of the type class alone. However taken in combination with other results, such as the work done in~\mbox{%DIFAUXCMD
 \cite{applicativeDo}}\hspace{0pt}%DIFAUXCMD
@@ -4317,9 +4444,8 @@ The composite approach also makes it much easier for the refactoring to be exten
 
 The previous section informally discussed \DIFdelbegin \DIFdel{how the }\DIFdelend \DIFaddbegin \DIFadd{the ``}\DIFaddend generalise monad to applicative\DIFdelbegin \DIFdel{refactoring in general}\DIFdelend \DIFaddbegin \DIFadd{'' refactoring}\DIFaddend . In practice there are quite a few options that implementers will make when writing this refactoring, including how parentheses are inserted, for example. This section will discuss \DIFdelbegin \DIFdel{more formally }\DIFdelend \DIFaddbegin \DIFadd{in more detail }\DIFaddend how HaRe implements the ``generalise to applicative'' refactoring.
 
-\DIFdelbegin \subsection{\DIFdel{Implementation of the Generalising to Applicative Refactoring}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+\DIFdelbegin %DIFDELCMD < \subsection{Implementation of the Generalising to Applicative Refactoring}
+%DIFDELCMD < %%%
 \DIFdelend \begin{figure}[t]
 	\begin{math}
 		\begin{aligned}
@@ -4352,7 +4478,7 @@ The refactoring takes two arguments: the filepath of the file to be refactored, 
 \DIFdelbegin \subsubsection{\DIFdel{Checking the Preconditions}}
 %DIFAUXCMD
 \addtocounter{subsubsection}{-1}%DIFAUXCMD
-\DIFdelend \DIFaddbegin \subsection{\DIFadd{Checking the Preconditions}}
+\DIFdelend \DIFaddbegin \subsection{Checking the Preconditions}
 \DIFaddend 
 
 \begin{figure}[t]
@@ -4421,7 +4547,7 @@ The second precondition is checked using a similar method. First we construct a 
 \DIFdelbegin \subsubsection{\DIFdel{Constructing the Effectful Expression}}
 %DIFAUXCMD
 \addtocounter{subsubsection}{-1}%DIFAUXCMD
-\DIFdelend \DIFaddbegin \subsection{\DIFadd{Constructing the Effectful Expression}}
+\DIFdelend \DIFaddbegin \subsection{Constructing the Effectful Expression}
 \DIFaddend \begin{figure}[t]
 \begin{math}
 \begin{aligned}
@@ -4493,7 +4619,7 @@ Once every cluster has been refactored separately all of the clusters are wrappe
 \DIFdelbegin \subsubsection{\DIFdel{Building the Pure Expression}}
 %DIFAUXCMD
 \addtocounter{subsubsection}{-1}%DIFAUXCMD
-\DIFdelend \DIFaddbegin \subsection{\DIFadd{Building the Pure Expression}}
+\DIFdelend \DIFaddbegin \subsection{Building the Pure Expression}
 \DIFaddend 
 
 \vspace{5pt}
@@ -4713,8 +4839,10 @@ Monadification of a Haskell program is a common transformation that must be perf
 
 This chapter \DIFdelbegin \DIFdel{will describe }\DIFdelend \DIFaddbegin \DIFadd{describes }\DIFaddend a monadification refactoring. First \DIFdelbegin \DIFdel{will be a very brief definition }\DIFdelend \DIFaddbegin \DIFadd{there is a brief review }\DIFaddend of the \texttt{Monad} type class from \DIFdelbegin \DIFdel{GHC }\DIFdelend \DIFaddbegin \DIFadd{Haskel }\DIFaddend (section~\ref{monTC}). There are multiple styles of monadification\DIFaddbegin \DIFadd{, }\DIFaddend as described in~\citep{monadSurvey}, and \DIFdelbegin \DIFdel{section}\DIFdelend \DIFaddbegin \DIFadd{Section}\DIFaddend ~\ref{monadStyles} will describe these styles and discuss their relative merits and usefulness to \DIFdelbegin \DIFdel{the Haskell community}\DIFdelend \DIFaddbegin \DIFadd{Haskell programmers}\DIFaddend . Finally the implementation of the monadification refactoring within \DIFdelbegin \DIFdel{the HaRe project }\DIFdelend \DIFaddbegin \DIFadd{HaRe }\DIFaddend is described in section~\ref{monadImp}.
 
-\section{The Monad \DIFdelbegin \DIFdel{Typeclass}\DIFdelend \DIFaddbegin \DIFadd{type class}\DIFaddend }
-\label{monTC}
+\DIFdelbegin %DIFDELCMD < \section{The Monad Typeclass}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \section{The Monad type class}
+\DIFaddend \label{monTC}
 
 The monad \DIFdelbegin \DIFdel{typeclass as it exists in GHC }\DIFdelend \DIFaddbegin \DIFadd{type class }\DIFaddend is defined in \DIFdelbegin \DIFdel{figure}\DIFdelend \DIFaddbegin \DIFadd{Figure}\DIFaddend ~\ref{monadDef} along with the \texttt{Functor} and \texttt{Applicative} \DIFdelbegin \DIFdel{typeclasses }\DIFdelend \DIFaddbegin \DIFadd{type classes }\DIFaddend for reference. The two canonical monad functions are \texttt{return} and \DIFdelbegin \DIFdel{bind (}\DIFdelend \DIFaddbegin \DIFadd{``}\DIFaddend \texttt{(>>=)}\DIFdelbegin \DIFdel{)}\DIFdelend \DIFaddbegin \DIFadd{'' which is pronounced bind}\DIFaddend . \texttt{return} is the function that brings some pure value into the monadic context; the default definition is the function \texttt{pure} from the \texttt{Applicative} instance of the type. Bind allows for computation to occur within the monadic context.
 
@@ -5349,16 +5477,19 @@ eval (Assign x e) env = do
 \DIFaddbegin \DIFadd{Introducing the do syntactic sugar into the target program is the final step of this two-step composite refactoring. Do syntax has become synonymous with monads in the Haskell language and a refactoring that supports them should also support this syntax as well.
 }
 
+\section{Summary}
+
 \DIFaddend Monads are a challenging and characteristic feature of Haskell and, anecdotally \DIFaddbegin \DIFadd{at least}\DIFaddend , infamous amongst those trying to learn the language. Monadification is an important and common transformation that Haskell code undergoes. This chapter has described two refactorings that automate this transformation. The monadification refactoring transforms a set of functions into restricted call-by-value monad style, where only the result type of a function is made monadic. The second refactoring sugars the binds produced by the monadification into \texttt{do} notation, a common structure for monadic Haskell functions.
 
 %DIF < %%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{\DIFdelbegin \DIFdel{Related Work}\DIFdelend \DIFaddbegin \DIFadd{Conclusion}\DIFaddend }
-\DIFdelbegin %DIFDELCMD < \label{chp:related}
-%DIFDELCMD < %%%
-\DIFdelend \DIFaddbegin \label{chp:conc}
-\DIFaddend 
+\DIFdelbegin \chapter{\DIFdel{Related Work}}
+%DIFAUXCMD
+\addtocounter{chapter}{-1}%DIFAUXCMD
+%DIFDELCMD < \label{chp:related}
+%DIFDELCMD < 
 
-This \DIFdelbegin \DIFdel{chapter reviews current work in refactoring and other areas of the literature. The chapter is divided into several sections. This chapter will begin with a brief description of refactoring tools in general. The second section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\mbox{%DIFAUXCMD
+%DIFDELCMD < %%%
+\DIFdel{This chapter reviews current work in refactoring and other areas of the literature. The chapter is divided into several sections. This chapter will begin with a brief description of refactoring tools in general. The second section (\ref{funcTools}) will describe work done in the area of tooling for functional languages such as HLint~\mbox{%DIFAUXCMD
 \citep{hlint} }\hspace{0pt}%DIFAUXCMD
 a tool that suggests improvements to Haskell code and Wrangler~\mbox{%DIFAUXCMD
 \citep{wrangler} }\hspace{0pt}%DIFAUXCMD
@@ -5369,11 +5500,9 @@ and the type and transform system developed at the University of Utrecht~\mbox{%
 .
 }%DIFDELCMD < 
 
+%DIFDELCMD < \section{Refactoring Tools in Modern IDEs}
 %DIFDELCMD < %%%
-\section{\DIFdel{Refactoring Tools in Modern IDEs}}
-%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
-\DIFdel{Refactoring tools have become a standard feature in integrated development environments.The four most popular IDEs for object-oriented languages, Eclipse}\footnote{%DIFDELCMD < \url{https://www.eclipse.org/}%%%
+\DIFdel{Refactoring tools have become a standard feature in integrated development environments. The four most popular IDEs for object-oriented languages, Eclipse}\footnote{%DIFDELCMD < \url{https://www.eclipse.org/}%%%
 }%DIFAUXCMD
 \addtocounter{footnote}{-1}%DIFAUXCMD
 \DIFdel{, NetBeans}\footnote{%DIFDELCMD < \url{https://netbeans.org/}%%%
@@ -5387,23 +5516,17 @@ and the type and transform system developed at the University of Utrecht~\mbox{%
 \addtocounter{footnote}{-1}%DIFAUXCMD
 \DIFdel{all come with refactoring tools for their primary language~\mbox{%DIFAUXCMD
 \citep{ides}}\hspace{0pt}%DIFAUXCMD
-. These refactoringtools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy). 
+. These refactoring tools support some general (renaming, method extraction) and object-oriented specific refactorings (pushing/pulling methods up/down the object hierarchy). 
 }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\section{\DIFdel{Refactoring Tools for functional languages}}%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
-%DIFDELCMD < \label{funcTools}
+%DIFDELCMD < \section{Refactoring Tools for functional languages}%DIFDELCMD < \label{funcTools}%%%
 %DIFDELCMD < %%%
 \DIFdel{A reason that often used to be given to explain why functional languages are in widespread use in industry is the lack of a robust tooling ecosystem~\mbox{%DIFAUXCMD
 \citep{wadlerTools}}\hspace{0pt}%DIFAUXCMD
 . This is no longer the case as functional language ecosystems have undergone a great deal of development in recent years and, maybe coincidently, use in industry has gone up substantially in the last five years. This section will cover some notable refactoring and code smell tools for functional programming languages.
 }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\subsection{\DIFdel{HLint}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < \subsection{HLint}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -5415,37 +5538,29 @@ and the type and transform system developed at the University of Utrecht~\mbox{%
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdel{Code smell and refactoring tools are very closely related. Simplistically a code smell tool detects problems in a code base and a refactoring tool fixes them. If a tool can detect a problem why can't the same program fix them? HLint has a }\DIFdelend \DIFaddbegin \DIFadd{thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are }\textit{\DIFadd{driven}} \DIFadd{by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow code to be re-used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the }\DIFaddend \texttt{\DIFdelbegin \DIFdel{-refactor}\DIFdelend \DIFaddbegin \DIFadd{Applicative}\DIFaddend } \DIFdelbegin \DIFdel{flag that will automatically apply the suggestions. However a single piece of code could have multiple smells, how would HLint choose which one to apply ? Also once a transformation was applied other hints may no longer be applicable.
+\DIFdel{Code smell and refactoring tools are very closely related. Simplistically a code smell tool detects problems in a code base and a refactoring tool fixes them. If a tool can detect a problem why can't the same program fix them? HLint has a }\texttt{\DIFdel{-refactor}} %DIFAUXCMD
+\DIFdel{flag that will automatically apply the suggestions. However a single piece of code could have multiple smells, how would HLint choose which one to apply? Also once a transformation was applied other hints may no longer be applicable.
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdel{One of the powerful features of HLint is its customizability. An HLint (called }\DIFdelend \DIFaddbegin \DIFadd{type class does not force sequential evaluation of the arguments to apply (}\DIFaddend \texttt{\DIFdelbegin \DIFdel{hlint.yaml}\DIFdelend \DIFaddbegin \DIFadd{<*>}\DIFaddend }) \DIFdelbegin \DIFdel{configuration file added to the root of a project   will be detected by HLint and it will suggest both the default hints as well as the custom hints from that file.
-Hints are very simple to write.
-}\DIFdelend \DIFaddbegin \DIFadd{like bind (}\texttt{\DIFadd{>>=}}\DIFadd{), the monad operation, does.
-}\DIFaddend 
+\DIFdel{One of the powerful features of HLint is its customizability. An HLint (called }\texttt{\DIFdel{hlint.yaml}}%DIFAUXCMD
+\DIFdel{) configuration file added to the root of a project   will be detected by HLint and it will suggest both the default hints as well as the custom hints from that file. Hints are very simple to write.
+}%DIFDELCMD < 
 
-\DIFdelbegin %DIFDELCMD < \begin{lstlisting}%DIFDELCMD < [caption={A simple hint from~\citep{hlint}}, label=lstHint]
+%DIFDELCMD < \begin{lstlisting}%DIFDELCMD < [caption={A simple hint from~\citep{hlint}}, label=lstHint]
 %DIFDELCMD < - hint: {lhs: x !! 0, rhs: head x}
 %DIFDELCMD < \end{lstlisting}
-%DIFDELCMD < %%%
-\DIFdelend \DIFaddbegin \DIFadd{These refactorings are all designed to help programmers redesign the data their programs are written over. It has been shown in the literature that as programmers make structural decisions the implementation of their programs technical debt can build up, and this debt can only be paid through rewriting and/or refactoring~(\mbox{%DIFAUXCMD
-\cite{techDebt} }\hspace{0pt}%DIFAUXCMD
-and~\mbox{%DIFAUXCMD
-\cite{fowler}}\hspace{0pt}%DIFAUXCMD
-). The core idea behind this thesis is that the data representation decisions that are also made during program development also accrue debt, and that refactoring is a valid and simple way to pay off this type of technical debt.  
-}\DIFaddend 
+%DIFDELCMD < 
 
-\DIFdelbegin \DIFdel{Listing~\ref{lstHint} contains the definition of a hint that detects the list index operator is being used to look up the 0th element of a list and suggests using }\texttt{\DIFdel{head}} %DIFAUXCMD
+%DIFDELCMD < %%%
+\DIFdel{Listing~\ref{lstHint} contains the definition of a hint that detects the list index operator is being used to look up the 0th element of a list and suggests using }\texttt{\DIFdel{head}} %DIFAUXCMD
 \DIFdel{instead. The }\texttt{\DIFdel{lhs}} %DIFAUXCMD
 \DIFdel{tag is the code HLint will search for. If code matching }\texttt{\DIFdel{lhs}} %DIFAUXCMD
 \DIFdel{is found  HLint will suggest the code be replaced with the }\texttt{\DIFdel{rhs}} %DIFAUXCMD
 \DIFdel{code. HLint assumes any single character variable is a substitution parameter. Given the hint from listing~\ref{lstHint} and the following code:
-}\DIFdelend \DIFaddbegin \section{\DIFadd{Summary of Contributions}}
+}%DIFDELCMD < 
 
-\DIFadd{The primary artifacts of this thesis are my contributions to HaRe and its API. In particular the following contributions have been made:
-}\DIFaddend 
-
-\DIFdelbegin %DIFDELCMD < \begin{lstlisting}%DIFDELCMD < 
+%DIFDELCMD < \begin{lstlisting}%DIFDELCMD < 
 %DIFDELCMD < f list = list !! 0
 %DIFDELCMD < \end{lstlisting}
 %DIFDELCMD < 
@@ -5466,10 +5581,7 @@ and~\mbox{%DIFAUXCMD
 %DIFDELCMD < \end{lstlisting}
 %DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\subsection{\DIFdel{Haskell Tools Refact}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < \subsection{Haskell Tools Refact}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -5477,27 +5589,33 @@ and~\mbox{%DIFAUXCMD
 \citep{haskellTools}}\hspace{0pt}%DIFAUXCMD
 . The Haskell Tools project is a GHC based developer tool kit~\mbox{%DIFAUXCMD
 \citep{haskellToolsGit}}\hspace{0pt}%DIFAUXCMD
-. There are six refactorings currently supported. }%DIFDELCMD < 
+. There are six refactorings currently supported.
+}%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\DIFdelend \begin{itemize}
-\DIFaddbegin \item \DIFadd{The design and implementation of a set of data-driven refactorings in HaRe. These refactorings are:
-	}\begin{itemize}
-		\DIFaddend \item \DIFdelbegin \DIFdel{Rename
-}\DIFdelend \DIFaddbegin \DIFadd{Introduce a Type Synonym, Section~\ref{introSyn}
-		}\DIFaddend \item \DIFdelbegin \DIFdel{Generate type signature
-}\DIFdelend \DIFaddbegin \DIFadd{Generalise Maybe to MonadPlus/Monad, Section~\ref{maybeMonadPlus} and Chapter~\ref{chp:generalImp}
-		}\DIFaddend \item \DIFdelbegin \DIFdel{Generate exports
-}\DIFdelend \DIFaddbegin \DIFadd{List to Hughes List, Section~\ref{listToDlist} and chapter~\ref{chp:generalImp}
-		}\DIFaddend \item \DIFdelbegin \DIFdel{Extract binding
-}\DIFdelend \DIFaddbegin \DIFadd{Generalise Monad to Applicative, Chapter~\ref{chp:applicative}
-		}\DIFaddend \item \DIFdelbegin \DIFdel{Inline binding
+%DIFDELCMD < \begin{itemize}
+\begin{itemize}%DIFAUXCMD
+%DIFDELCMD < \item %%%
+\item%DIFAUXCMD
+\DIFdel{Rename
+}%DIFDELCMD < \item %%%
+\item%DIFAUXCMD
+\DIFdel{Generate type signature
+}%DIFDELCMD < \item %%%
+\item%DIFAUXCMD
+\DIFdel{Generate exports
+}%DIFDELCMD < \item %%%
+\item%DIFAUXCMD
+\DIFdel{Extract binding
+}%DIFDELCMD < \item %%%
+\item%DIFAUXCMD
+\DIFdel{Inline binding
 }%DIFDELCMD < \item %%%
 \item%DIFAUXCMD
 \DIFdel{Organize imports
-}\DIFdelend \DIFaddbegin \DIFadd{Monadification	, Chapter~\ref{chp:monadification}	
-	}\DIFaddend \end{itemize}
-\DIFdelbegin %DIFDELCMD < 
+}
+\end{itemize}%DIFAUXCMD
+%DIFDELCMD < \end{itemize}
+%DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{Haskell-tools has implemented  its own abstract syntax tree. The AST of haskell-tools is generated using information from all of GHC's compiler stages. Each node represents the same language elements it just includes additional information that is spread across the different stages of the GHC~\mbox{%DIFAUXCMD
@@ -5517,18 +5635,15 @@ and~\mbox{%DIFAUXCMD
 }\hspace{0pt}%DIFAUXCMD
 }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\subsection{\DIFdel{Wrangler}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < \subsection{Wrangler}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{Wrangler is a refactoring and code inspection tool for Erlang~\mbox{%DIFAUXCMD
 \citep{wrangler}}\hspace{0pt}%DIFAUXCMD
-. Erlang is a functional programming language designed to be massively scalable andhighly fault tolerant~\mbox{%DIFAUXCMD
+. Erlang is a functional programming language designed to be massively scalable and highly fault tolerant~\mbox{%DIFAUXCMD
 \citep{erlang}}\hspace{0pt}%DIFAUXCMD
-. It was originally developed in 1986 by Joe Armstrong, Robert Virding, andMike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\mbox{%DIFAUXCMD
+. It was originally developed in 1986 by Joe Armstrong, Robert Virding, and Mike Williams at the Computer Science Laboratory at Ericsson Telecom AB~\mbox{%DIFAUXCMD
 \citep{erlangHistory}}\hspace{0pt}%DIFAUXCMD
 . Erlang's core design tenets include lightweight processes, that communicate through message passing. Erlang also boasts a ``let it fail" error handling architecture, where processes either succeed or fail and other specialised processes handle the error~\mbox{%DIFAUXCMD
 \citep{armstrongThesis}}\hspace{0pt}%DIFAUXCMD
@@ -5571,35 +5686,26 @@ and~\mbox{%DIFAUXCMD
 
 %DIFDELCMD < %%%
 \DIFdel{The first template in figure~\ref{templates} matches applications of }\texttt{\DIFdel{erlang:spawn}} %DIFAUXCMD
-\DIFdel{when it is called with one argument whereas the second template will match the same function with any number of arguments.
-}%DIFDELCMD < 
+\DIFdel{when it is called with one argument whereas the second template will match the same function with any number of arguments. }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdel{Composite refactorings are refactorings that are made up of multiple refactorings run, in sequence, one after the other. It can be challenging to develop composite refactorings if they arenot explicitly handled by the refactoring tool. The naive solution just chains refactorings together with the output from one refactoring in a composite refactoring becoming the input to the next refactoring. However, what if the second refactoring fails in a chain of four? composite refactoring definitions, without tool support, become filled with error handling code to manage the situation when one of the component refactorings fail. Wrangler defines a domain specific language that helps describe the various facets of a composite refactoring.
+\DIFdel{Composite refactorings are refactorings that are made up of multiple refactorings run, in sequence, one after the other. It can be challenging to develop composite refactorings if they are not explicitly handled by the refactoring tool. The naive solution just chains refactorings together with the output from one refactoring in a composite refactoring becoming the input to the next refactoring. However, what if the second refactoring fails in a chain of four? composite refactoring definitions, without tool support, become filled with error handling code to manage the situation when one of the component refactorings fail. Wrangler defines a domain specific language that helps describe the various facets of a composite refactoring.
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{The Wrangler DSL supports the creation of a composite refactoring through a variety of features. First, Wrangler extends every primitive refactoring with a }\textit{\DIFdel{refactoring command generator}}%DIFAUXCMD
 \DIFdel{. A command generator allows the extended refactoring to accept not just concrete values but also structures that specify how the parameter should be generated; each parameter of a command generator accepts either a concrete value, a condition that checks if a value is satisfactory, or a generator for creating the parameter based on the previous parameters. A refactoring for renaming functions named with the format }\texttt{\DIFdel{camelCase}} %DIFAUXCMD
 \DIFdel{to }\texttt{\DIFdel{camel\_case}} %DIFAUXCMD
-\DIFdel{would accept three arguments the target filename, the name of the target function, and the desired new name. This command generator's first parameter is a condition that always returns true because any file is a valid target for renaming. The second parameter is another condition that checks if the function name matches is in camel case format (e.
-g. "}\texttt{\DIFdel{aFunName}}%DIFAUXCMD
-\DIFdel{"). The final parameter is generated by taking the second parameter and modifying it so that the name is in the corresponding "snake case" format }\DIFdelend \DIFaddbegin \item \DIFadd{An API for the creation of embeddable types refactorings, chapter~\ref{chp:generalImp}
-}\item \DIFadd{Enhancements and additions to HaRe's API, see Chapter~\ref{chp:generalImp}. The API was extended while developing the refactorings mentioned above.
-}\begin{itemize}
-	\item \DIFadd{Functions that perform high level, common transformations, that many refactorings must do }\DIFaddend (e.g. \DIFdelbegin \DIFdel{"}\texttt{\DIFdel{a\_fun\_name}}%DIFAUXCMD
-\DIFdel{")
-	. 
+\DIFdel{would accept three arguments the target filename, the name of the target function, and the desired new name. This command generator's first parameter is a condition that always returns true because any file is a valid target for renaming. The second parameter is another condition that checks if the function name matches is in camel case format (e.g. "}\texttt{\DIFdel{aFunName}}%DIFAUXCMD
+\DIFdel{"). The final parameter is generated by taking the second parameter and modifying it so that the name is in the corresponding "snake case" format (e.g. "}\texttt{\DIFdel{a\_fun\_name}}%DIFAUXCMD
+\DIFdel{"). 
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{The DSL also allows decision making to occur during the execution of a composite refactoring. Composite refactorings are transactional and can be either atomic or non-atomic. Atomic composite refactorings require each component refactoring to be successfully applied before continuing onto the next refactoring. If a single refactoring fails inside of an atomic composite refactoring the entire refactoring fails and the program remains unchanged. When a single refactoring fails inside of a non-atomic composite refactoring, correspondingly, the entire refactoring will not fail and continue by trying the next refactoring in the sequence. The Wrangler DSL allows for refactorings to described as atomic and non-atomic sections at each level.  
 }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\subsection{\DIFdel{ROTOR}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < \subsection{ROTOR}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -5612,8 +5718,7 @@ g. "}\texttt{\DIFdel{aFunName}}%DIFAUXCMD
 \addtocounter{footnote}{-1}%DIFAUXCMD
 \DIFdel{the first refactoring tool to target OCaml~\mbox{%DIFAUXCMD
 \citep{rotor}}\hspace{0pt}%DIFAUXCMD
-. Language features of OCaml provide some unique challenges for a refactoring tool. 
-	In OCaml one module may be included in another so that , for example, when renaming the function }\texttt{\DIFdel{f}} %DIFAUXCMD
+. Language features of OCaml provide some unique challenges for a refactoring tool. In OCaml one module may be included in another so that, for example, when renaming the function }\texttt{\DIFdel{f}} %DIFAUXCMD
 \DIFdel{in module }\texttt{\DIFdel{A}} %DIFAUXCMD
 \DIFdel{but }\texttt{\DIFdel{A}} %DIFAUXCMD
 \DIFdel{is included in module }\texttt{\DIFdel{B}} %DIFAUXCMD
@@ -5626,56 +5731,41 @@ g. "}\texttt{\DIFdel{aFunName}}%DIFAUXCMD
 \DIFdel{An opportunity of the ROTOR project is that it has an partner in industry, Jane Street Capital. ROTOR is using the core library}\footnote{%DIFDELCMD < \url{https://github.com/janestreet/core}%%%
 } %DIFAUXCMD
 \addtocounter{footnote}{-1}%DIFAUXCMD
-\DIFdelend \DIFaddbegin \DIFadd{wrapping a syntax element in parentheses)
-	}\item \DIFadd{Functions for retrieving particular syntax elements from the abstract syntax tree of }\DIFaddend an \DIFdelbegin \DIFdel{"industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
- }\DIFdelend \DIFaddbegin \DIFadd{entire module such as getting the body of a function based on a position. 
-	}\item \DIFadd{Functions that aid in working with ghc-exactprint and the parsed GHC abstract syntax tree's annotations. These functions provide functionality such as changing the location of a syntax element relative to the prior syntax element or adding new annotations to a syntax element.
-}\end{itemize}	  
-\end{itemize}
-\DIFaddend 
+\DIFdel{an "industrial strength" version of the OCaml standard library as a test bed for testing the refactoring tool.
+ }%DIFDELCMD < 
 
-\DIFdelbegin \section{\DIFdel{Novel applications of Refactoring}}%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
-%DIFDELCMD < \label{otherTools}
+%DIFDELCMD < \section{Novel applications of Refactoring}%DIFDELCMD < \label{otherTools}%%%
+%DIFDELCMD < 
+
 %DIFDELCMD < %%%
-\DIFdelend \DIFaddbegin \section{\DIFadd{The GHC Tooling Ecosystem}}
-
-\DIFadd{The focus of the refactorings described in this theis are the changes they make to the data that the target programs use; any structural changes that occur during the transformation are incidental. Despite not being the focus of this thesis, a great deal of effort had to go into understanding the state of the GHC tooling ecosystem and how to rewrite GHC Haskell to produce it. This section will summarize my experience with the current state of the program transformation ecosystem of GHC.
-}\DIFaddend 
-
-\DIFdelbegin \DIFdel{Though automated refactoring was originally developed for the object-oriented language Smalltalk~\mbox{%DIFAUXCMD
+\DIFdel{Though automated refactoring was originally developed for the object-oriented language Smalltalk~\mbox{%DIFAUXCMD
 \citep{refactoringBrowser} }\hspace{0pt}%DIFAUXCMD
 there has been recent work on building tools that refactor things that are not traditional programming languages. This section with briefly talk about two novel applications of refactoring, spreadsheets and wikis.
 }%DIFDELCMD < 
 
+%DIFDELCMD < \subsection{Spreadsheet refactoring}
 %DIFDELCMD < %%%
-\subsection{\DIFdel{Spreadsheet refactoring}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
-\DIFdel{Spreadsheets are a widely used tool in industry, with 13 million end users that are estimated to }\DIFdelend \DIFaddbegin \DIFadd{I began working on HaRe when the latest version of GHC was 7.6 (At the time of writing it is 8.4.3). At this point all comments, whitespace information, and the positioning of many special characters were completely eliminated from the parsed abstract syntax. To preserve the layout of source files HaRe had to generate a separate tree structure that contained all the tokens that were not represented by the AST and some whitespace information. When it came time to print the modified source the AST and this token tree needed to }\DIFaddend be \DIFdelbegin \DIFdel{"programming" with spreadsheets or databases in 2012; this figure dwarfs 3 million professional programmers at that time~\mbox{%DIFAUXCMD
+\DIFdel{Spreadsheets are a widely used tool inindustry, with 13 million end users that are estimated to be "programming" with spreadsheets or databases in 2012; this figure dwarfs 3 million professional programmers at that time~\mbox{%DIFAUXCMD
 \citep{endUsers}}\hspace{0pt}%DIFAUXCMD
 . Spreadsheets can also exhibit "bad smells" much like the code smells described by Fowler. End-users are also able to detect "spreadsheet smells" and agree that these patterns should be avoided~\mbox{%DIFAUXCMD
 \citep{spreadsheetSmells}}\hspace{0pt}%DIFAUXCMD
 . This indicates that even though it isn't a traditional form of programming, spreadsheets are a valid target for refactoring.
-}\DIFdelend \DIFaddbegin \DIFadd{combined for the output to be formatted correctly. 
-}\DIFaddend 
+}%DIFDELCMD < 
 
-\DIFdelbegin \DIFdel{BumbleBee is a refactoring tool whose grammar is built from the grammer for Excel formulas~\mbox{%DIFAUXCMD
+%DIFDELCMD < %%%
+\DIFdel{BumbleBee is a refactoring tool whose grammar is built from the grammer for Excel formulas~\mbox{%DIFAUXCMD
 \citep{bumblebee}}\hspace{0pt}%DIFAUXCMD
 . Many spreadsheet users have no formal programming training so creating a language that would be familiar to them is important. The grammar of BumbleBee consists of two Excel formulas associated by a "$\leftrightarrow$" operator that indicates the two formula can be transformed into each other.
-}\DIFdelend \DIFaddbegin \DIFadd{A major addition to the utility of the GHC API came with the release of GHC 7.10. With this release the GHC parser would now return the location of all comments and tokens that had been previously discarded, in a separate structure as part of the the parsed syntax tree. This implementation allowed compiler stages that depended on the parsed AST to remain unchanged because the new structure could be ignored. This addition to the GHC also coincided with the release of ghc-exactprint,}\footnote{\DIFadd{This is not coincidental. Alan Zimmerman is the programmer behind both the modification to the GHC and the ghc-exactprint library.}} \DIFadd{which was described in Section~\ref{ghcExactprint}. This library made transforming Haskell code much easier because it allowed the formatting to be done with relative positioning instead of absolute locations. Ghc-exactprint also greatly simplified the development of the common transformation library that was added to HaRe as a part of this thesis work. 
-}\DIFaddend 
+}%DIFDELCMD < 
 
-\DIFdelbegin \begin{displaymath} \DIFdel{A1+A2+A3 \leftrightarrow SUM(A1:A3) }\end{displaymath}
+%DIFDELCMD < %%%
+\begin{displaymath} \DIFdel{A1+A2+A3 \leftrightarrow SUM(A1:A3) }\end{displaymath}
 %DIFAUXCMD
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdel{The previous example means that adding together the cells A1}\DIFdelend \DIFaddbegin \DIFadd{In the short time that I have been a part of the Haskell tooling community it has grown and changed a great deal. The GHC has been changed specifically to better support tool builders, notable examples of this are~\mbox{%DIFAUXCMD
-\cite{apiAnns} }\hspace{0pt}%DIFAUXCMD
-and~\mbox{%DIFAUXCMD
-\cite{treesThatGrow}}\hspace{0pt}%DIFAUXCMD
-. There is also an initiative to create a pluginable editor interface for Haskell}\DIFaddend , \DIFdelbegin \DIFdel{A2, and A3 could be replaced by a call to the $SUM$ function. BumbleBee also has metavariables that stand in for certain constructs from the Excel language. A "$C$" represents a cell, "$R$" a range, and "$P$" a constant. The following example transforms a sum over any range divided by the length of that range into a call to the average function over the same range. }%DIFDELCMD < 
+\DIFdel{The previous example means that adding together the cells A1, A2, and A3 could be replaced by a call to the $SUM$ function. BumbleBee also has metavariables that stand in for certain constructs from the Excel language. A "$C$" represents a cell, "$R$" a range, and "$P$" a constant. The following example transforms a sum over any range divided by the length of that range into a call to the average function over the same range.
+}%DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \begin{displaymath} \DIFdel{SUB(R)/COUNT(R) \leftrightarrow AVERAGE(R) }\end{displaymath}
@@ -5683,20 +5773,19 @@ and~\mbox{%DIFAUXCMD
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdel{Finally BumbleBee allows for cells to be referenced in the form ${i,j}$ and cells can be connected into groups with the "$...$" operator. This enables the following transformation rule that replaces a chain of sums to be replaced with a single call to $SUM$}\DIFdelend \DIFaddbegin \DIFadd{haskell-ide-engine}\footnote{\url{https://github.com/haskell/haskell-ide-engine}} \DIFadd{so that a Haskell environment can be easily incorporated into many different editors and IDEs and tool developers only have to target the ide engine plugin system. The future of Haskell tooling is looking very bright! And in particular this makes adding HaRe to other IDEs that much easier}\DIFaddend . 
-
-\DIFdelbegin \begin{displaymath} \DIFdel{\{i,j\} + ... + \{m,n\} \leftrightarrow SUM(\{i,j\}:\{m,n\}) }\end{displaymath}
-%DIFAUXCMD
-\DIFdelend \DIFaddbegin \subsection{\DIFadd{Challenges of Working with the GHC API}}
-\DIFaddend 
-
-\DIFdelbegin \DIFdel{The goal of this syntax is to allow user familiar with Excel but not another programming language to be able to create their own translations. BumbleBee is implemented as an add on for Excel so users can work with it in a familiar environment.
+\DIFdel{Finally BumbleBee allows for cells to be referenced in the form ${i,j}$ and cells can be connected into groups with the "$...$" operator. This enables the following transformation rule that replaces a chain of sums to be replaced with a single call to $SUM$.
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\subsection{\DIFdel{Wiki refactoring}}
+\begin{displaymath} \DIFdel{\{i,j\} + ... + \{m,n\} \leftrightarrow SUM(\{i,j\}:\{m,n\}) }\end{displaymath}
 %DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < 
+
+%DIFDELCMD < %%%
+\DIFdel{The goal of this syntax is to allow user familiar with Excel but not another programming language to be able to create their own translations. BumbleBee is implemented as an add on for Excel so users can work with it in a familiar environment.
+}%DIFDELCMD < 
+
+%DIFDELCMD < \subsection{Wiki refactoring}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -5704,8 +5793,8 @@ and~\mbox{%DIFAUXCMD
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdel{Refactoring a wiki is a surprisingly difficult task. Beyond just the content of an article there is also the history of changes to that article and }\DIFdelend \DIFaddbegin \DIFadd{Working with the GHC API is not without its challenges however. The structure of }\DIFaddend the \DIFdelbegin \DIFdel{"talk" page where users can discuss about the content of an article. A refactoring needs to preserve two key properties of the wiki, authorship independence and readership independence. Authorship independence means that a refactoring will preserve the attribution of content to the original author(s).
-Readership independence implies that a refactoring will not alter the content of }\DIFdelend \DIFaddbegin \DIFadd{abstract syntax is very complex and spread across several modules. The core types of }\DIFaddend the \DIFdelbegin \DIFdel{wiki, a refactoring will only change how content is distributed throughout the wiki. }%DIFDELCMD < 
+\DIFdel{Refactoring a wiki is a surprisingly difficult task. Beyond just the content of an article there is also the history of changes to that article and the "talk" page where users can discuss about the content of an article. A refactoring needs to preserve two key properties of the wiki, authorship independence and readership independence. Authorship independence means that a refactoring will preserve the attribution of content to the original author(s). Readership independence implies that a refactoring will not alter the content of the wiki, a refactoring will only change how content is distributed throughout the wiki.
+}%DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{Splitting an article into two is a common refactoring that needs to take place, common enough that Wikipedia documents the process.}\footnote{%DIFDELCMD < \url{http://en.wikipedia.org/wiki/Wikipedia:Splitting}%%%
@@ -5737,8 +5826,7 @@ Readership independence implies that a refactoring will not alter the content of
 \citep{wikiWhirl}}\hspace{0pt}%DIFAUXCMD
 . WikiWhirl is built on top of FreeMind an open source mind mapping tool~\mbox{%DIFAUXCMD
 \citep{freeMind}}\hspace{0pt}%DIFAUXCMD
-. Mind mapping is a method of visualizing the relationships between pieces of  hierarchical information. WikiWhirl represents a wiki as a mind map and users can then refactor the wiki using this view (see figure~\ref{wikiwhirl}). 
-}%DIFDELCMD < 
+. Mind mapping is a method of visualizing the relationships between pieces of  hierarchical information. WikiWhirl represents a wiki as a mind map and users can then refactor the wiki using this view (see figure~\ref{wikiwhirl}). }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{WikiWhirl currently supports eight refactorings. They are:
@@ -5776,21 +5864,18 @@ Readership independence implies that a refactoring will not alter the content of
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdel{Both wikis and spreadsheets are common data formats that deal with the same "smell" and quality issues that software projects experience. The difference between software development and these applications is that the users of the latter will not necessarily be technology professionals. Refactoring tools for wikis and spreadsheets have to be usable by laypeople not just software engineers}\DIFdelend \DIFaddbegin \DIFadd{tree are represented by many constructors, the expression type for example, }\texttt{\DIFadd{HsExpr}}\DIFadd{, contains 51 different constructors as of GHC 8. This amount of complexity makes a generic programming library a mandatory prerequisite for working with the abstract syntax tree}\DIFaddend . 
+\DIFdel{Both wikis and spreadsheets are common data formats that deal with the same "smell" and quality issues that software projects experience. The difference between software development and these applications is that the users of the latter will not necessarily be technology professionals. Refactoring tools for wikis and spreadsheets have to be usable by laypeople not just software engineers. 
+}%DIFDELCMD < 
 
-\DIFdelbegin \section{\DIFdel{Refactoring to introduce parallelism}}%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
-%DIFDELCMD < \label{refacParallel}
+%DIFDELCMD < \section{Refactoring to introduce parallelism}%DIFDELCMD < \label{refacParallel}%%%
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{The reasons to refactor source code have also expanded beyond code quality. This section will describe two different projects that have developed refactorings to change the execution of a program from single to multi-threaded. Functional programming languages are well suited to parallel execution due to immutability by default and in some languages (such as Erlang) first class concurrency features. This section will first describe the ``ParaForming'' which uses refactoring to introduce parallel abstractions into Haskell code, then it will describe work done to refactor Erlang code to introduce algorithmic skeletons.
 }%DIFDELCMD < 
 
+%DIFDELCMD < \subsection{ParaForming}  
 %DIFDELCMD < %%%
-\subsection{\DIFdel{ParaForming}}  
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
 \DIFdel{ParaForming is an approach to construct parallel programs from an existing program using software refactoring~\mbox{%DIFAUXCMD
 \citep{paraforming}}\hspace{0pt}%DIFAUXCMD
 . The ParaForming work targets Glasgow parallel Haskell (GpH), an extension to Haskell, and is implemented in HaRe. Parallelism is added to programs in GpH using strategies (see figure~\ref{strategy}). 
@@ -5852,7 +5937,7 @@ Readership independence implies that a refactoring will not alter the content of
 \DIFdel{using}\footnote{\DIFdel{The (}\texttt{\DIFdel{using :: a -> Strategy a -> a}}%DIFAUXCMD
 \DIFdel{) function just evaluates some expression with the given strategy.}} %DIFAUXCMD
 \addtocounter{footnote}{-1}%DIFAUXCMD
-\DIFdelend \DIFaddbegin \DIFadd{Fortunately for tool builders the number of types and constructors that represent the vast majority of ``standard'' Haskell code is much more limited. However, determining which constructors you need to target for any given transformation can be very tedious: in }\DIFaddend the \DIFdelbegin \texttt{\DIFdel{parList rdeepseq}} %DIFAUXCMD
+\DIFdelend \DIFaddbegin \DIFadd{Unlike the other refactorings developed for this thesis this transformation has a long history in }\DIFaddend the \DIFdelbegin \texttt{\DIFdel{parList rdeepseq}} %DIFAUXCMD
 \DIFdel{strategy. The }\texttt{\DIFdel{parlist}}%DIFAUXCMD
 \footnote{\texttt{\DIFdel{parlist :: Strategy a -> Strategy }%DIFDELCMD < [%%%
 \DIFdel{a}%DIFDELCMD < ]%%%
@@ -5861,10 +5946,11 @@ Readership independence implies that a refactoring will not alter the content of
 \addtocounter{footnote}{-1}%DIFAUXCMD
 \DIFdel{function evaluates each element of a list in parallel according to a given strategy and }\texttt{\DIFdel{rdeepseq}} %DIFAUXCMD
 \DIFdel{is the strategy the fully evaluates its argument. 
-  }\DIFdelend \DIFaddbegin \DIFadd{author's experience this process involves looking at numerous printouts of abstract syntax trees. 
-}\DIFaddend 
+  }%DIFDELCMD < 
 
-\DIFdelbegin \DIFdel{The refactored program in figure~\ref{eulerPar1} is highly parallel but not very efficient because the parallelism is too fine grained. Another refactoring can help in this case instead of sparking every element of a list another strategy can be introduced, one that separates the list into "chunks" and each of the chunks of the list is executed in parallel. This refactoring adds an additional argument to the function that determines how many chunks the list will be split into,as seen in figure~\ref{eulerChunk}. }%DIFDELCMD < 
+%DIFDELCMD < %%%
+\DIFdel{The refactored program in figure~\ref{eulerPar1} is highly parallel but not very efficient because the parallelism is too fine grained. Another refactoring can help in this case instead of sparking every element of a list another strategy can be introduced, one that separates the list into "chunks" and each of the chunks of the list is executed in parallel. This refactoring adds an additional argument to the function that determines how many chunks the list will be split into, as seen in figure~\ref{eulerChunk}.
+  }%DIFDELCMD < 
 
 %DIFDELCMD < \begin{figure}[t]
 %DIFDELCMD < \begin{lstlisting}%DIFDELCMD < 
@@ -5886,17 +5972,13 @@ Readership independence implies that a refactoring will not alter the content of
 outlines a refactoring that can make recursive calls happen in parallel.
 }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\subsection{\DIFdel{Cost-Directed Parallel Refactoring}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < \subsection{Cost-Directed Parallel Refactoring}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{The previous section touched on one of the big challenges of parallel programming, determining the correct level of parallelism to achieve maximum performance. \mbox{%DIFAUXCMD
 \citep{parallelErl} }\hspace{0pt}%DIFAUXCMD
-describes a methodology to introduce algorithmic skeletons into Erlang programs using the Erlang refactoring tool Wrangler. In addition to introducing a skeleton this work provides cost models that estimate the performance of the program after adding each skeleton. 
-This estimate helps a programmer make an informed decision about what parallelisation strategy is the best for a particular program. 
+describes a methodology to introduce algorithmic skeletons into Erlang programs using the Erlang refactoring tool Wrangler. In addition to introducing a skeleton this work provides cost models that estimate the performance of the program after adding each skeleton. This estimate helps a programmer make an informed decision about what parallelisation strategy is the best for a particular program. 
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -5915,13 +5997,10 @@ be used to estimate the speed up that different skeletons could provide.
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdel{Parallelisation can be tedious anddifficult to do which makes it a good candidate for tool assistance. A refactoring tool can guide a programmer through the process of parallelisation. Much like how the data-driven refactorings have multiple small changes are required before the entire process can be considered ``finished'' changing a program to run in parallel is also a sequence of several smaller changes.
+\DIFdel{Parallelisation can be tedious and difficult to do which makes it a good candidate for tool assistance. A refactoring tool can guide a programmer through the process of parallelisation. Much like how the data-driven refactorings have multiple small changes are required before the entire process can be considered ``finished'' changing a program to run in parallel is also a sequence of several smaller changes.
 }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\section{\DIFdel{ApplicativeDo}}%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
-%DIFDELCMD < \label{applicativeDo}
+%DIFDELCMD < \section{ApplicativeDo}%DIFDELCMD < \label{applicativeDo}%%%
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -5932,9 +6011,7 @@ be used to estimate the speed up that different skeletons could provide.
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\DIFdelend \DIFaddbegin \DIFadd{This situation could be improved by centralising information for GHC tool builders. Currently the Haskell wiki hosts a single page ``GHC/As a library'' that gives a few examples of how to run the various stages over a single file~\mbox{%DIFAUXCMD
-\citep{ghcAsALibrary}}\hspace{0pt}%DIFAUXCMD
-. This is a fine general introduction to working with the GHC API but it does not contain many details about working with the abstract syntax or projects. }\DIFaddend The \DIFdelbegin \DIFdel{under-utilisation of applicatives in Haskellhas not gone un-noticed; \mbox{%DIFAUXCMD
+\DIFdelend \DIFaddbegin \DIFadd{Haskell programming community. }\DIFaddend The \DIFdelbegin \DIFdel{under-utilisation of applicatives in Haskell has not gone un-noticed; \mbox{%DIFAUXCMD
 \citep{applicativeDo}}\hspace{0pt}%DIFAUXCMD
 , reimplement the way Haskell desugars do notation so that applicatives will be supported by do notation as well. 
 }%DIFDELCMD < 
@@ -5975,37 +6052,37 @@ be used to estimate the speed up that different skeletons could provide.
 
 %DIFDELCMD < %%%
 \DIFdel{The }\textit{\DIFdel{ApplicativeDo}} %DIFAUXCMD
-\DIFdel{algorithm will attempt to insert as many applies into the expression as possible. When the implementation of }\DIFdelend \DIFaddbegin \DIFadd{GHC developer wiki}\footnote{\url{https://ghc.haskell.org/trac/ghc/}} \DIFadd{does contain a great deal of detail about the inner workings of but it is not well organised or easy to find, and a lot of }\DIFaddend the \DIFdelbegin \texttt{\DIFdel{Applicative}} %DIFAUXCMD
+\DIFdel{algorithm will attempt to insert as many applies into the expression as possible. When the implementation of }\DIFdelend \DIFaddbegin \DIFadd{design space for this refactoring had already been extensively covered in~(\mbox{%DIFAUXCMD
+\cite{lammelReuse}}\hspace{0pt}%DIFAUXCMD
+;~\mbox{%DIFAUXCMD
+\cite{monadification}}\hspace{0pt}%DIFAUXCMD
+;~\mbox{%DIFAUXCMD
+\cite{clausMonadResponse}}\hspace{0pt}%DIFAUXCMD
+). Rather than producing an additional style of monadification the contribution of this chapter is the implementation of a practical monadification refactoring based on }\DIFaddend the \DIFdelbegin \texttt{\DIFdel{Applicative}} %DIFAUXCMD
 \DIFdel{instance evaluates the two arguments of apply in parallel, better performance can be achieved by adding more applies. 
-}\DIFdelend \DIFaddbegin \DIFadd{material there is not directly relevent to tool builders. A centeralised source of Haskell tool building information would help guide people new to the field greatly.
-}\DIFaddend 
-
-\DIFdelbegin \DIFdel{There could be multiple ways to desugar a particular function. The }\textit{\DIFdel{applicativeDo}} %DIFAUXCMD
-\DIFdel{algorithm first assumes that every expression have an identical time cost, from this assumption the algorithm heuristically determines the desugaring with the shortest execution time.
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\section{\DIFdel{Program transformations}}%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
-%DIFDELCMD < \label{typeTrans}
+\DIFdel{There could be multiple ways to desugar a particular function. The }\textit{\DIFdel{applicativeDo}} %DIFAUXCMD
+\DIFdel{algorithm first assumes that every expression have an identical time cost, from this assumption the algorithm heuristically determines the desugaring with the shortest execution time.
+}%DIFDELCMD < 
+
+%DIFDELCMD < \section{Program transformations}%DIFDELCMD < \label{typeTrans}%%%
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{Refactoring is a type of program transformation but it does not constitute the whole field. A major difference between refactoring and other types of program transformations is scope that a refactoring must be aware of. Program transformations typically focus on just the algorithm whereas refactorings must take into account the broader effects a transformation has on a codebase and the context that programs exist in. Additionally the target program of a refactoring needs to be readable, maintainable, and keep proper layout and user comments. Other types of program transformation don't typically have these concerns. This section will describe some of the program transformation work most relevant to this thesis. First it will describe the type and transform system developed by~\mbox{%DIFAUXCMD
 \citep{typeAndTransformSemantics}}\hspace{0pt}%DIFAUXCMD
-. Next there will be a discussion of the previous methods of monadification found in the literature. 
+. Next there will be a discussion of the previous methods of monadificationfound in the literature. 
 }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\subsection{\DIFdel{Type and transform systems}}
-%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
+%DIFDELCMD < \subsection{Type and transform systems}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
 \DIFdel{The type-and-transform system described in~\mbox{%DIFAUXCMD
 \citep{typeAndTransformSemantics} }\hspace{0pt}%DIFAUXCMD
-is a system for a semantics preserving and type changing program transformations over the typed lambda calculus with let polymorphism. The type-and-transform system is limited to isomorphic types , there must be a way to convert between the two types and back again as described in figure~\ref{transformIso}.
+is a system for a semantics preserving and type changing program transformations over the typed lambda calculus with let polymorphism. The type-and-transform system is limited to isomorphic types, there must be a way to convert between the two types and back again as described in figure~\ref{transformIso}.
 }%DIFDELCMD < 
 
 %DIFDELCMD < \begin{figure}[t]
@@ -6036,10 +6113,7 @@ is a system for a semantics preserving and type changing program transformations
 \DIFdel{This work emphasises formalisation and its correctness and the work is done in the context of the lambda calculus rather than a full programming language. There is a Haskell implementation of their system but it is only a prototype though they state that they want to expand this work to work with Haskell however this has not been published yet.
 }%DIFDELCMD < 
 
-%DIFDELCMD < %%%
-\subsection{\DIFdel{Automatic Monadification}}%DIFAUXCMD
-\addtocounter{subsection}{-1}%DIFAUXCMD
-%DIFDELCMD < \label{erwigMonad}
+%DIFDELCMD < \subsection{Automatic Monadification}%DIFDELCMD < \label{erwigMonad}%%%
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
@@ -6072,89 +6146,102 @@ monadification is performed in two steps. First the program is transformed into 
 \DIFdel{Once the program has been converted into A-normal a let expression of the form $ let x = t1 in t2 $ is transformed into $ t1 >>= \lambda x. t2 $. If the right hand side of the lambda isn't already a monadic type then }\texttt{\DIFdel{return}} %DIFAUXCMD
 \DIFdel{will be introduced, e.g. $ t1 >>= \lambda x. return~~t2 $. The full transformation is given by inference rules in~\mbox{%DIFAUXCMD
 \citep{lammelReuse}}\hspace{0pt}%DIFAUXCMD
-.
-}%DIFDELCMD < 
+}\DIFdelend \DIFaddbegin \DIFadd{styles of monadification, from~\mbox{%DIFAUXCMD
+\cite{clausMonadResponse}}\hspace{0pt}%DIFAUXCMD
+, and algorithms for introducing them provided by (\mbox{%DIFAUXCMD
+\cite{lammelReuse}}\hspace{0pt}%DIFAUXCMD
+;~\mbox{%DIFAUXCMD
+\cite{monadification}}\hspace{0pt}%DIFAUXCMD
+)}\DIFaddend .
 
-%DIFDELCMD < %%%
-\DIFdel{Monadification is developed further by~\mbox{%DIFAUXCMD
+\DIFdelbegin \DIFdel{Monadification is developed further by~\mbox{%DIFAUXCMD
 \citep{monadification}}\hspace{0pt}%DIFAUXCMD
 . This work provides an algorithm for restricted call-by-value monadification as opposed to the semantics style inference rules defined in~\mbox{%DIFAUXCMD
 \citep{lammelReuse}}\hspace{0pt}%DIFAUXCMD
 . This work targets the lambda calculus extended with case and let expressions. The algorithm from~\mbox{%DIFAUXCMD
 \citep{monadification} }\hspace{0pt}%DIFAUXCMD
-is very similar to the one implemented in HaRe. It has the same precondition where every call to a monadified function must be fully saturated and it produces the same style of monadification. 
-A prototype implementation of this method was produced.
+is very similar to the one implemented in HaRe. It has the same precondition where every call to a monadified function must be fully saturated and it produces the same style of monadification. A prototype implementation of this method was produced.
 }%DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\chapter{\DIFdel{Conclusion}}
-%DIFAUXCMD
-\addtocounter{chapter}{-1}%DIFAUXCMD
-%DIFDELCMD < \label{chp:conc}
+\DIFdelend \chapter{Conclusion}
+\label{chp:conc}
+
+\DIFdelbegin %DIFDELCMD < \section{Summary of Contributions}
 %DIFDELCMD < 
 
 %DIFDELCMD < %%%
-\section{\DIFdel{Summary of Contributions}}
-%DIFAUXCMD
-\addtocounter{section}{-1}%DIFAUXCMD
-%DIFDELCMD < 
+\DIFdelend This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow \DIFdelbegin \DIFdel{programs to be used }\DIFdelend \DIFaddbegin \DIFadd{code to be re-used }\DIFaddend in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} \DIFdelbegin \DIFdel{typeclass doesn't }\DIFdelend \DIFaddbegin \DIFadd{type class does not }\DIFaddend force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
 
-%DIFDELCMD < %%%
-\DIFdel{This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are }\textit{\DIFdel{driven}} %DIFAUXCMD
-\DIFdel{by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow programs to be used in more places (e. g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the }\texttt{\DIFdel{Applicative}} %DIFAUXCMD
-\DIFdel{typeclass doesn't force sequential evaluation of the arguments to apply (}\texttt{\DIFdel{<*>}}%DIFAUXCMD
-\DIFdel{) like bind (}\texttt{\DIFdel{>>=}}%DIFAUXCMD
-\DIFdel{), the monad operation, does .
-}%DIFDELCMD < 
+\DIFaddbegin \DIFadd{These refactorings are all designed to help programmers redesign the data their programs use and manipulate. It has been shown in the literature that as programmers make structural decisions the implementation of their programs technical debt can build up, and this debt can only be paid through rewriting and/or refactoring~(\mbox{%DIFAUXCMD
+\cite{techDebt} }\hspace{0pt}%DIFAUXCMD
+and~\mbox{%DIFAUXCMD
+\cite{fowler}}\hspace{0pt}%DIFAUXCMD
+). The core idea behind this thesis is that the data representation decisions that are also made during program development also accrue debt, and that refactoring is a valid and simple way to pay off this type of technical debt.  
+}
 
-%DIFDELCMD < %%%
-\DIFdel{The primary artifacts of this work are my contributions to HaRe and its API. In particular the following contributions have been made:
-}%DIFDELCMD < 
+\section{Summary of Contributions}
 
-%DIFDELCMD < \begin{itemize}
-\begin{itemize}%DIFAUXCMD
-%DIFDELCMD < \item %%%
-\item%DIFAUXCMD
-\DIFdel{The design and implementation of a set of data-driven refactorings in HaRe. These refactorings are:
-	}%DIFDELCMD < \begin{itemize}
-%DIFDELCMD < 		\item %%%
-\item%DIFAUXCMD
-\DIFdel{Introduce a Type Synonym, section~\ref{introSyn}
-		}%DIFDELCMD < \item %%%
-\item%DIFAUXCMD
-\DIFdel{Generalise Maybe to MonadPlus/Monad, section~\ref{maybeMonadPlus} and chapter~\ref{generalImp}
-		}%DIFDELCMD < \item %%%
-\item%DIFAUXCMD
-\DIFdel{List to Hughes List, section~\ref{listToDlist} and chapter~\ref{generalImp}
-		}%DIFDELCMD < \item %%%
-\item%DIFAUXCMD
-\DIFdel{Generalise Monad to Applicative, chapter~\ref{chp:applicative}
-		}%DIFDELCMD < \item %%%
-\item%DIFAUXCMD
-\DIFdel{Monadification	, chapter~\ref{chp:monadification}	
-	}
-\end{itemize}%DIFAUXCMD
-%DIFDELCMD < \end{itemize}
-%DIFDELCMD < \item %%%
-\DIFdel{An API for the creation of embeddable types refactorings, chapter~\ref{generalImp}
-}%DIFDELCMD < \item %%%
-\DIFdel{Enhancements and additions to HaRe's API, see chapter~\ref{generalImp}. The API was extended while developing the refactorings mentioned above.
-}%DIFDELCMD < \begin{itemize}
-\begin{itemize}%DIFAUXCMD
-%DIFDELCMD < 	\item %%%
-\item%DIFAUXCMD
-\DIFdel{Functions that perform high level, common transformations, that many refactorings must do (e.g. wrapping a syntax element in parenthesis)
+\DIFaddend The primary artifacts of this \DIFdelbegin \DIFdel{work }\DIFdelend \DIFaddbegin \DIFadd{thesis }\DIFaddend are my contributions to HaRe and its API. In particular the following contributions have been made:
+
+\begin{itemize}
+\item The design and implementation of a set of data-driven refactorings in HaRe. These refactorings are:
+	\begin{itemize}
+		\item Introduce a Type Synonym, \DIFdelbegin \DIFdel{section}\DIFdelend \DIFaddbegin \DIFadd{Section}\DIFaddend ~\ref{introSyn}
+		\item Generalise Maybe to MonadPlus/Monad, \DIFdelbegin \DIFdel{section}\DIFdelend \DIFaddbegin \DIFadd{Section}\DIFaddend ~\ref{maybeMonadPlus} and \DIFdelbegin \DIFdel{chapter~\ref{generalImp}
+		}\DIFdelend \DIFaddbegin \DIFadd{Chapter~\ref{chp:generalImp}
+		}\DIFaddend \item List to Hughes List, \DIFdelbegin \DIFdel{section}\DIFdelend \DIFaddbegin \DIFadd{Section}\DIFaddend ~\ref{listToDlist} and chapter~\DIFdelbegin \DIFdel{\ref{generalImp}
+		}\DIFdelend \DIFaddbegin \DIFadd{\ref{chp:generalImp}
+		}\DIFaddend \item Generalise Monad to Applicative, \DIFdelbegin \DIFdel{chapter~\ref{chp:applicative}		
 	}%DIFDELCMD < \item %%%
 \item%DIFAUXCMD
-\DIFdel{Functions for retrieving particular syntax elements from the tree of an entire module such as getting the body of a function based on a position. }%DIFDELCMD < \item %%%
-\item%DIFAUXCMD
-\DIFdel{Functions that aid in working with ghc-exactprint and the annotations such as changing the location of a syntax element relative to the prior syntax element or adding new annotations to a syntax element.
+\DIFdel{Monadification	, chapter~\ref{chp:monadification}	
+}\DIFdelend \DIFaddbegin \DIFadd{Chapter~\ref{chp:applicative}		
+	}\DIFaddend \end{itemize}
+\item \DIFaddbegin \DIFadd{The implementation of Monadification, Chapter~\ref{chp:monadification}	
+}\item \DIFaddend An API for the creation of embeddable types refactorings, chapter~\DIFdelbegin \DIFdel{\ref{generalImp}
+}\DIFdelend \DIFaddbegin \DIFadd{\ref{chp:generalImp}
+}\DIFaddend \item Enhancements and additions to HaRe's API, see \DIFdelbegin \DIFdel{chapter~\ref{generalImp}}\DIFdelend \DIFaddbegin \DIFadd{Chapter~\ref{chp:generalImp}}\DIFaddend . The API was extended while developing the refactorings mentioned above.
+\begin{itemize}
+	\item Functions that perform high level, common transformations, that many refactorings must do (e.g. wrapping a syntax element in \DIFdelbegin \DIFdel{parenthesis}\DIFdelend \DIFaddbegin \DIFadd{parentheses}\DIFaddend )
+	\item Functions for retrieving particular syntax elements from the \DIFaddbegin \DIFadd{abstract syntax }\DIFaddend tree of an entire module such as getting the body of a function based on a position. 
+	\item Functions that aid in working with ghc-exactprint and the \DIFdelbegin \DIFdel{annotations }\DIFdelend \DIFaddbegin \DIFadd{parsed GHC abstract syntax tree's annotations. These functions provide functionality }\DIFaddend such as changing the location of a syntax element relative to the prior syntax element or adding new annotations to a syntax element.
+\end{itemize}	  
+\end{itemize}
+\DIFaddbegin 
+
+\section{The GHC Tooling Ecosystem}
+
+\DIFadd{The focus of the refactorings described in this theis are the changes they make to the data that the target programs use; any structural changes that occur during the transformation are incidental. Despite not being the focus of this thesis, a great deal of effort had to go into understanding the state of the GHC tooling ecosystem and how to rewrite GHC Haskell to produce it. This section will summarize my experience with the current state of the program transformation ecosystem of GHC.
 }
-\end{itemize}%DIFAUXCMD
-%DIFDELCMD < \end{itemize}	  
-%DIFDELCMD < \end{itemize}
-%DIFDELCMD < %%%
-\DIFdelend \section{Future Work}
+
+\DIFadd{I began working on HaRe when the latest version of GHC was 7.6 (At the time of writing it is 8.4.3). At this point all comments, whitespace information, and the positioning of many special characters were completely eliminated from the parsed abstract syntax. To preserve the layout of source files HaRe had to generate a separate tree structure that contained all the tokens that were not represented by the AST and some whitespace information. When it came time to print the modified source the AST and this token tree needed to be combined for the output to be formatted correctly. 
+}
+
+\DIFadd{A major addition to the utility of the GHC API came with the release of GHC 7.10. With this release the GHC parser would now return the location of all comments and tokens that had been previously discarded, in a separate structure as part of the the parsed syntax tree. This implementation allowed compiler stages that depended on the parsed AST to remain unchanged because the new structure could be ignored. This addition to the GHC also coincided with the release of ghc-exactprint,}\footnote{\DIFadd{This is not coincidental. Alan Zimmerman is the programmer behind both the modification to the GHC and the ghc-exactprint library.}} \DIFadd{which was described in Section~\ref{ghcExactprint}. This library made transforming Haskell code much easier because it allowed the formatting to be done with relative positioning instead of absolute locations. Ghc-exactprint also greatly simplified the development of the common transformation library that was added to HaRe as a part of this thesis work. 
+}
+
+\DIFadd{In the short time that I have been a part of the Haskell tooling community it has grown and changed a great deal. The GHC has been changed specifically to better support tool builders, notable examples of this are~\mbox{%DIFAUXCMD
+\cite{apiAnns} }\hspace{0pt}%DIFAUXCMD
+and~\mbox{%DIFAUXCMD
+\cite{treesThatGrow}}\hspace{0pt}%DIFAUXCMD
+. There is also an initiative to create a pluginable editor interface for Haskell, haskell-ide-engine}\footnote{\url{https://github.com/haskell/haskell-ide-engine}} \DIFadd{so that a Haskell environment can be easily incorporated into many different editors and IDEs and tool developers only have to target the ide engine plugin system. The future of Haskell tooling is looking very bright! And in particular this makes adding HaRe to other IDEs that much easier. 
+}
+
+\subsection{Challenges of Working with the GHC API}
+
+\DIFadd{Working with the GHC API is not without its challenges however. The structure of the abstract syntax is very complex and spread across several modules. The core types of the tree are represented by many constructors, the expression type for example, }\texttt{\DIFadd{HsExpr}}\DIFadd{, contains 51 different constructors as of GHC 8. This amount of complexity makes a generic programming library a mandatory prerequisite for working with the abstract syntax tree. 
+}
+
+\DIFadd{Fortunately for tool builders the number of types and constructors that represent the vast majority of ``standard'' Haskell code is much more limited. However, determining which constructors you need to target for any given transformation can be very tedious: in the author's experience this process involves looking at numerous printouts of abstract syntax trees. 
+}
+
+\DIFadd{This situation could be improved by centralising information for GHC tool builders. Currently the Haskell wiki hosts a single page ``GHC/As a library'' that gives a few examples of how to run the various stages over a single file~\mbox{%DIFAUXCMD
+\citep{ghcAsALibrary}}\hspace{0pt}%DIFAUXCMD
+. This is a fine general introduction to working with the GHC API but it does not contain many details about working with the abstract syntax or projects. The GHC developer wiki}\footnote{\url{https://ghc.haskell.org/trac/ghc/}} \DIFadd{does contain a great deal of detail about the inner workings of but it is not well organised or easy to find, and a lot of the material there is not directly relevent to tool builders. A centeralised source of Haskell tool building information would help guide people new to the field greatly.
+}
+
+\DIFaddend \section{Future Work}
 This work and HaRe can be extended in multiple ways. Development on HaRe is ongoing and will continue for the foreseeable future. 
 
 \textit{\textbf{Reimplement Refactorings}} - When HaRe was updated to work with GHC the original implementations of the refactorings were no longer valid using the new back-end. An important task in the near future will be to go back an reimplement the refactorings that are currently not supported in HaRe.  
@@ -6175,11 +6262,15 @@ This work and HaRe can be extended in multiple ways. Development on HaRe is ongo
 
 \textit{\textbf{Template language for refactoring}} - A powerful feature of Wrangler is its template language~\citep{letsUser}. This allows for Wrangler refactorings to be defined using concrete Erlang syntax rather than the abstract syntax, lowering the difficulty in implementing refactorings significantly for programmers not familiar with the Erlang backend. A similar feature for HaRe would allow refactorings to be written without having to understand the syntax tree of GHC. Template Haskell is a template language for Haskell and is built into the GHC. \DIFaddbegin \DIFadd{A significant amount of time while developing this thesis was spent exploring if Template Haskell and it's related feature, Quasiquotation ~\mbox{%DIFAUXCMD
 \citep{quasi}}\hspace{0pt}%DIFAUXCMD
-, could be used to develop a template language for refactoring Haskell. }\DIFaddend Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}.
-\DIFaddbegin 
+, could be used to develop a template language for refactoring Haskell. }\DIFaddend Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}\DIFaddbegin \DIFadd{.
+}
 
-\textit{\textbf{\DIFadd{Data-Driven refactorings for other languages}}} \DIFadd{- The data-driven refactorings presented in this thesis lean heavily on the types that 
-}\DIFaddend 
+\textit{\textbf{\DIFadd{Data-Driven refactorings for other languages}}} \DIFadd{- The data-driven refactorings presented in this thesis lean heavily on the types that Haskell provides and how they are used by the Haskell community. Data-driven refactorings for other programming languages would be very different from the refactorings presented in this thesis. The refactorings related to Applicative Functors and Monads are much less useful for other langauges as they are a fairly unique feature of Haskell.}\footnote{\DIFadd{Haskell's }\textit{\DIFadd{purity}} \DIFadd{requires some way to handle effects and monads are the primary way this is handled in Haskell. However, nothing prevents monads from being adopted in any language that supports parameterised types they are just less useful in an effectful language.}} \DIFadd{Data-driven refactorings for other statically typed functional languages such as OCaml or Scala would be an interesting topic to explore further because of how different these langauges are from Haskell.
+}
+
+\DIFadd{Every programming language requires developers to make decisions about the representation of data. These representations will accrue technical debt just like any other part of a program. Programs must be rewritten to pay back this debt, therefore the data representations of a program will need to be rewritten throughout a programs development. This thesis has presented several refactorings that help Haskell programmers change how the data is represented within their programs}\DIFaddend . 
+
+
 
 
 \bibliography{main}

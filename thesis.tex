@@ -381,7 +381,7 @@ Chapter~\ref{chp:monadification} describes the monadification refactoring. Monad
 
 \textbf{Chapter~\ref{chp:conc}: Conclusion}
 
-The final chapter summarises the work done for this thesis and the contributions it has made. It concludes with a discussion of future work that could be performed on HaRe.
+The final chapter summarises the work done for this thesis and the contributions it has made. There is also a discussion of the current Haskell tooling ecosystem, the challenges currently facing Haskell tool builders, and how they could be tackled. It concludes with a discussion of future work that could be performed on HaRe.
 
 \section{Contributions of this Research}
 
@@ -391,7 +391,7 @@ The work in this thesis was carried out in HaRe. This study focused on adding ad
 	\item Extending the HaRe API to better support data-driven refactorings. These refactorings are complex and require more information from the abstract syntax of GHC than prior refactorings in HaRe. The contributions to the API were focused on analysis of the types of nodes and creating a higher level interface for common small expression level transformations. These changes are described in Chapter~\ref{chp:generalImp}.
 	\item The design and implementation of the ``generalise maybe'' and ``list to Hughes list'' refactoring, described in Chapters~\ref{chp:ddRefs} and ~\ref{chp:generalImp}. The ``generalise maybe'' refactoring is a way of taking a concrete effect and turning it into an abstract one so that it can be instantiated in multiple ways. The ``list to Hughes list'' refactoring describes a way to rewrite  a program's data model to use a different type with a similar interface.
 	\item The design and implementation of the ``generalise monads to applicative'' refactoring, Chapter~\ref{chp:applicative}. Effects in Haskell are typically handled using monads, a powerful abstraction that allows the type system to check the type of the effects that are being performed by a program. Since the introduction of monads the Haskell community has developed more fine-grained approaches to effect handling. This refactoring allows software systems to handle effects using the applicative as opposed to the monadic interface.
-	\item The design and implementation of the ``monadification'' refactoring, see Chapter~\ref{chp:monadification}. Monadification is the process of making a program work over a monadic type rather than a pure one. This refactoring supports the evolution of pure programs to effectful ones.
+	\item The implementation of the ``monadification'' refactoring, see Chapter~\ref{chp:monadification}. Monadification is the process of making a program work over a monadic type rather than a pure one. This refactoring supports the transformation of pure programs to effectful ones.
 \end{itemize}
 
 
@@ -1214,9 +1214,9 @@ One refactoring that does need to reference the typed syntax tree fairly heavily
 
 \section{Summary}
 
-The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe\footnote{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: \url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} and some of its notable dependencies was the focus of this chapter.
+The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe\footnote{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: \url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} and some of its notable dependencies was the focus of this chapter. 
 
-Next this thesis will begin to describe its major contribution: the design and implementation of data-driven refactorings. The next chapter will begin the discussion of what is a data-driven refactoring and some simple refactoring designs.
+The next chapter will begin to describe the major contribution of this thesis: the design and implementation of data-driven refactorings. The next chapter will begin the discussion of what is a data-driven refactoring and some simple refactoring designs.
 
 \chapter{Data-driven refactorings}
 \label{chp:ddRefs}
@@ -4105,7 +4105,11 @@ eval (Assign x e) env = do
 
 Introducing the do syntactic sugar into the target program is the final step of this two-step composite refactoring. Do syntax has become synonymous with monads in the Haskell language and a refactoring that supports them should also support this syntax as well.
 
+\section{Summary}
+
 Monads are a challenging and characteristic feature of Haskell and, anecdotally at least, infamous amongst those trying to learn the language. Monadification is an important and common transformation that Haskell code undergoes. This chapter has described two refactorings that automate this transformation. The monadification refactoring transforms a set of functions into restricted call-by-value monad style, where only the result type of a function is made monadic. The second refactoring sugars the binds produced by the monadification into \texttt{do} notation, a common structure for monadic Haskell functions.
+
+Unlike the other refactorings developed for this thesis this transformation has a long history in the Haskell programming community. The design space for this refactoring had already been extensively covered in~(\cite{lammelReuse};~\cite{monadification};~\cite{clausMonadResponse}). Rather than producing an additional style of monadification the contribution of this chapter is the implementation of a practical monadification refactoring based on the styles of monadification, from~\cite{clausMonadResponse}, and algorithms for introducing them provided by (\cite{lammelReuse};~\cite{monadification}).
 
 \chapter{Conclusion}
 \label{chp:conc}
@@ -4124,9 +4128,9 @@ The primary artifacts of this thesis are my contributions to HaRe and its API. I
 		\item Introduce a Type Synonym, Section~\ref{introSyn}
 		\item Generalise Maybe to MonadPlus/Monad, Section~\ref{maybeMonadPlus} and Chapter~\ref{chp:generalImp}
 		\item List to Hughes List, Section~\ref{listToDlist} and chapter~\ref{chp:generalImp}
-		\item Generalise Monad to Applicative, Chapter~\ref{chp:applicative}
-		\item Monadification	, Chapter~\ref{chp:monadification}	
+		\item Generalise Monad to Applicative, Chapter~\ref{chp:applicative}		
 	\end{itemize}
+\item The implementation of Monadification, Chapter~\ref{chp:monadification}	
 \item An API for the creation of embeddable types refactorings, chapter~\ref{chp:generalImp}
 \item Enhancements and additions to HaRe's API, see Chapter~\ref{chp:generalImp}. The API was extended while developing the refactorings mentioned above.
 \begin{itemize}
@@ -4164,9 +4168,6 @@ This work and HaRe can be extended in multiple ways. Development on HaRe is ongo
 \textit{\textbf{Template language for refactoring}} - A powerful feature of Wrangler is its template language~\citep{letsUser}. This allows for Wrangler refactorings to be defined using concrete Erlang syntax rather than the abstract syntax, lowering the difficulty in implementing refactorings significantly for programmers not familiar with the Erlang backend. A similar feature for HaRe would allow refactorings to be written without having to understand the syntax tree of GHC. Template Haskell is a template language for Haskell and is built into the GHC. A significant amount of time while developing this thesis was spent exploring if Template Haskell and it's related feature, Quasiquotation ~\citep{quasi}, could be used to develop a template language for refactoring Haskell. Unfortunately Template Haskell uses it's own abstract syntax for Haskell code which makes it difficult to use for refactoring GHC Haskell. However, there is a plan to change this though it is not finished yet~\citep{ghcTreesGrow}.
 
 \textit{\textbf{Data-Driven refactorings for other languages}} - The data-driven refactorings presented in this thesis lean heavily on the types that Haskell provides and how they are used by the Haskell community. Data-driven refactorings for other programming languages would be very different from the refactorings presented in this thesis. The refactorings related to Applicative Functors and Monads are much less useful for other langauges as they are a fairly unique feature of Haskell.\footnote{Haskell's \textit{purity} requires some way to handle effects and monads are the primary way this is handled in Haskell. However, nothing prevents monads from being adopted in any language that supports parameterised types they are just less useful in an effectful language.} Data-driven refactorings for other statically typed functional languages such as OCaml or Scala would be an interesting topic to explore further because of how different these langauges are from Haskell.
-
-Every programming language requires developers to make decisions about the representation of data. These representations will accrue technical debt just like any other part of a program. Programs must be rewritten to pay back this debt, therefore the data representations of a program will need to be rewritten throughout a programs development. This thesis has presented several refactorings that help Haskell programmers change how the data is represented within their programs. 
-
 
 
 
