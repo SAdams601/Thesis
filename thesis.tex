@@ -201,7 +201,6 @@ Finally I must thank Rosemary for her love and support. You have supported me th
 
 \chapter{Introduction}\label{chp:intro}
 
-The introductory chapter of this thesis will begin with a brief discussion of functional programming and the Haskell programming language. Next will be a very high level overview of refactoring with a focus on refactoring functional programming languages in particular. Finally this chapter concludes with an outline of the remainder of this thesis.
 
 \section{Functional Programming}
 Functional programming is a programming paradigm that focuses on data values as described by expressions which are built from function applications and definitions~\citep{elementsOfFunc}.  Functions in this case are closely related to the idea of mathematical functions. What qualifies a programming language as functional is debatable but several concepts are often included in languages that are described as functional. 
@@ -224,20 +223,114 @@ f x y = case x > 0 of
 \label{lazyY}
 \end{figure}
 
-Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads represent computations, which when run will have effects as well as producing a result. A principle topic of this thesis is refactoring to support patterns of computation related to Monads and other related structures. 
+Haskell is also a pure language. Purity is the idea that functions cannot perform actions in addition to returning values. These additional actions are known as side-effects. Haskell allows for traditionally side-effect causing operations (IO, state, etc.) through the use of monads. Monads represent computations, which when run will have effects as well as producing a result. A principle topic of this thesis is refactoring to support patterns of computation related to Monads and other related structures.
+
+\subsection{User defined types in Haskell}
+
+All high level programming languages come with some predefined set of types and, typically, some way for users to define new types. In Haskell new types can be introduced with the \texttt{data} keyword. Figure~\ref{simpleDataTy} shows a simple data type, \texttt{Choice}. There are only two different values a \texttt{Choice} can be, \texttt{Yes} or \texttt{No}, these are the \textit{constructors} of \texttt{Choice}. 
+
+
+
+\begin{figure}[t]
+\begin{lstlisting}
+data Choice = Yes | No
+\end{lstlisting}
+\caption{A simple data type that models a yes/no choice.}
+\label{simpleDataTy}
+\end{figure}
+
+Data types can also extend existing Haskell types. Returning to the \texttt{Choice} example maybe we want to be able to store some text along with a \texttt{Yes} to explain why this choice was made. This modified definition of \texttt{Choice} is shown in Figure~\ref{stringChoice}. Now a call to the \texttt{Yes} constructor needs to be passed some value of type \texttt{String} to construct a value of type \texttt{Choice}. 
+
+  \begin{figure}[t]
+\begin{lstlisting}
+data Choice = Yes String | No
+\end{lstlisting}
+\caption{\texttt{Yes} \texttt{Choice}s now contain a string as well.}
+\label{stringChoice}
+\end{figure}
+
+Haskell allows you to take this one step further however. The creator of a type does not need to specify exactly which types will be stored within the new type, this means that types can be \textit{parameterized}. Figure~\ref{choiceParam} shows a version of \texttt{Choice} where the \texttt{Yes} choices can contain any type \texttt{a}. This is known as parametric polymorphism~\citep{haskellWikiPolymorphism}. This type of polymorphism allows users to effectively reuse their types again and again without having to redefine them every time a new ``inner'' type is needed.
+
+  \begin{figure}[t]
+\begin{lstlisting}
+data Choice a = Yes a | No
+\end{lstlisting}
+\caption{\texttt{Yes} \texttt{Choice}s can now hold any other type.}
+\label{choiceParam}
+\end{figure}
+
+\subsection{Type classes}
+
+Now that we have seen how users of Haskell can define their own data types, and how types can be defined in a generic way, making the definitions applicable to a whole set of arguments. Haskell is a functional language  so a natural next question is to wonder that, if we can define types that are generic in some ways, can the same be said of functions? The answer is yes, this is what type classes do for Haskell.
+
+A type class allows a user to define a set of functions and/or constant names and their types. Then definitions of these functions and constants can be given for specific types. Figure~\ref{choiceEq} shows the type class for \texttt{Eq} which describes what it means for types to have a notion of equality. Figure~\ref{choiceEq} also shows how the definition of \texttt{Choice} from Figure~\ref{choiceParam} implements the \texttt{Eq} type class. The ``\texttt{(Eq a) =>}'' clause in the instance declaration is a constraint on the type of \texttt{a}. This means that for a \texttt{Choice} to be ``\texttt{Eq}-able'' \texttt{a} must be as well.
+
+\begin{figure}[t]
+\begin{lstlisting}
+class Eq a where
+   (==) :: a -> a -> Bool
+   (/=) :: a -> a -> Bool
+	
+instance (Eq a) => Eq (Choice a) where
+   Yes x == Yes y = x == y
+   No == No = True
+   _ == _ = False
+	
+   c1 /= c2 = not (c1 == c2) 
+\end{lstlisting}
+\caption{The \texttt{Eq} type class and \texttt{Choice}'s implementation of it.}
+\label{choiceEq}
+\end{figure}
+
+Haskell gives its users very powerful tools to help construct their own types and define those types' properties. These tools allow for many powerful concepts to be defined abstractly making them reusable. One of the more well known abstract concepts of the Haskell language are monads which are the subject of the next section.
+
+\subsection{Monads}
+
+Monads are a type class used to represent ``composable computation descriptions''~\citep{haskellWikiMonad}. Haskell uses monads to augment pure computations with features that other languages would allow as side effects such as state or I/O. Haskell has a built in monad type class, whose declaration is shown in Figure~\ref{monadTC}. Instances of monad need to implement two functions: \texttt{return} which will create a monadic computation that will produce its parameter and \texttt{>>=} (which is pronounced bind). Bind's first argument is some monadic value with a result of type \texttt{a} and its second argument is a function that takes in a value of type \texttt{a} and returns another monadic value that computes a result of type \texttt{b}. Bind computes the result of type \texttt{a} from the monadic value it was given in its first argument and passes that value to the function it received as its second argument. This description of bind only applies when its first argument is capable of computing some result or when the monad instance does not need to perform any additional tasks. This is the great power of monads as an abstraction, because bind can be implemented in almost any way\footnote{All instances of monad should abide by the three monad laws~\citep{wadler1995Monads}} it can act as a way to specify how a particular set of computations are performed. 
+
+The \texttt{Choice} type that was defined in the previous section is really just a copy of the \texttt{Maybe} type which is commonly used to represent computations that may fail or return a result. Instead of \texttt{Yes} and \texttt{No} \texttt{Maybe}'s constructors are \texttt{Just} and \texttt{Nothing} respectively. \texttt{Maybe} is a monad and in its case bind is used to cause a chain of computations to return \texttt{Nothing} if one of the steps of the computation fail. This allows for functions that could potentially fail to return a result to be composed without having to check if their parameter is a \texttt{null} value. Figure~\ref{maybeChain} shows this in practice. Each of the \texttt{f\_} functions can be written with the assumption that their parameter exists, only the top level function, \texttt{g}, needs to check if the \texttt{chain} function has failed.
+
+\begin{figure}[t]
+	\begin{lstlisting}
+	class Applicative m => Monad m where
+	return :: a -> m a
+	(>>=)  :: forall a b. m a -> (a -> m b) -> m b
+	\end{lstlisting}
+	\caption{The \texttt{Monad} type class declaration}
+	\label{monadTC}
+\end{figure}
+
+\begin{figure}[t]
+	\begin{lstlisting}
+		chain :: a -> Maybe a
+		chain a = f_1 a >>= f_2 >>= f_3 >>= f_4
+		
+		g a = case (chain a) of
+			(Just b) -> putStrLn ("Got value: " ++ (show b))
+			Nothing -> putStrLn "Something went wrong"
+	\end{lstlisting}
+	\caption{A chain of functions composed using bind. Each \texttt{f\_} function is of type \texttt{a -> Maybe a}}
+	\label{maybeChain}
+\end{figure}
+
+Monads are a powerful abstraction but it is also useful to further categorise monads that exhibit different properties. Haskell comes with type classes, that inherit from \texttt{Monad}, and that categorise additional features monads can have, such as failure (\texttt{MonadFail}) or failure and recovery (\texttt{MonadPlus})~\citep{typeclassopedia}. \texttt{MonadPlus} is a type class that represents the type of computations that may fail and also provide some way of choosing between possibly failed computations. 
+
+In addition to the type classes that further categorise monads, monads themselves inherit from other more general types: functors and applicative functors. Functors are the set of types that can mapped over, in the case of lists the values can be transformed to another value by mapping some function over the list. Applicative functors are the set of types that can have sequential actions performed over them. Applicative functors will be discussed in more detail in Chapter~\ref{chp:applicative}. 
+
+The Haskell community has built a large system of types around monad for representing all different sorts of computations. This system of types provides a fertile environment for data-driven refactorings, the topic of this thesis.
 
 \section{Refactoring} 
-Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was first coined in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}; \cite{performanceRestructuring}). Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}.
+Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was first coined in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}; \cite{performanceRestructuring}). 
 
-Behaviour preservation is what separates refactoring from other types of program manipulation. This idea of functionality preservation means that refactoring will not introduce new bugs or eliminate old ones. To prevent semantic changes after refactoring, many refactorings have non-trivial preconditions~\citep{mens2002formalising}. For example, the renaming refactoring should check that the new name being introduced does not cause a name clash with a name already used in the source program.
+Behaviour preservation is what separates refactoring from other types of program manipulation. This idea of behaviour preservation is that refactoring will not introduce new bugs or eliminate old ones. To prevent semantic changes after refactoring, many refactorings have non-trivial preconditions~\citep{mens2002formalising}. For example, the refactoring that renames an item (such as a function or variable) should check that the new name being introduced does not cause a name clash with a name already used in the source program.
 
-Manual refactoring is tedious and error prone because changes to small portions of code may require system-wide changes. When deleting a parameter from a function, for example, every call site of that function also needs to be modified, and missing even a single call site will cause an error. Refactoring by hand depends on high testing coverage to ensure that functionality is preserved~\citep{fowler}. This means that tools that can automatically perform refactorings and ensure that preconditions are met are highly desirable.
+Manual refactoring can be tedious and error prone because changes to small portions of code may require system-wide changes. When deleting a parameter from a function, for example, every call site of that function also needs to be modified, and missing even a single call site will cause an error. Refactoring by hand depends on high testing coverage to ensure that functionality is preserved~\citep{fowler}. This means that tools that can automatically perform refactorings and ensure that preconditions are met are highly desirable.
 
 \subsection{Functional refactoring}
 
-Refactoring a functional language has a few key differences from refactoring an imperative language. The higher-order nature of functional languages means that any sub-expression of a function is a candidate for generalisation whereas in other languages the types of parameters and results is limited. This means that functional refactorings can target The semantics of functional languages also allow for more comprehensive checking of preconditions based on the static semantics of the language~\citep{refacTools}.
+Refactoring a functional language has a few key differences from refactoring an imperative language. The higher-order nature of functional languages means that any sub-expression of a function is a candidate for generalisation whereas in other languages the types of parameters and results are limited. This means that functional refactorings can target much more of the source program's abstract syntax tree. The semantics of functional languages also allow for more comprehensive checking of preconditions based on the static semantics of the language~\citep{refacTools}.
 
-It is also not unusual for functional refactorings to be substantially different than their object-oriented (OO) counterparts. For example creating a case statement from a multi-equation function definition in a functional language versus inlining a virtual method as a case statement in an OO language require substantially different program manipulations~\citep{huiqingThesis}. Additionally there can be refactorings with no OO counterpart, monadification, the introduction of monadic types into otherwise pure code, for instance.
+It is also not unusual for functional refactorings to be substantially different than their object-oriented (OO) counterparts. For example creating a \texttt{case} statement from a multi-equation function definition in a functional language versus inlining virtual methods into a \texttt{case} statement in an OO language require substantially different program manipulations~\citep{huiqingThesis}. The first refactoring, the inlining of a multi-equation function, involves moving the pattern matches from each of the target function's equations to the left hand side patterns of the new \texttt{case} expression. The object oriented refactoring needs to look up all of the implementations of the virtual method, inline their bodies into the new target method, and build a case statement that switches depending on which concrete type the new method is called invoked in. Both of these refactorings are consolidating some conditional logic into a single function,\footnote{If we consider methods to be functions that happen to be associated with a particular object.} but the syntax elements that need to traversed and constructed to build the target program are very different. Additionally there can be refactorings with no OO counterpart, monadification the introduction of monadic types into otherwise pure code for instance.
 
 \section{Summary}
 
@@ -300,6 +393,9 @@ The work in this thesis was carried out in HaRe. This study focused on adding ad
 	\item The design and implementation of the ``generalise monads to applicative'' refactoring, Chapter~\ref{chp:applicative}. Effects in Haskell are typically handled using monads, a powerful abstraction that allows the type system to check the type of the effects that are being performed by a program. Since the introduction of monads the Haskell community has developed more fine-grained approaches to effect handling. This refactoring allows software systems to handle effects using the applicative as opposed to the monadic interface.
 	\item The design and implementation of the ``monadification'' refactoring, see Chapter~\ref{chp:monadification}. Monadification is the process of making a program work over a monadic type rather than a pure one. This refactoring supports the evolution of pure programs to effectful ones.
 \end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
