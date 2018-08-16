@@ -176,11 +176,13 @@
 \begin{preface}
 \section{Abstract}
 
-Refactoring is the process of changing the internal structure of a program without changing its external behaviour. The goal of performing refactorings is to increase code quality. However, refactoring by hand is time consuming and error-prone. This makes automated refactoring tools very useful.
+Agile software development allows for software to evolve slowly over time. Decisions made during the early stages of a program's lifecycle often come with a cost in the form of technical debt. Technical debt is the concept that reworking a program that is implemented in a naive or ``easy'' way, is often more difficult than changing the behaviour of a more robust solution. Refactoring is one of the primary ways to reduce technical debt.
 
-Agile software development allows for software to evolve slowly over time. This evolution changes how a program processes, abstracts over, and views its data. This evolution, though necessary, comes with the cost of technical debt. As technical debt increases changes to a code base become more difficult. Refactoring is one of the primary ways to  reduce technical debt. 
+Refactoring is the process of changing the internal structure of a program without changing its external behaviour. The goal of performing refactorings is to increase code quality, maintainability, and extensibility of the source program. Performing refactorings manually is time consuming and error-prone. This makes automated refactoring tools very useful.
 
-There exist refactorings that specifically help software to evolve its data model, however these refactorings are specific to the object-oriented programming paradigm. Haskell is a strongly typed, pure functional programming language. Haskell's rich type system allows for complex and powerful data models and abstractions. This thesis reports on work done to design and automate refactorings that help Haskell programmers develop and evolve these abstractions.
+Haskell is a strongly typed, pure functional programming language. Haskell's rich type system allows for complex and powerful data models and abstractions. These abstractions and data models are an important part of Haskell programs. This thesis argues that these parts of a program accrue technical debt, and that refactoring is an important technique to reduce this type of technical debt.
+
+Refactorings exist that tackle issues with a program's data model, however these refactorings are specific to the object-oriented programming paradigm. This thesis reports on work done to design and automate refactorings that help Haskell programmers develop and evolve these abstractions.
 
 This work also discussed the current design and implementation of HaRe (the \textit{Ha}skell \textit{Re}factorer). HaRe now supports the Glasgow Haskell Compiler's implementation of the Haskell 2010 standard and its extensions, and uses some of GHC's internal packages in its implementation. 
 
