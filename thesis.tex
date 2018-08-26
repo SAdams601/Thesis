@@ -205,15 +205,15 @@ Finally I must thank Rosemary for her love and support. You have supported me th
 
 
 \section{Functional Programming}
-Functional programming is a programming paradigm that focuses on data values as described by expressions which are built from function applications and definitions~\citep{elementsOfFunc}.  Functions in this case are closely related to the idea of mathematical functions. What qualifies a programming language as functional is debatable but several concepts are often included in languages that are described as functional. 
+Functional programming is a programming paradigm that focuses on data values as described by expressions which are built from function applications and definitions~\citep{elementsOfFunc}.  Functions in this case are closely related to the idea of mathematical functions. What qualifies a programming language as functional is debatable but several concepts are often included in languages that are described as functional such as immutability and first class functions.
 
-First class functions mean that functions are allowed to be treated like any other data type. First class functions can be passed to or returned from from other ``higher-order'' functions. Iteration is accomplished through recursion rather than via looping. There is also a heavy emphasis on functions remaining ``pure,'' that is without side effects; though functional languages do provide ways to use IO or state, it is emphasised that functions should remain pure if at all possible. Haskell's type system allows for effectful computations to be contained within monad types.
+An immutable language is one where once some value has been created it cannot be modified. First class functions mean that functions are allowed to be treated like any other data type. First class functions can be passed to or returned from from other ``higher-order'' functions. Iteration is accomplished through recursion rather than via looping. There is also a heavy emphasis on functions remaining ``pure,'' that is without side effects; though functional languages do provide ways to use IO or state, it is emphasised that functions should remain pure if at all possible. Haskell's type system allows for effectful computations to be contained within monadic types.
   
 \section{Haskell}
 \label{haskell}
-Haskell is a statically typed, lazily evaluated, pure functional language. Haskell also supports Hindley-Milner type inference(\cite{hindley};\cite{milner}). Type inference means that Haskell programs do not need the type of every top level binding to be explicitly provided by the programmer. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define and use their own types.
+Haskell is a statically typed, lazily evaluated, pure functional language. Haskell also supports Hindley-Milner type inference~(\cite{hindley};~\cite{milner}). Type inference means that Haskell programs do not need the type of every top level binding to be explicitly provided by the programmer. Types will be~\textit{inferred} at compilation time so that every part of a Haskell program's type is known at that time. Haskell's type system also allows users to define and use their own types.
 
-Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is the list containing all of the natural numbers. 
+Lazy evaluation, also known as call-by-need~\citep{wadsworth}, means that Haskell expressions are not evaluated when they are passed as a parameter to a function, but rather when that value is used. For example, in the Haskell function \texttt{f}, in Figure~\ref{lazyY}, the parameter y will never be evaluated. Lazy evaluation is more nuanced than call-by-name style parameter passing. Composite data types will be evaluated only as much as required to allow the computation to continue. This allows for both partial and infinite data types, for example \texttt{[1..]} is the list containing all of the natural numbers. 
 
 \begin{figure}[t]
 \begin{lstlisting}
@@ -322,13 +322,13 @@ In addition to the type classes that further categorise monads, monads themselve
 The Haskell community has built a large system of types around monad for representing all different sorts of computations. This system of types provides a fertile environment for data-driven refactorings, the topic of this thesis.
 
 \section{Refactoring} 
-Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was first coined in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature(\cite{highSpeedRestructuring}; \cite{performanceRestructuring}). 
+Refactoring is the process of changing a program without changing its behaviour. This is done to improve its internal structure~\citep{fowler}. The term refactoring was first coined in~\citep{programRestructuring} and these ideas expanded to the object-oriented paradigm in~\citep{refactOOFrameworks}. Martin Fowler's 1999 book ``Refactoring'' has become the canonical reference for object-oriented refactorings~\citep{fowler}. People have been performing refactoring for much longer and it was called ``program restructuring'' in the literature~(\cite{highSpeedRestructuring};~\cite{performanceRestructuring}). 
 
 Behaviour preservation is what separates refactoring from other types of program manipulation. This idea of behaviour preservation is that refactoring will not introduce new bugs or eliminate old ones. To prevent semantic changes after refactoring, many refactorings have non-trivial preconditions~\citep{mens2002formalising}. For example, the refactoring that renames an item (such as a function or variable) should check that the new name being introduced does not cause a name clash with a name already used in the source program.
 
 Manual refactoring can be tedious and error prone because changes to small portions of code may require system-wide changes. When deleting a parameter from a function, for example, every call site of that function also needs to be modified, and missing even a single call site will cause an error. Refactoring by hand depends on high testing coverage to ensure that functionality is preserved~\citep{fowler}. This means that tools that can automatically perform refactorings and ensure that preconditions are met are highly desirable.
 
-\subsection{Functional refactoring}
+\subsection{Refactoring Functional Languages}
 
 Refactoring a functional language has a few key differences from refactoring an imperative language. The higher-order nature of functional languages means that any sub-expression of a function is a candidate for generalisation whereas in other languages the types of parameters and results are limited. This means that functional refactorings can target much more of the source program's abstract syntax tree. The semantics of functional languages also allow for more comprehensive checking of preconditions based on the static semantics of the language~\citep{refacTools}.
 
@@ -336,7 +336,7 @@ It is also not unusual for functional refactorings to be substantially different
 
 \section{Summary}
 
-One of the most widely accepted best practices in software development is the concept of incremental change, an essential concept of both the extreme programming and agile software development philosophies (\cite{extremeProg}; \cite{agileManifesto}). Refactoring remains a key step in this incremental development process to preventing technical debt from causing development to slow to a crawl.
+One of the most widely accepted best practices in software development is the concept of incremental change, an essential concept of both the extreme programming and agile software development philosophies~(\cite{extremeProg};~\cite{agileManifesto}). Refactoring remains a key step in this incremental development process to preventing technical debt from causing development to slow to a crawl.
 
 Much of the refactoring literature focuses on changes that need to be made to the structure of programs. The structure of a program is very important and structural refactorings can maintain the ``separation of concerns'' by extracting functions from existing definitions or ensuring that a program's names reflect what the program currently does. This thesis argues that it is just as important to maintain the ways that a program structures and evaluates the data it computes.
 
@@ -371,7 +371,7 @@ The ``generalising maybe'' refactoring (Section~\ref{genMaybe}) rewrites functio
 
 This chapter continues from the refactoring designs presented in chapter~\ref{chp:ddRefs} to describe HaRe's implementation of both the ``maybe to MonadPlus'' and the ``list to Hughes List'' refactorings. There is also be a discussion of the API that  supports the ``list to Hughes List'' refactoring and can be used to define further ``reversibly embeddable'' type refactorings. Finally this chapter will describe the enhancements made to HaRe's API, specifically the addition of high-level transformation functions.
 
-\textbf{Chapter~\ref{chp:applicative}: Generalising Monads to Applicative}
+\textbf{Chapter~\ref{chp:applicative}: Generalising Monadic code to Applicative Functors}
 
 This chapter presents another generalisation refactoring. Applicative functors are a, relatively, new addition to the Haskell environment. Applicative functors are an interface for sequencing effectful computations. Currently the Haskell community predominantly uses the monadic interface for effects. This chapter will describe the design and implementation of a refactoring for taking a monadic \texttt{do} statement and transforming it to use the \texttt{Applicative} (the Haskell type class for Applicative functors) interface instead.
 
@@ -787,7 +787,7 @@ Work on HaRe was initiated at the University of Kent. HaRe was started by Huiqin
 	
 	Chris Brown began the working on updating HaRe so that it could support all of GHC Haskell and not just Haskell 98. Since then development of HaRe has been lead by Alan Zimmerman; much of HaRe's current infrastructure is his work~\citep{hareCurrent}. He also contributes to several of HaRe's dependencies including GHC-Mod~\citep{ghcMod}, the current implementation of Strafunski-StrategyLib~\citep{strafunskiGit}, and he started ghc-exactprint~\citep{exactprint}.
 	
-	The contributions of this thesis are built on top of all of the work that has gone into making HaRe what it is today. This chapter will describe the implementation of HaRe beginning, in Section~\ref{hareOrig}, with a brief discussion of the original implementation of HaRe, and its dependencies such as Programatica~\citep{programatica}, a language frontend for Haskell 98, and Strafunski-StrategyLib~\citep{strafunski} a generic programming library. Next the chapter describes the current dependencies of HaRe beginning with Section~\ref{ghcApi}. This section describes the GHC API, the language frontend that is included with the GHC. HaRe now uses the GHC API for access to the internal representation of Haskell rather than a third-party library like Programmtica. In addition to Strafunski-StrategyLib HaRe's newer code also uses another generic programming library, \textit{Scrap Your Boilerplate} (SYB)~\citep{syb}. Section~\ref{genProg} describes how HaRe uses SYB to perform abstract syntax tree traversals and transformations. Section~\ref{ghcExactprint} describes, \textit{ghc-exactprint}, the pretty-printer HaRe uses to output the modified program~\citep{exactprint}. Finally the chapter concludes with a description of the current implementation of HaRe in Section~\ref{hareCurr}. For the purposes of this thesis the ``current'' implementation of HaRe is, as of this writing, version 0.8.4.1\footnote{\url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}}.
+	The contributions of this thesis are built on top of all of the work that has gone into making HaRe what it is today. This chapter will describe the implementation of HaRe beginning, in Section~\ref{hareOrig}, with a brief discussion of the original implementation of HaRe, and its dependencies such as Programatica~\citep{programatica}, a language frontend for Haskell 98, and Strafunski-StrategyLib~\citep{strafunski} a generic programming library. Next the chapter describes the current dependencies of HaRe beginning with Section~\ref{ghcApi}. This section describes the GHC API, the language frontend that is included with the GHC. HaRe now uses the GHC API for access to the internal representation of Haskell rather than a third-party library like Programmtica. In addition to Strafunski-StrategyLib HaRe's newer code also uses another generic programming library, \textit{Scrap Your Boilerplate} (SYB)~\citep{syb}. Section~\ref{genProg} describes how HaRe uses SYB to perform abstract syntax tree traversals and transformations. Section~\ref{ghcExactprint} describes, \textit{ghc-exactprint}, the pretty-printer HaRe uses to output the modified program~\citep{exactprint}. Next the chapter concludes with a description of the current implementation of HaRe in Section~\ref{hareCurr}, including a description of HaRe's API, how refactorings are currently implemented, and how HaRe makes use of the GHC API. For the purposes of this thesis the ``current'' implementation of HaRe is, as of this writing, version 0.8.4.1\footnote{\url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}}.
 
 \section{The original implementation of HaRe}
 \label{hareOrig}
@@ -1216,7 +1216,7 @@ One refactoring that does need to reference the typed syntax tree fairly heavily
 
 \section{Summary}
 
-The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The current implementation of HaRe\footnote{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: \url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} and some of its notable dependencies was the focus of this chapter. 
+The work done for this thesis was fortunate enough to be built upon the contributions of others who made HaRe and its dependencies. The focus of this chapter has been the current implementation of HaRe\footnote{Which for the purpose of this thesis is release v0.8.4.1 on GitHub: \url{https://github.com/RefactoringTools/HaRe/tree/4055ef45f0de3c966fd7841986ab0ed2ee814055}} and some of its notable dependencies.
 
 The next chapter will begin to describe the major contribution of this thesis: the design and implementation of data-driven refactorings. The next chapter will begin the discussion of what is a data-driven refactoring and some simple refactoring designs.
 
@@ -1227,7 +1227,7 @@ Some refactorings focus on rewriting the structure of a program (e.g. refactorin
 
 Consider the introducing a type synonym refactoring (that is described in  more detail in Section~\ref{introSyn}), this refactoring adds a type synonym, i.e. a user chosen name, for some type. The motivation behind this is to ensure that the names of types correspond to the types that they represent. For example, if some strings are used to represent customer names in a program, introducing a synonym for strings called \texttt{Name} helps clarify what kind of data certain strings are supposed to represent. In this way the refactoring's changes to the source program are motivated by the data in that program and the desire for the program's types to better communicate the nature of that data.
 
-This chapter covers, more specifically, what is meant by data-driven refactorings by example. It begins with a discussion of data-driven refactorings for imperative and object-oriented languages in Section~\ref{ooRefs}. Imperative programs are written as a sequence of steps that modify an object to a desired output state. Types in an object-oriented program exist in a strict hierarchy, every type is a sub-type of a top type commonly known as ``\texttt{Object}.'' These two factors mean that object-oriented data-driven refactorings modify the hierarchy, by moving methods between related classes or extracting new child or parent classes, while leaving the structure of the code mostly unchanged. The rest of this chapter will describe data-driven refactorings for functional programs.
+This chapter covers, more specifically, what is meant by data-driven refactorings by example. It begins with a discussion of data-driven refactorings for imperative and object-oriented languages in Section~\ref{ooRefs}. Imperative programs are written as a sequence of steps that modify values to a desired output state. Types in an object-oriented program exist in a strict hierarchy, every type is a sub-type of a top type commonly known as ``\texttt{Object}.'' These two factors mean that object-oriented data-driven refactorings modify the hierarchy, by moving methods between related classes or extracting new child or parent classes, while leaving the structure of the code mostly unchanged. The rest of this chapter will describe data-driven refactorings for functional programs.
 
 In comparison to imperative programs, functional programs describe the relationship between the input and output data. Functional programming languages also tend to offer a much richer type system than object-oriented languages where data types are typically either classes or a non-user expandable set of primitive types. These two facts mean that the structure of a functional program can be determined by the types it works over to a much greater degree than in imperative languages.
 
@@ -1265,7 +1265,7 @@ let mInt init_i = object
 
 The OCaml object from Figure~\ref{ocamlObj} would be a valid target for this refactoring. However these methods are not as common as they are in imperative object-oriented languages with mutable data as the default, so a refactoring to remove a setter method is of limited applicability even for OCaml.
 
-The second type of refactoring found in~\citep{fowler} is much more interesting to a functional programmer. The specifics of these refactorings are not directly applicable to functional programs but the underlying motivations are relevant to any programming paradigm. 
+The refactorings that could be adapted from~\cite{fowler} are much more interesting to a functional programmer. The specifics of these refactorings are not directly applicable to functional programs but the underlying motivations are relevant to any programming paradigm. 
 
 For example, the motivation for the "Replace Data Value with Object" refactoring in~\citep[pg. 175]{fowler} reads as:
 
@@ -1332,7 +1332,7 @@ class Customer {
 \label{custCls}
 \end{figure}
 
-Functional programmers have to make similar data representation decisions to those the object-oriented programmer. At the start of a project representing a customer by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction could be required. 
+Functional programmers have to make similar data representation decisions to those the object-oriented programmer make. At the start of a project representing a customer by their name could be reasonable. As the project develops this can become a serious limitation and a more robust abstraction could be required. 
 
 This section introduced how object-oriented refactorings help build up the data model over the lifetime of a project. These sorts of refactorings for a language with a rich type system like Haskell offer many more choices for evolving the data model of a system. Though a Haskell programmer can take inspiration or directly reimplement several of the canonical Fowler refactorings there may be additional refactorings that are completely functional with no OO counterparts, like monadification (Chapter~\ref{chp:monadification}) or abstraction of expressions into a local \texttt{where} or \texttt{let} clause. The rest of this chapter will describe refactorings for Haskell that support data model evolution.  
 
@@ -1347,7 +1347,7 @@ This section introduced how object-oriented refactorings help build up the data 
 
 Haskell offers a rich environment for data representation. The Haskell 2010 standard defines several types that are included in the prelude, including tuples, lists, characters, strings (which are just lists of characters), several types of numbers, and the function type. GHC also provides more types than the standard requires and programmers can construct new algebraic and abstract data types or rename existing types with type synonyms. Type classes support overloading as well. The standard library of GHC comes with many type classes that can help produce powerful abstractions~\citep{typeclassopedia}. Contrast this with how most object-oriented type systems are either unified, where every type is a subclass of some top level \texttt{Object} class, (e.g. C\# or Ruby) or there are a fixed set of predefined primitive types as well as the object hierarchy (e.g. C++ and Java's type systems). 
 
-These two different approaches to type systems both have pros and cons, which have sparked a vigorous (and quite possibly protracted) debate. The goal of this thesis is not to add to this debate, instead it is to build from a number of general principles that transcend the debate.
+These two different approaches to type systems both have pros and cons, which have sparked a vigorous (and quite protracted) debate. The goal of this thesis is not to add to this debate, instead it is to build from a number of general principles that transcend the debate.
 
 \begin{itemize}
 	\item Data representation is a language independent problem that must be answered in every project.
@@ -1387,7 +1387,7 @@ numberOfOrdersFor orders name = length (filter (\ord -> name == (customer ord)) 
 	\label{haskellOrder}
 \end{figure}
 
-The initial representation of a customer as just a \texttt{String} is underdeveloped. this representation of a customer only allows the system to store a single ``field'' of information per customer, as the system becomes more developed it will want to associate more information with a particular customer and this representation will need to change.
+The initial representation of a customer as just a \texttt{String} is underdeveloped. This representation of a customer only allows the system to store a single ``field'' of information per customer, as the system becomes more developed it will want to associate more information with a particular customer and this representation will need to change.
 
  Introducing a customer synonym is a simple step that sets up the code base for further development. The synonym will clearly mark which strings in the program stand for customers and which do not.
 
@@ -2725,9 +2725,6 @@ f <$> x = pure f <*> x
 \label{fmapLaw}
 \end{figure}
 
- 
-
-
 \section{The Applicative Programming Style}
 \label{sec:appProgStyle}
 
@@ -3549,7 +3546,7 @@ Another possible application of this refactoring is to parts of the code used to
 
 \section{Summary}
 
-This refactoring is another example of a generalisation refactoring that rewrites code to work with a type class. The previous examples of this type of refactoring, the Maybe to MonadPlus or the Maybe to Monad refactorings generalised a concrete type to one of its type classes. This refactoring can accept code from any instance of a type class and generalise it to use the operations from a superclass instead (assuming that code passes the preconditions of course). This refactoring opens the door for possible performance increases if the \texttt{Applicative} instance definition allows for parallel execution of the arguments to apply.
+This refactoring is another example of a generalisation refactoring that rewrites code to work with a type class. The previous examples of this type of refactoring, the Maybe to MonadPlus or the Maybe to Monad refactorings generalised a concrete type to one of its type classes. This refactoring is different, it does not generalise a program so that additional concrete types can be applied to it. Instead, this refactoring generalises the way that the target program can be evaluated. Though monads can be constructed to support parallel evaluation~\citep{parMonad}, this functionality needs to be explicitally added to a program. Applicative programs can be made implicitly parallel depending on the definition of the applicative instance~\citep{haxl}. 
 
 Additionally there are cases where the applicative versions of functions are cleaner and easier to read. Parsers in particular can become very descriptive in the applicative style with function calls being read from left to right in the same order as the syntax elements they are parsing appear in the input. 
 
@@ -4075,7 +4072,7 @@ do
 \label{doEx}
 \end{figure}
 
-\textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are (\cite{realWorldHaskell}; \cite{haskellCraft}; \cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
+\textbf{\texttt{do}} notation is highly used when writing monadic Haskell programs and some texts even introduce it before explaining what monads are~(\cite{realWorldHaskell};~\cite{haskellCraft};~\cite{learnYou}). Supporting this syntax is an important feature for a monadification refactoring to be practical. 
 
 The sugaring of bind syntax into \texttt{do} syntax is a separate refactoring in HaRe. This allows for the programmer to choose exactly which functions should be written with \texttt{do} syntax and when functions are clearer remaining as binds. The refactoring takes in a single parameter, the position where the target function is declared. The sugared version of \texttt{eval} from Figure~\ref{monEval} is shown in Figure~\ref{finEval}. The first two cases weren't bind expressions so they remain just calls to return. The three other cases have been refactored into the equivalent \texttt{do} statements.
 
@@ -4111,14 +4108,14 @@ Introducing the do syntactic sugar into the target program is the final step of 
 
 Monads are a challenging and characteristic feature of Haskell and, anecdotally at least, infamous amongst those trying to learn the language. Monadification is an important and common transformation that Haskell code undergoes. This chapter has described two refactorings that automate this transformation. The monadification refactoring transforms a set of functions into restricted call-by-value monad style, where only the result type of a function is made monadic. The second refactoring sugars the binds produced by the monadification into \texttt{do} notation, a common structure for monadic Haskell functions.
 
-Unlike the other refactorings developed for this thesis this transformation has a long history in the Haskell programming community. The design space for this refactoring had already been extensively covered in~(\cite{lammelReuse};~\cite{monadification};~\cite{clausMonadResponse}). Rather than producing an additional style of monadification the contribution of this chapter is the implementation of a practical monadification refactoring based on the styles of monadification, from~\cite{clausMonadResponse}, and algorithms for introducing them provided by (\cite{lammelReuse};~\cite{monadification}).
+Unlike the other refactorings developed for this thesis this transformation has a long history in the Haskell programming community. The design space for this refactoring had already been extensively covered in~(\cite{lammelReuse};~\cite{monadification};~\cite{clausMonadResponse}). Rather than producing an additional style of monadification the contribution of this chapter is the implementation of a practical monadification refactoring based on the styles of monadification, from~\cite{clausMonadResponse}, and algorithms for introducing them provided by~\cite{lammelReuse} and~\cite{monadification}.
 
 \chapter{Conclusion}
 \label{chp:conc}
 
 This thesis has explored a new category of refactoring for functional programming languages. Data-driven refactorings are transformations that are \textit{driven} by the data types a program uses. The generalisation refactorings, for example, are motivated by a desire to allow code to be re-used in more places (e.g. the ``Maybe to MonadPlus'' refactoring) or even to generalise the way a program is evaluated as in the ``monad to applicative'' refactoring where the \texttt{Applicative} type class does not force sequential evaluation of the arguments to apply (\texttt{<*>}) like bind (\texttt{>>=}), the monad operation, does.
 
-These refactorings are all designed to help programmers redesign the data their programs use and manipulate. It has been shown in the literature that as programmers make structural decisions the implementation of their programs technical debt can build up, and this debt can only be paid through rewriting and/or refactoring~(\cite{techDebt} and~\cite{fowler}). The core idea behind this thesis is that the data representation decisions that are also made during program development also accrue debt, and that refactoring is a valid and simple way to pay off this type of technical debt.  
+These refactorings are all designed to help programmers redesign the data their programs use and manipulate. It has been shown in the literature that as programmers make structural decisions the implementation of their programs technical debt can build up, and this debt can only be paid through rewriting and/or refactoring~(\cite{techDebt};~\cite{fowler}). The core idea behind this thesis is that the data representation decisions that are also made during program development also accrue debt, and that refactoring is a valid and simple way to pay off this type of technical debt.  
 
 \section{Summary of Contributions}
 
